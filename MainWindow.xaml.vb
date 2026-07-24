@@ -10,6 +10,7 @@ Imports System.Windows.Media.Animation
 Imports System.Windows.Media
 Imports System.ComponentModel
 Imports System.Collections.ObjectModel
+Imports System.Collections.Generic
 Imports System.Text.Json
 Imports System.Text.Json.Serialization
 Imports System.Diagnostics
@@ -1818,13 +1819,41 @@ Partial Class MainWindow
 
     Private Sub GridCrono_PreviewKeyDown(sender As Object, e As KeyEventArgs)
         If e.Key = Key.Delete OrElse e.Key = Key.Back Then
-            If gridCrono.SelectedItem IsNot Nothing Then
-                Dim entry = DirectCast(gridCrono.SelectedItem, CronoAnaliseEntry)
-                cronoEntries.Remove(entry)
+            If gridCrono.SelectedCells.Count > 0 Then
+                ' Agrupar células por linha para não processar a mesma entry múltiplas vezes
+                Dim entriesProcessadas As New HashSet(Of CronoAnaliseEntry)()
+                For Each cellInfo In gridCrono.SelectedCells
+                    Dim entry = TryCast(cellInfo.Item, CronoAnaliseEntry)
+                    If entry IsNot Nothing AndAlso cellInfo.Column IsNot Nothing Then
+                        Dim colIndex = cellInfo.Column.DisplayIndex
+                        Select Case colIndex
+                            Case 0 ' Operação
+                                entry.Operacao = ""
+                            Case 1 ' Início1
+                                entry.Inicio1 = 0
+                            Case 2 ' Fim1
+                                entry.Fim1 = 0
+                            Case 3 ' Início2
+                                entry.Inicio2 = 0
+                            Case 4 ' Fim2
+                                entry.Fim2 = 0
+                            Case 5 ' Início3
+                                entry.Inicio3 = 0
+                            Case 6 ' Fim3
+                                entry.Fim3 = 0
+                            Case 7 ' Início4
+                                entry.Inicio4 = 0
+                            Case 8 ' Fim4
+                                entry.Fim4 = 0
+                        End Select
+                        entriesProcessadas.Add(entry)
+                    End If
+                Next
                 e.Handled = True
-
-                ' Atualizar análise estatística após remoção
-                AtualizarAnaliseEstatistica()
+                ' Atualizar análise estatística se alguma entry foi modificada
+                If entriesProcessadas.Count > 0 Then
+                    AtualizarAnaliseEstatistica()
+                End If
             End If
         ElseIf modoCronoAtivo Then
             If Not editandoCelulaCrono AndAlso (e.Key = Key.Up OrElse e.Key = Key.Down OrElse e.Key = Key.Left OrElse e.Key = Key.Right) Then
