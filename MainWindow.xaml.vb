@@ -901,8 +901,7 @@ Partial Class MainWindow
             VisualizadorVideo.Visibility = Visibility.Visible
             imgFrameBuffer.Visibility = Visibility.Collapsed
 
-            btnPlayPause.Content = "⏸"
-            estaReproduzindo = True
+            AtualizarEstadoPlayPause(True)
 
             txtInicio.Text = videoAtual.Inicio.ToString()
             txtFim.Text = videoAtual.Fim.ToString()
@@ -938,12 +937,21 @@ Partial Class MainWindow
         End If
         mediaTimeline = Nothing
         videoAtual = Nothing
-        estaReproduzindo = False
-        btnPlayPause.Content = "▶"
+        AtualizarEstadoPlayPause(False)
         AtualizarIndicadorDeCorte()
     End Sub
 
     ' --- CONTROLOS DE REPRODUÇÃO E LINHA DO TEMPO ---
+
+    Private Sub AtualizarEstadoPlayPause(estaTocando As Boolean)
+        Dim simbolo = If(estaTocando, "⏸", "▶")
+        btnPlayPause.Content = simbolo
+        If btnCronoPlayPause IsNot Nothing Then
+            btnCronoPlayPause.Content = simbolo
+        End If
+        estaReproduzindo = estaTocando
+    End Sub
+
     Private Sub BtnPlayPause_Click(sender As Object, e As RoutedEventArgs)
         If mediaClock Is Nothing Then Return
 
@@ -953,8 +961,7 @@ Partial Class MainWindow
                 PararReproducaoPorFrames()
             End If
             mediaClock.Controller.Pause()
-            btnPlayPause.Content = "▶"
-            estaReproduzindo = False
+            AtualizarEstadoPlayPause(False)
         Else
             ' Reproduzir
             ' Verificar se temos frames no buffer para reprodução fluida
@@ -984,8 +991,7 @@ Partial Class MainWindow
                 mediaClock.Controller.Resume()
             End If
 
-            btnPlayPause.Content = "⏸"
-            estaReproduzindo = True
+            AtualizarEstadoPlayPause(True)
         End If
     End Sub
 
@@ -1157,8 +1163,7 @@ Partial Class MainWindow
             VisualizadorVideo.Clock = Nothing
             VisualizadorVideo.Close()
         End If
-        btnPlayPause.Content = "▶"
-        estaReproduzindo = False
+        AtualizarEstadoPlayPause(False)
 
         Dim argumentosDesempenho As String = ""
         If rbDesempenhoEco.IsChecked = True Then
@@ -1503,8 +1508,7 @@ Partial Class MainWindow
 
         If estaReproduzindo Then
             mediaClock.Controller.Pause()
-            estaReproduzindo = False
-            btnPlayPause.Content = "▶"
+            AtualizarEstadoPlayPause(False)
         End If
 
         Dim duracaoFrame As Double = 1.0 / frameRate
@@ -1886,6 +1890,23 @@ Partial Class MainWindow
     End Function
 
     ' --- MÉTODOS PARA PAINEL DOCKABLE ---
+
+    Private Sub BtnCronoFrameAnt_Click(sender As Object, e As RoutedEventArgs)
+        AvancarFrame(-1)
+    End Sub
+
+    Private Sub BtnCronoPlayPause_Click(sender As Object, e As RoutedEventArgs)
+        BtnPlayPause_Click(Nothing, Nothing)
+    End Sub
+
+    Private Sub BtnCronoFrameProx_Click(sender As Object, e As RoutedEventArgs)
+        AvancarFrame(1)
+    End Sub
+
+    Private Sub BtnCronoRegistrar_Click(sender As Object, e As RoutedEventArgs)
+        RegistrarTempoAtual()
+    End Sub
+
     Private Sub CronoPanelHeader_MouseLeftButtonDown(sender As Object, e As MouseButtonEventArgs)
         isDraggingCronoHeader = True
         dragStartPoint = e.GetPosition(Me)
