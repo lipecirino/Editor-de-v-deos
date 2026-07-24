@@ -559,6 +559,7 @@ Partial Class MainWindow
     Private mediaTimeline As MediaTimeline
     Private mediaClock As MediaClock
 
+    ' --- REPRODUÇÃO FLUIDA COM FRAMES EM MEMÓRIA ---
     Private estaReproduzindo As Boolean = False
     Private isDraggingSlider As Boolean = False
     Private frameRate As Double = 30.0
@@ -573,13 +574,6 @@ Partial Class MainWindow
     Private bufferTaskCts As CancellationTokenSource
     Private ultimaPosicaoBuffer As Double = -1
     Private Const BUFFER_SEGUNDOS As Double = 3.0 ' 3 segundos para frente e para trás
-
-    ' --- REPRODUÇÃO FLUIDA COM FRAMES EM MEMÓRIA ---
-    Private timerReproducaoFrames As New DispatcherTimer()
-    Private estaReproduindoPorFrames As Boolean = False
-    Private frameAtualReproducao As Integer = 0
-    Private ultimaTeclaPressionada As DateTime = DateTime.MinValue
-    Private direcaoNavegacao As Integer = 0 ' -1 para trás, 1 para frente, 0 parado
 
     ' --- MODO CRONOANÁLISE ---
     Private modoCronoAtivo As Boolean = False
@@ -684,9 +678,6 @@ Partial Class MainWindow
         GlobalFFOptions.Configure(New FFOptions With {.BinaryFolder = AppDomain.CurrentDomain.BaseDirectory})
         cronometroVideo.Interval = TimeSpan.FromMilliseconds(200)
         AddHandler cronometroVideo.Tick, AddressOf CronometroTick
-
-        ' Configurar timer para reprodução fluida por frames
-        AddHandler timerReproducaoFrames.Tick, AddressOf TimerReproducaoFrames_Tick
 
         ' Inicializar modo cronoanálise
         gridCrono.ItemsSource = cronoEntries
@@ -957,40 +948,11 @@ Partial Class MainWindow
 
         If estaReproduzindo Then
             ' Pausar
-            If estaReproduindoPorFrames Then
-                PararReproducaoPorFrames()
-            End If
             mediaClock.Controller.Pause()
             AtualizarEstadoPlayPause(False)
         Else
-            ' Reproduzir
-            ' Verificar se temos frames no buffer para reprodução fluida
-            Dim posicaoAtual = mediaClock.CurrentTime.Value.TotalSeconds
-            Dim frameAtual As Integer = CInt(Math.Floor(posicaoAtual * frameRate))
-            Dim temFramesNoBuffer As Boolean = False
-            Dim quantidadeFrames As Integer = 0
-
-            SyncLock frameBufferLock
-                ' Contar quantos frames consecutivos temos a partir da posição atual
-                Dim f As Integer = frameAtual
-                While frameBuffer.ContainsKey(f)
-                    quantidadeFrames += 1
-                    f += 1
-                End While
-                temFramesNoBuffer = (quantidadeFrames >= frameRate * 0.5) ' Pelo menos meio segundo
-            End SyncLock
-
-            If temFramesNoBuffer Then
-                ' Iniciar reprodução fluida por frames
-                IniciarReproducaoPorFrames(frameAtual)
-            Else
-                ' Reprodução normal pelo MediaElement
-                If estaReproduindoPorFrames Then
-                    PararReproducaoPorFrames()
-                End If
-                mediaClock.Controller.Resume()
-            End If
-
+            ' Reproduzir (sempre a 1x pelo MediaElement)
+            mediaClock.Controller.Resume()
             AtualizarEstadoPlayPause(True)
         End If
     End Sub
@@ -1036,11 +998,6 @@ Partial Class MainWindow
         isDraggingSlider = False
         popupTempoDrag.IsOpen = False
         If mediaClock IsNot Nothing Then
-            ' Parar reprodução por frames se estiver ativa
-            If estaReproduindoPorFrames Then
-                PararReproducaoPorFrames()
-            End If
-
             mediaClock.Controller.Resume()
             mediaClock.Controller.Seek(TimeSpan.FromSeconds(slLinhaTempo.Value), TimeSeekOrigin.BeginTime)
             lblTempoAtual.Text = TimeSpan.FromSeconds(slLinhaTempo.Value).ToString("hh\:mm\:ss")
@@ -1397,110 +1354,6 @@ Partial Class MainWindow
             bufferTaskCts.Cancel()
             bufferTaskCts = Nothing
         End If
-
-        ' Parar reprodução por frames se estiver ativa
-        PararReproducaoPorFrames()
-    End Sub
-
-    ' --- REPRODUÇÃO FLUIDA COM FRAMES EM MEMÓRIA ---
-    Private Sub IniciarReproducaoPorFrames(frameInicial As Integer)
-        IniciarReproducaoPorFramesDirecional(frameInicial, 1)
-    End Sub
-
-    Private Sub IniciarReproducaoPorFramesDirecional(frameInicial As Integer, direcao As Integer)
-        estaReproduindoPorFrames = True
-        frameAtualReproducao = frameInicial
-        direcaoNavegacao = direcao
-
-        ' Configurar intervalo baseado no framerate
-        timerReproducaoFrames.Interval = TimeSpan.FromMilliseconds(1000.0 / frameRate)
-        timerReproducaoFrames.Start()
-
-        ' Esconder MediaElement e mostrar Image
-        VisualizadorVideo.Visibility = Visibility.Collapsed
-        imgFrameBuffer.Visibility = Visibility.Visible
-
-        ' Exibir primeiro frame
-        ExibirFrameDoBuffer(frameAtualReproducao)
-    End Sub
-
-    Private Sub PararReproducaoPorFrames()
-        If Not estaReproduindoPorFrames Then Return
-
-        estaReproduindoPorFrames = False
-        timerReproducaoFrames.Stop()
-        direcaoNavegacao = 0
-
-        ' Mostrar MediaElement e esconder Image
-        VisualizadorVideo.Visibility = Visibility.Visible
-        imgFrameBuffer.Visibility = Visibility.Collapsed
-    End Sub
-
-    Private Sub TimerReproducaoFrames_Tick(sender As Object, e As EventArgs)
-        If Not estaReproduindoPorFrames Then Return
-
-        ' Avançar para o próximo frame (na direção configurada)
-        frameAtualReproducao += direcaoNavegacao
-
-        ' Verificar se o frame está no buffer
-        Dim temFrame As Boolean = False
-        SyncLock frameBufferLock
-            temFrame = frameBuffer.ContainsKey(frameAtualReproducao)
-        End SyncLock
-
-        If temFrame Then
-            ' Exibir frame do buffer
-            ExibirFrameDoBuffer(frameAtualReproducao)
-
-            ' Atualizar controles
-            Dim posicaoSegundos = frameAtualReproducao / frameRate
-            slLinhaTempo.Value = posicaoSegundos
-            lblTempoAtual.Text = TimeSpan.FromSeconds(posicaoSegundos).ToString("hh\:mm\:ss")
-
-            ' Verificar se está próximo do fim do buffer e recarregar
-            Dim framesFaltando As Integer = 0
-            Dim frameMaxBuffer As Integer = 0
-            SyncLock frameBufferLock
-                If frameBuffer.Count > 0 Then
-                    If direcaoNavegacao > 0 Then
-                        frameMaxBuffer = frameBuffer.Keys.Max()
-                        framesFaltando = frameMaxBuffer - frameAtualReproducao
-                    Else
-                        frameMaxBuffer = frameBuffer.Keys.Min()
-                        framesFaltando = frameAtualReproducao - frameMaxBuffer
-                    End If
-                End If
-            End SyncLock
-
-            ' Se estamos chegando perto do fim do buffer, recarregar
-            If framesFaltando < (frameRate * 1.0) Then ' Menos de 1 segundo restante
-                Dim posicaoAtual = frameAtualReproducao / frameRate
-                CarregarBufferFrames(posicaoAtual)
-            End If
-        Else
-            ' Frame não está no buffer, parar reprodução por frames e voltar ao MediaElement
-            PararReproducaoPorFrames()
-
-            ' Sincronizar posição do MediaElement
-            If mediaClock IsNot Nothing Then
-                Dim posicao = frameAtualReproducao / frameRate
-                mediaClock.Controller.Seek(TimeSpan.FromSeconds(posicao), TimeSeekOrigin.BeginTime)
-                If estaReproduzindo Then
-                    mediaClock.Controller.Resume()
-                End If
-            End If
-        End If
-    End Sub
-
-    Private Sub ExibirFrameDoBuffer(frameNum As Integer)
-        SyncLock frameBufferLock
-            If frameBuffer.ContainsKey(frameNum) Then
-                Dim frame = frameBuffer(frameNum)
-                Dispatcher.Invoke(Sub()
-                                      imgFrameBuffer.Source = frame
-                                  End Sub)
-            End If
-        End SyncLock
     End Sub
 
     Private Sub AvancarFrame(direcao As Integer)
@@ -1517,90 +1370,17 @@ Partial Class MainWindow
         If novaPosicao < 0 Then novaPosicao = 0
         If novaPosicao > slLinhaTempo.Maximum Then novaPosicao = slLinhaTempo.Maximum
 
-        Dim novoFrame As Integer = CInt(Math.Floor(novaPosicao * frameRate))
-
-        ' Detectar navegação rápida (múltiplos toques em menos de 300ms)
-        Dim agora = DateTime.Now
-        Dim tempoDesdeUltimaTecla = (agora - ultimaTeclaPressionada).TotalMilliseconds
-        ultimaTeclaPressionada = agora
-
-        ' Se está navegando rapidamente na mesma direção, iniciar reprodução automática
-        If tempoDesdeUltimaTecla < 300 AndAlso direcaoNavegacao = direcao Then
-            ' Verificar se temos frames suficientes no buffer
-            Dim temFramesSuficientes As Boolean = False
-            SyncLock frameBufferLock
-                Dim framesConsecutivos As Integer = 0
-                Dim f As Integer = novoFrame
-                While frameBuffer.ContainsKey(f) AndAlso framesConsecutivos < frameRate
-                    framesConsecutivos += 1
-                    f += direcao
-                End While
-                temFramesSuficientes = (framesConsecutivos >= frameRate * 0.3) ' 0.3 segundos
-            End SyncLock
-
-            If temFramesSuficientes AndAlso Not estaReproduindoPorFrames Then
-                ' Iniciar reprodução automática na direção navegada
-                IniciarReproducaoPorFramesDirecional(novoFrame, direcao)
-                Return
-            End If
-        Else
-            direcaoNavegacao = direcao
-        End If
-
-        ' Verificar se o frame está no buffer
-        Dim frameNoBuffer As Boolean = False
-        SyncLock frameBufferLock
-            frameNoBuffer = frameBuffer.ContainsKey(novoFrame)
-        End SyncLock
-
-        If frameNoBuffer Then
-            ' Usar frame do buffer para navegação instantânea
-            If Not estaReproduindoPorFrames Then
-                ' Parar MediaElement e iniciar modo de frames
-                PararReproducaoPorFrames() ' Garante estado limpo
-                VisualizadorVideo.Visibility = Visibility.Collapsed
-                imgFrameBuffer.Visibility = Visibility.Visible
-            End If
-
-            ' Exibir frame do buffer
-            ExibirFrameDoBuffer(novoFrame)
-            frameAtualReproducao = novoFrame
-        Else
-            ' Frame não está no buffer, usar MediaElement
-            If estaReproduindoPorFrames Then
-                PararReproducaoPorFrames()
-            End If
-
-            mediaClock.Controller.Resume()
-            mediaClock.Controller.Seek(TimeSpan.FromSeconds(novaPosicao), TimeSeekOrigin.BeginTime)
-            Dispatcher.BeginInvoke(DispatcherPriority.Background, Sub()
-                                                                      If Not estaReproduzindo Then
-                                                                          mediaClock.Controller.Pause()
-                                                                      End If
-                                                                  End Sub)
-        End If
+        ' Navegar usando sempre o MediaElement (1x)
+        mediaClock.Controller.Resume()
+        mediaClock.Controller.Seek(TimeSpan.FromSeconds(novaPosicao), TimeSeekOrigin.BeginTime)
+        Dispatcher.BeginInvoke(DispatcherPriority.Background, Sub()
+                                                                  If Not estaReproduzindo Then
+                                                                      mediaClock.Controller.Pause()
+                                                                  End If
+                                                              End Sub)
 
         slLinhaTempo.Value = novaPosicao
         lblTempoAtual.Text = TimeSpan.FromSeconds(novaPosicao).ToString("hh\:mm\:ss")
-
-        ' Atualizar buffer se mudamos de posição significativamente ou se não temos o frame atual
-        Dim frameAtual As Integer = CInt(Math.Floor(novaPosicao * frameRate))
-        Dim precisaRecarregar As Boolean = False
-
-        SyncLock frameBufferLock
-            ' Verificar se temos o frame atual no buffer
-            If Not frameBuffer.ContainsKey(frameAtual) Then
-                precisaRecarregar = True
-            ElseIf Math.Abs(novaPosicao - ultimaPosicaoBuffer) > (BUFFER_SEGUNDOS * 0.5) Then
-                ' Recarregar se movemos mais de metade do buffer
-                precisaRecarregar = True
-            End If
-        End SyncLock
-
-        If precisaRecarregar OrElse ultimaPosicaoBuffer < 0 Then
-            ultimaPosicaoBuffer = novaPosicao
-            CarregarBufferFrames(novaPosicao)
-        End If
     End Sub
 
     ' --- MODO CRONOANÁLISE ---
