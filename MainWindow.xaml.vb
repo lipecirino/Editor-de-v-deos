@@ -1643,13 +1643,10 @@ Partial Class MainWindow
 
         Dim entry = TryCast(gridCrono.CurrentItem, CronoAnaliseEntry)
         If entry Is Nothing Then
-            entry = TryCast(gridCrono.SelectedItem, CronoAnaliseEntry)
-        End If
-        If entry Is Nothing Then
             ' Selecionar a última entry se nenhuma estiver selecionada
             If cronoEntries.Count > 0 Then
                 entry = cronoEntries.Last()
-                gridCrono.SelectedItem = entry
+                gridCrono.CurrentCell = New DataGridCellInfo(entry, gridCrono.Columns(0))
             Else
                 Return
             End If
@@ -1671,7 +1668,7 @@ Partial Class MainWindow
             ' Todos os campos estão preenchidos, criar nova operação
             AdicionarNovaOperacao(False)
             entry = cronoEntries.Last()
-            gridCrono.SelectedItem = entry
+            gridCrono.CurrentCell = New DataGridCellInfo(entry, gridCrono.Columns(0))
             proxCampo = CronoAnaliseEntry.IDX_INICIO1
         End If
 
@@ -1692,9 +1689,8 @@ Partial Class MainWindow
         Dim colunaDataGrid = campoIndice + 1
         If colunaDataGrid >= gridCrono.Columns.Count Then Return
 
-        gridCrono.SelectedItem = entry
-        gridCrono.ScrollIntoView(entry)
         gridCrono.CurrentCell = New DataGridCellInfo(entry, gridCrono.Columns(colunaDataGrid))
+        gridCrono.ScrollIntoView(entry)
         gridCrono.Focus()
         Dispatcher.BeginInvoke(Sub()
                                    gridCrono.BeginEdit()
@@ -1712,7 +1708,7 @@ Partial Class MainWindow
             .Operacao = $"Op {opNum}"
         }
         cronoEntries.Add(entry)
-        gridCrono.SelectedItem = entry
+        gridCrono.CurrentCell = New DataGridCellInfo(entry, gridCrono.Columns(0))
         gridCrono.ScrollIntoView(entry)
         gridCrono.Focus()
 
