@@ -122,7 +122,7 @@
             </StackPanel>
         </Grid>
 
-        <Grid Grid.Column="1">
+        <Grid Grid.Column="1" x:Name="gridConteudo">
             <Grid.RowDefinitions>
                 <RowDefinition Height="70*"/>
                 <RowDefinition Height="Auto"/>
@@ -228,7 +228,7 @@
                 <Button Name="btnProcessar" Content="CONVERTER TUDO PARA MP4" Height="50" Style="{StaticResource BotaoArredondado}" Click="BtnProcessar_Click" FontSize="14" FontWeight="Bold"/>
             </StackPanel>
 
-            <GridSplitter Grid.Row="4" Height="8" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+            <GridSplitter Name="gridSplitterCrono" Grid.Row="4" Height="8" HorizontalAlignment="Stretch" VerticalAlignment="Center"
                           Background="#FFE2E8F0" ShowsPreview="True" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext"
                           Visibility="{Binding ElementName=pnlCrono, Path=Visibility}" ToolTip="Arraste para ajustar a altura da cronoanálise"/>
 

@@ -1611,6 +1611,12 @@ Partial Class MainWindow
 
     Private Sub BtnModoCrono_Unchecked(sender As Object, e As RoutedEventArgs)
         modoCronoAtivo = False
+
+        ' Se o painel estiver desacoplado, fechar a janela flutuante (isso reacopla automaticamente)
+        If cronoPanelWindow IsNot Nothing Then
+            cronoPanelWindow.Close()
+        End If
+
         pnlCrono.Visibility = Visibility.Collapsed
         grpConfigVideo.Visibility = Visibility.Visible
         painelExportacao.Visibility = Visibility.Visible
@@ -1900,6 +1906,13 @@ Partial Class MainWindow
     Private Sub DesacoplarCronoPanel()
         If pnlCrono Is Nothing OrElse cronoPanelWindow IsNot Nothing Then Return
 
+        ' Expandir a linha do vídeo para ocupar o espaço do crono
+        gridConteudo.RowDefinitions(0).Height = New GridLength(1, GridUnitType.Star)
+        ' Colapsar a linha do crono
+        gridConteudo.RowDefinitions(5).Height = New GridLength(0, GridUnitType.Pixel)
+        ' Esconder o GridSplitter
+        gridSplitterCrono.Visibility = Visibility.Collapsed
+
         ' Criar janela flutuante
         cronoPanelWindow = New CronoPanelWindow(Me, pnlCrono)
         cronoPanelWindow.Show()
@@ -1910,14 +1923,16 @@ Partial Class MainWindow
 
         cronoPanelWindow = Nothing
 
-        ' Encontrar a grade principal do grid de conteúdo
-        Dim mainGrid = CType(Me.Content, Grid)
-        If mainGrid Is Nothing Then Return
+        ' Restaurar as proporções originais das linhas
+        gridConteudo.RowDefinitions(0).Height = New GridLength(70, GridUnitType.Star)
+        gridConteudo.RowDefinitions(5).Height = New GridLength(30, GridUnitType.Star)
+        gridConteudo.RowDefinitions(5).MinHeight = 170
+        ' Mostrar o GridSplitter novamente
+        gridSplitterCrono.Visibility = Visibility.Visible
 
-        ' Re-adicionar o painel ao grid
-        Grid.SetRow(cronoPanel, 4)
-        Grid.SetColumn(cronoPanel, 0)
-        mainGrid.Children.Add(cronoPanel)
+        ' Re-adicionar o painel ao grid interior (coluna 1 - gridConteudo) na linha 5
+        Grid.SetRow(cronoPanel, 5)
+        gridConteudo.Children.Add(cronoPanel)
 
         ' Restaurar a visibilidade se estava no modo crono
         If modoCronoAtivo Then
