@@ -124,15 +124,19 @@
 
         <Grid Grid.Column="1" x:Name="gridConteudo">
             <Grid.RowDefinitions>
-                <RowDefinition Height="70*"/>
+                <RowDefinition Height="2*"/>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="30*" MinHeight="170"/>
+                <RowDefinition Height="1*" MinHeight="170"/>
             </Grid.RowDefinitions>
 
-            <Border Background="Black" CornerRadius="10">
+            <!-- ===== TOPO: Vídeo + Controlos ===== -->
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Border Background="Black" CornerRadius="10">
                 <Grid>
                     <MediaElement Name="VisualizadorVideo" LoadedBehavior="Manual" UnloadedBehavior="Stop" Stretch="Uniform" MediaOpened="VisualizadorVideo_MediaOpened"/>
                     <Image Name="imgFrameBuffer" Stretch="Uniform" Visibility="Collapsed"/>
@@ -177,63 +181,72 @@
                     </Popup>
                 </Grid>
                 <TextBlock Name="lblTempoTotal" Text="00:00:00" Grid.Column="6" VerticalAlignment="Center" Margin="15,0" Foreground="#666"/>
-            </Grid>
+            </Grid>  <!-- fecha barra de controlos -->
+            </Grid>  <!-- fecha wrapper topo (video + controlos) -->
 
-            <GroupBox Name="grpConfigVideo" Header="Configurações do Vídeo" Grid.Row="2" Padding="15" Margin="0,0,0,10">
-                <StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                        <TextBlock Text="Corte (seg):" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                        <TextBox Name="txtInicio" Width="50" Text="0" VerticalAlignment="Center" TextChanged="TxtCorte_TextChanged"/>
-                        <Button Content="Fixar Início" Click="BtnCapturarInicio_Click" Margin="5,0,20,0" Padding="10,2" Style="{StaticResource BotaoArredondado}" Background="#666" FontSize="11"/>
-                        <TextBox Name="txtFim" Width="50" Text="0" VerticalAlignment="Center" TextChanged="TxtCorte_TextChanged"/>
-                        <Button Content="Fixar Fim" Click="BtnCapturarFim_Click" Margin="5,0,0,0" Padding="10,2" Style="{StaticResource BotaoArredondado}" Background="#666" FontSize="11"/>
-                    </StackPanel>
-                    <WrapPanel>
-                        <RadioButton Name="rbNormal" Content="Normal" IsChecked="True" Margin="0,0,15,0"/>
-                        <RadioButton Name="rbRotDireita" Content="Girar 90° D" Margin="0,0,15,0"/>
-                        <RadioButton Name="rbRotEsquerda" Content="Girar 90° E" Margin="0,0,15,0"/>
-                        <RadioButton Name="rbRot180" Content="180°" Margin="0,0,15,0"/>
-                        <RadioButton Name="rbEspelharH" Content="Espelhar H" Margin="0,0,15,0"/>
-                        <RadioButton Name="rbEspelharV" Content="Espelhar V"/>
-                    </WrapPanel>
-                </StackPanel>
-            </GroupBox>
+            <!-- ===== SEPARADOR ===== -->
+            <GridSplitter Name="gridSplitterCrono" Grid.Row="1" Height="8" HorizontalAlignment="Stretch"
+                          VerticalAlignment="Center" Background="#FFE2E8F0" ShowsPreview="True"
+                          ResizeDirection="Rows" ResizeBehavior="PreviousAndNext"
+                          ToolTip="Arraste para ajustar a altura da área inferior"/>
 
-            <StackPanel Name="painelExportacao" Grid.Row="3" Margin="0,0,0,10">
-                <Expander Name="expExportacaoDesempenho" Header="Exportação e Desempenho (Clique para expandir)" Margin="0,0,0,15" IsExpanded="False" Background="#F0F0F0" Padding="10" BorderBrush="#DDD" BorderThickness="1">
-                    <StackPanel Margin="0,10,0,0">
-                        <TextBlock Text="Local de Guardar:" FontWeight="Bold" Margin="0,0,0,5" Foreground="#333"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                            <RadioButton Name="rbSalvarPastaEscolhida" Content="Escolher uma pasta" IsChecked="True" Margin="0,0,15,0"/>
-                            <RadioButton Name="rbSalvarPastaOriginal" Content="Guardar na mesma pasta do original (adiciona '_editado')"/>
+            <!-- ===== INFERIOR: Config Video / Exportação OU Cronoanálise ===== -->
+            <Grid Grid.Row="2" x:Name="gridInferior" Margin="0,0,0,10">
+
+                <!-- Painel de Config + Export (modo normal) -->
+                <StackPanel Name="painelConfigCompleto">
+                    <GroupBox Name="grpConfigVideo" Header="Configurações do Vídeo" Padding="15" Margin="0,0,0,10">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                            <TextBlock Text="Corte (seg):" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBox Name="txtInicio" Width="50" Text="0" VerticalAlignment="Center" TextChanged="TxtCorte_TextChanged"/>
+                            <Button Content="Fixar Início" Click="BtnCapturarInicio_Click" Margin="5,0,20,0" Padding="10,2" Style="{StaticResource BotaoArredondado}" Background="#666" FontSize="11"/>
+                            <TextBox Name="txtFim" Width="50" Text="0" VerticalAlignment="Center" TextChanged="TxtCorte_TextChanged"/>
+                            <Button Content="Fixar Fim" Click="BtnCapturarFim_Click" Margin="5,0,0,0" Padding="10,2" Style="{StaticResource BotaoArredondado}" Background="#666" FontSize="11"/>
                         </StackPanel>
-
-                        <CheckBox Name="chkDeletarOriginal" Content="Eliminar vídeo original após a conversão com sucesso" Margin="0,0,0,15"/>
-
-                        <TextBlock Text="Uso de Processador (CPU):" FontWeight="Bold" Margin="0,0,0,5" Foreground="#333"/>
-                        <StackPanel Orientation="Horizontal">
-                            <RadioButton Name="rbDesempenhoAlto" Content="Alto Desempenho (Sem limites)" IsChecked="True" Margin="0,0,15,0"/>
-                            <RadioButton Name="rbDesempenhoEco" Content="Modo Económico (Limitar a 50% para não bloquear o PC)"/>
-                        </StackPanel>
+                        <WrapPanel>
+                            <RadioButton Name="rbNormal" Content="Normal" IsChecked="True" Margin="0,0,15,0"/>
+                            <RadioButton Name="rbRotDireita" Content="Girar 90° D" Margin="0,0,15,0"/>
+                            <RadioButton Name="rbRotEsquerda" Content="Girar 90° E" Margin="0,0,15,0"/>
+                            <RadioButton Name="rbRot180" Content="180°" Margin="0,0,15,0"/>
+                            <RadioButton Name="rbEspelharH" Content="Espelhar H" Margin="0,0,15,0"/>
+                            <RadioButton Name="rbEspelharV" Content="Espelhar V"/>
+                        </WrapPanel>
                     </StackPanel>
-                </Expander>
+                </GroupBox>
 
-                <StackPanel Name="painelProgresso" Visibility="Collapsed" Margin="0,0,0,10">
-                    <TextBlock Name="lblStatusLote" Text="Vídeo 1/1" FontSize="11" Margin="0,0,0,5"/>
-                    <Grid>
-                        <ProgressBar Name="pbProgresso" Style="{StaticResource ProgressLote}"/>
-                        <TextBlock Name="lblPorcentagem" Text="0%" HorizontalAlignment="Right" Margin="0,-20,0,0" FontWeight="Bold" Foreground="#FF033150"/>
-                    </Grid>
+                <StackPanel Name="painelExportacao" Margin="0,0,0,10">
+                    <Expander Name="expExportacaoDesempenho" Header="Exportação e Desempenho (Clique para expandir)" Margin="0,0,0,15" IsExpanded="False" Background="#F0F0F0" Padding="10" BorderBrush="#DDD" BorderThickness="1">
+                        <StackPanel Margin="0,10,0,0">
+                            <TextBlock Text="Local de Guardar:" FontWeight="Bold" Margin="0,0,0,5" Foreground="#333"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <RadioButton Name="rbSalvarPastaEscolhida" Content="Escolher uma pasta" IsChecked="True" Margin="0,0,15,0"/>
+                                <RadioButton Name="rbSalvarPastaOriginal" Content="Guardar na mesma pasta do original (adiciona '_editado')"/>
+                            </StackPanel>
+
+                            <CheckBox Name="chkDeletarOriginal" Content="Eliminar vídeo original após a conversão com sucesso" Margin="0,0,0,15"/>
+
+                            <TextBlock Text="Uso de Processador (CPU):" FontWeight="Bold" Margin="0,0,0,5" Foreground="#333"/>
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton Name="rbDesempenhoAlto" Content="Alto Desempenho (Sem limites)" IsChecked="True" Margin="0,0,15,0"/>
+                                <RadioButton Name="rbDesempenhoEco" Content="Modo Económico (Limitar a 50% para não bloquear o PC)"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Expander>
+
+                    <StackPanel Name="painelProgresso" Visibility="Collapsed" Margin="0,0,0,10">
+                        <TextBlock Name="lblStatusLote" Text="Vídeo 1/1" FontSize="11" Margin="0,0,0,5"/>
+                        <Grid>
+                            <ProgressBar Name="pbProgresso" Style="{StaticResource ProgressLote}"/>
+                            <TextBlock Name="lblPorcentagem" Text="0%" HorizontalAlignment="Right" Margin="0,-20,0,0" FontWeight="Bold" Foreground="#FF033150"/>
+                        </Grid>
+                    </StackPanel>
+                    <Button Name="btnProcessar" Content="CONVERTER TUDO PARA MP4" Height="50" Style="{StaticResource BotaoArredondado}" Click="BtnProcessar_Click" FontSize="14" FontWeight="Bold"/>
                 </StackPanel>
-                <Button Name="btnProcessar" Content="CONVERTER TUDO PARA MP4" Height="50" Style="{StaticResource BotaoArredondado}" Click="BtnProcessar_Click" FontSize="14" FontWeight="Bold"/>
-            </StackPanel>
+            </StackPanel>  <!-- fecha painelConfigCompleto -->
 
-            <GridSplitter Name="gridSplitterCrono" Grid.Row="4" Height="8" HorizontalAlignment="Stretch" VerticalAlignment="Center"
-                          Background="#FFE2E8F0" ShowsPreview="True" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext"
-                          Visibility="{Binding ElementName=pnlCrono, Path=Visibility}" ToolTip="Arraste para ajustar a altura da cronoanálise"/>
-
-            <!-- ========== PAINEL MODO CRONOANÁLISE (inferior) ========== -->
-            <Border Name="pnlCrono" Grid.Row="5" Background="#FFF8FAFC" BorderBrush="#FFD7DEE8" BorderThickness="1" Margin="0,0,0,10" CornerRadius="10" Visibility="Collapsed">
+            <!-- Painel de Cronoanálise (modo crono) -->
+            <Border Name="pnlCrono" Visibility="Collapsed" Background="#FFF8FAFC" BorderBrush="#FFD7DEE8" BorderThickness="1" CornerRadius="10">
                 <Grid Margin="10">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -533,7 +546,8 @@
                     </ScrollViewer>
 
                 </Grid>
-            </Border>
-        </Grid>
-    </Grid>
+            </Border>  <!-- fecha pnlCrono -->
+        </Grid>  <!-- fecha gridInferior -->
+    </Grid>  <!-- fecha gridConteudo -->
+</Grid>  <!-- fecha grid coluna direita -->
 </Window>

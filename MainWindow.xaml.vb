@@ -1762,34 +1762,27 @@ Partial Class MainWindow
                 AtualizarAnaliseEstatistica()
 
                 Using sw As New StreamWriter(save.FileName, False, Text.Encoding.UTF8)
-                    sw.WriteLine("Nome do vídeo;Caminho do vídeo;Operação;Início1 (min:seg,00);Fim1 (min:seg,00);Início2;Fim2;Início3;Fim3;Início4;Fim4;Duração (min:seg,00);Desvio da Média (%);Início1 (seg);Fim1 (seg);Início2 (seg);Fim2 (seg);Início3 (seg);Fim3 (seg);Início4 (seg);Fim4 (seg);Duração (seg)")
+                    sw.WriteLine("Nome do vídeo;Caminho do vídeo;Operação;Início1;Fim1;Início2;Fim2;Início3;Fim3;Início4;Fim4;Duração")
                     Dim nomeVideo = If(videoAtual IsNot Nothing, Path.GetFileName(videoAtual.Caminho), String.Empty)
                     Dim caminhoVideo = If(videoAtual IsNot Nothing, videoAtual.Caminho, String.Empty)
                     For Each entry In cronoEntries
-                        Dim duracaoTotal As Double = Math.Max(0, entry.Fim1 - entry.Inicio1) + Math.Max(0, entry.Fim2 - entry.Inicio2) + Math.Max(0, entry.Fim3 - entry.Inicio3) + Math.Max(0, entry.Fim4 - entry.Inicio4)
+                        Dim duracaoTotal As Double = Math.Max(0, entry.Fim1 - entry.Inicio1) +
+                                                     Math.Max(0, entry.Fim2 - entry.Inicio2) +
+                                                     Math.Max(0, entry.Fim3 - entry.Inicio3) +
+                                                     Math.Max(0, entry.Fim4 - entry.Inicio4)
                         Dim linha = String.Join(";", {
                             EscaparCampoCsv(nomeVideo),
                             EscaparCampoCsv(caminhoVideo),
                             EscaparCampoCsv(entry.Operacao),
-                            EscaparCampoCsv(entry.Inicio1Display),
-                            EscaparCampoCsv(entry.Fim1Display),
-                            EscaparCampoCsv(entry.Inicio2Display),
-                            EscaparCampoCsv(entry.Fim2Display),
-                            EscaparCampoCsv(entry.Inicio3Display),
-                            EscaparCampoCsv(entry.Fim3Display),
-                            EscaparCampoCsv(entry.Inicio4Display),
-                            EscaparCampoCsv(entry.Fim4Display),
-                            EscaparCampoCsv(entry.DuracaoDisplay),
-                            entry.DesvioPercentual.ToString("F2"),
-                            entry.Inicio1.ToString("F3"),
-                            entry.Fim1.ToString("F3"),
-                            entry.Inicio2.ToString("F3"),
-                            entry.Fim2.ToString("F3"),
-                            entry.Inicio3.ToString("F3"),
-                            entry.Fim3.ToString("F3"),
-                            entry.Inicio4.ToString("F3"),
-                            entry.Fim4.ToString("F3"),
-                            duracaoTotal.ToString("F3")
+                            If(entry.Inicio1 > 0, entry.Inicio1.ToString("F3"), ""),
+                            If(entry.Fim1 > 0, entry.Fim1.ToString("F3"), ""),
+                            If(entry.Inicio2 > 0, entry.Inicio2.ToString("F3"), ""),
+                            If(entry.Fim2 > 0, entry.Fim2.ToString("F3"), ""),
+                            If(entry.Inicio3 > 0, entry.Inicio3.ToString("F3"), ""),
+                            If(entry.Fim3 > 0, entry.Fim3.ToString("F3"), ""),
+                            If(entry.Inicio4 > 0, entry.Inicio4.ToString("F3"), ""),
+                            If(entry.Fim4 > 0, entry.Fim4.ToString("F3"), ""),
+                            If(duracaoTotal > 0, duracaoTotal.ToString("F3"), "")
                         })
                         sw.WriteLine(linha)
                     Next
@@ -1906,10 +1899,10 @@ Partial Class MainWindow
     Private Sub DesacoplarCronoPanel()
         If pnlCrono Is Nothing OrElse cronoPanelWindow IsNot Nothing Then Return
 
-        ' Expandir a linha do vídeo para ocupar o espaço do crono
+        ' Expandir a linha do vídeo para ocupar todo o espaço
         gridConteudo.RowDefinitions(0).Height = New GridLength(1, GridUnitType.Star)
-        ' Colapsar a linha do crono
-        gridConteudo.RowDefinitions(5).Height = New GridLength(0, GridUnitType.Pixel)
+        ' Colapsar a linha inferior (config/crono)
+        gridConteudo.RowDefinitions(2).Height = New GridLength(0, GridUnitType.Pixel)
         ' Esconder o GridSplitter
         gridSplitterCrono.Visibility = Visibility.Collapsed
 
@@ -1929,16 +1922,17 @@ Partial Class MainWindow
             CType(parentPanel, Panel).Children.Remove(cronoPanel)
         End If
 
-        ' Restaurar as proporções originais das linhas
-        gridConteudo.RowDefinitions(0).Height = New GridLength(70, GridUnitType.Star)
-        gridConteudo.RowDefinitions(5).Height = New GridLength(30, GridUnitType.Star)
-        gridConteudo.RowDefinitions(5).MinHeight = 170
+        ' Restaurar as proporções 2/3 e 1/3
+        gridConteudo.RowDefinitions(0).Height = New GridLength(2, GridUnitType.Star)
+        gridConteudo.RowDefinitions(2).Height = New GridLength(1, GridUnitType.Star)
+        gridConteudo.RowDefinitions(2).MinHeight = 170
         ' Mostrar o GridSplitter novamente
         gridSplitterCrono.Visibility = Visibility.Visible
 
-        ' Re-adicionar o painel ao grid interior (coluna 1 - gridConteudo) na linha 5
-        Grid.SetRow(cronoPanel, 5)
-        gridConteudo.Children.Add(cronoPanel)
+        ' Re-adicionar o painel ao grid inferior (gridInferior)
+        Grid.SetRow(cronoPanel, 0)
+        Grid.SetColumn(cronoPanel, 0)
+        gridInferior.Children.Add(cronoPanel)
 
         ' Restaurar a visibilidade se estava no modo crono
         If modoCronoAtivo Then
