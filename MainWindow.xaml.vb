@@ -1923,6 +1923,12 @@ Partial Class MainWindow
 
         cronoPanelWindow = Nothing
 
+        ' Remover o painel do pai atual (janela flutuante) antes de re-adicionar
+        Dim parentPanel = VisualTreeHelper.GetParent(cronoPanel)
+        If TypeOf parentPanel Is Panel Then
+            CType(parentPanel, Panel).Children.Remove(cronoPanel)
+        End If
+
         ' Restaurar as proporções originais das linhas
         gridConteudo.RowDefinitions(0).Height = New GridLength(70, GridUnitType.Star)
         gridConteudo.RowDefinitions(5).Height = New GridLength(30, GridUnitType.Star)
