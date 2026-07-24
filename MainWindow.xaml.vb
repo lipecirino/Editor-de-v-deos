@@ -1774,15 +1774,15 @@ Partial Class MainWindow
                             EscaparCampoCsv(nomeVideo),
                             EscaparCampoCsv(caminhoVideo),
                             EscaparCampoCsv(entry.Operacao),
-                            If(entry.Inicio1 > 0, entry.Inicio1.ToString("F3"), ""),
-                            If(entry.Fim1 > 0, entry.Fim1.ToString("F3"), ""),
-                            If(entry.Inicio2 > 0, entry.Inicio2.ToString("F3"), ""),
-                            If(entry.Fim2 > 0, entry.Fim2.ToString("F3"), ""),
-                            If(entry.Inicio3 > 0, entry.Inicio3.ToString("F3"), ""),
-                            If(entry.Fim3 > 0, entry.Fim3.ToString("F3"), ""),
-                            If(entry.Inicio4 > 0, entry.Inicio4.ToString("F3"), ""),
-                            If(entry.Fim4 > 0, entry.Fim4.ToString("F3"), ""),
-                            If(duracaoTotal > 0, duracaoTotal.ToString("F3"), "")
+                            If(entry.Inicio1 > 0, EscaparCampoCsv(entry.Inicio1Display), ""),
+                            If(entry.Fim1 > 0, EscaparCampoCsv(entry.Fim1Display), ""),
+                            If(entry.Inicio2 > 0, EscaparCampoCsv(entry.Inicio2Display), ""),
+                            If(entry.Fim2 > 0, EscaparCampoCsv(entry.Fim2Display), ""),
+                            If(entry.Inicio3 > 0, EscaparCampoCsv(entry.Inicio3Display), ""),
+                            If(entry.Fim3 > 0, EscaparCampoCsv(entry.Fim3Display), ""),
+                            If(entry.Inicio4 > 0, EscaparCampoCsv(entry.Inicio4Display), ""),
+                            If(entry.Fim4 > 0, EscaparCampoCsv(entry.Fim4Display), ""),
+                            If(duracaoTotal > 0, EscaparCampoCsv(CronoAnaliseEntry.SegundosParaCrono(duracaoTotal)), "")
                         })
                         sw.WriteLine(linha)
                     Next
