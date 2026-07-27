@@ -485,7 +485,8 @@ Public Class CronoAnaliseEntry
         If segundos = 0 Then Return ""
         Dim ts = TimeSpan.FromSeconds(segundos)
         Dim centesimos = CInt((ts.Milliseconds / 10))
-        Return $"{CInt(ts.TotalMinutes):00}:{ts.Seconds:00},{centesimos:00}"
+        Dim totalMin = Int(ts.TotalMinutes)
+        Return $"{totalMin:00}:{ts.Seconds:00},{centesimos:00}"
     End Function
 
     Public Shared Function CronoParaSegundos(crono As String) As Double?
@@ -1405,7 +1406,8 @@ Partial Class MainWindow
         If totalSegundos < 0 Then totalSegundos = 0
         Dim ts = TimeSpan.FromSeconds(totalSegundos)
         Dim centesimos = CInt((ts.Milliseconds / 10))
-        Return $"{CInt(ts.TotalMinutes):00}:{ts.Seconds:00},{centesimos:00}"
+        Dim totalMin = Int(ts.TotalMinutes)
+        Return $"{totalMin:00}:{ts.Seconds:00},{centesimos:00}"
     End Function
 
     Private Sub AvancarFrame(direcao As Integer)
