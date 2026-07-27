@@ -1628,7 +1628,7 @@ Partial Class MainWindow
         ' Validar entrada conforme a coluna em edição
         If gridCrono.CurrentCell.Column IsNot Nothing Then
             Dim colIndex = gridCrono.CurrentCell.Column.DisplayIndex
-            If colIndex = 1 Then
+            If colIndex = 2 Then
                 ' Nº Amostras: apenas dígitos
                 For Each ch As Char In e.Text
                     If Not Char.IsDigit(ch) Then
@@ -1636,7 +1636,7 @@ Partial Class MainWindow
                         Exit For
                     End If
                 Next
-            ElseIf colIndex >= 2 AndAlso colIndex <= 9 Then
+            ElseIf colIndex >= 3 AndAlso colIndex <= 10 Then
                 ' Colunas de tempo (Início1..Fim4): apenas dígitos, ':' e ','
                 For Each ch As Char In e.Text
                     If Not Char.IsDigit(ch) AndAlso ch <> ":"c AndAlso ch <> ","c Then
