@@ -328,6 +328,7 @@
                                     <Setter Property="BorderBrush" Value="#FFE6EDF5"/>
                                     <Setter Property="BorderThickness" Value="1"/>
                                     <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="VerticalContentAlignment" Value="Center"/>
                                     <Style.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
                                             <Setter Property="Background" Value="#FFF5F9FF"/>
