@@ -979,7 +979,7 @@ Partial Class MainWindow
     Private Sub VisualizadorVideo_MediaOpened(sender As Object, e As RoutedEventArgs)
         If VisualizadorVideo.NaturalDuration.HasTimeSpan Then
             slLinhaTempo.Maximum = VisualizadorVideo.NaturalDuration.TimeSpan.TotalSeconds
-            lblTempoTotal.Text = VisualizadorVideo.NaturalDuration.TimeSpan.ToString("hh\:mm\:ss")
+            lblTempoTotal.Text = FormatarTempo(VisualizadorVideo.NaturalDuration.TimeSpan.TotalSeconds)
             cronometroVideo.Start()
 
             Try
@@ -1003,7 +1003,7 @@ Partial Class MainWindow
         If Not isDraggingSlider Then
             Dim pos = mediaClock.CurrentTime.Value.TotalSeconds
             slLinhaTempo.Value = pos
-            lblTempoAtual.Text = mediaClock.CurrentTime.Value.ToString("hh\:mm\:ss")
+            lblTempoAtual.Text = FormatarTempo(mediaClock.CurrentTime.Value.TotalSeconds)
         End If
     End Sub
 
@@ -1019,7 +1019,7 @@ Partial Class MainWindow
         If mediaClock IsNot Nothing Then
             mediaClock.Controller.Resume()
             mediaClock.Controller.Seek(TimeSpan.FromSeconds(slLinhaTempo.Value), TimeSeekOrigin.BeginTime)
-            lblTempoAtual.Text = TimeSpan.FromSeconds(slLinhaTempo.Value).ToString("hh\:mm\:ss")
+            lblTempoAtual.Text = FormatarTempo(slLinhaTempo.Value)
             If Not estaReproduzindo Then
                 Dispatcher.BeginInvoke(DispatcherPriority.Background, Sub()
                                                                           mediaClock.Controller.Pause()
@@ -1034,8 +1034,7 @@ Partial Class MainWindow
 
     Private Sub SlLinhaTempo_ValueChanged(sender As Object, e As RoutedPropertyChangedEventArgs(Of Double))
         If isDraggingSlider Then
-            Dim t = TimeSpan.FromSeconds(slLinhaTempo.Value)
-            lblTempoDrag.Text = t.ToString("hh\:mm\:ss")
+            lblTempoDrag.Text = FormatarTempo(slLinhaTempo.Value)
             popupTempoDrag.HorizontalOffset += 0.1
             popupTempoDrag.HorizontalOffset -= 0.1
         End If
@@ -1375,6 +1374,13 @@ Partial Class MainWindow
         End If
     End Sub
 
+    Private Function FormatarTempo(totalSegundos As Double) As String
+        If totalSegundos < 0 Then totalSegundos = 0
+        Dim ts = TimeSpan.FromSeconds(totalSegundos)
+        Dim centesimos = CInt((ts.Milliseconds / 10))
+        Return $"{CInt(ts.TotalMinutes):00}:{ts.Seconds:00},{centesimos:00}"
+    End Function
+
     Private Sub AvancarFrame(direcao As Integer)
         If mediaClock Is Nothing OrElse Not mediaClock.CurrentTime.HasValue Then Return
 
@@ -1399,7 +1405,7 @@ Partial Class MainWindow
                                                               End Sub)
 
         slLinhaTempo.Value = novaPosicao
-        lblTempoAtual.Text = TimeSpan.FromSeconds(novaPosicao).ToString("hh\:mm\:ss")
+        lblTempoAtual.Text = FormatarTempo(novaPosicao)
     End Sub
 
     ' --- MODO CRONOANÁLISE ---
