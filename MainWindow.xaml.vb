@@ -844,11 +844,23 @@ Partial Class MainWindow
     End Sub
 
     ' --- EVENTOS DA GALERIA (BOTÕES + DRAG & DROP) ---
+    Private Function VideoJaExiste(caminho As String) As Boolean
+        For Each item In lstGaleria.Items
+            Dim v = TryCast(item, VideoTarefa)
+            If v IsNot Nothing AndAlso v.Caminho.Equals(caminho, StringComparison.OrdinalIgnoreCase) Then
+                Return True
+            End If
+        Next
+        Return False
+    End Function
+
     Private Sub BtnAbrirArquivos_Click(sender As Object, e As RoutedEventArgs)
         Dim abrir As New OpenFileDialog() With {.Multiselect = True, .Filter = "Vídeos|*.m4v;*.mp4;*.avi;*.mkv;*.mov;*.3gp"}
         If abrir.ShowDialog() = True Then
             For Each arq In abrir.FileNames
-                lstGaleria.Items.Add(New VideoTarefa() With {.Caminho = arq})
+                If Not VideoJaExiste(arq) Then
+                    lstGaleria.Items.Add(New VideoTarefa() With {.Caminho = arq})
+                End If
             Next
         End If
     End Sub
@@ -858,7 +870,7 @@ Partial Class MainWindow
             If sel.ShowDialog() = System.Windows.Forms.DialogResult.OK Then
                 Dim ext = {".m4v", ".mp4", ".avi", ".mkv", ".mov", ".3gp"}
                 For Each arq In Directory.GetFiles(sel.SelectedPath, "*.*", SearchOption.AllDirectories)
-                    If ext.Contains(Path.GetExtension(arq).ToLower()) Then
+                    If ext.Contains(Path.GetExtension(arq).ToLower()) AndAlso Not VideoJaExiste(arq) Then
                         lstGaleria.Items.Add(New VideoTarefa() With {.Caminho = arq})
                     End If
                 Next
@@ -871,7 +883,7 @@ Partial Class MainWindow
             Dim arquivos As String() = CType(e.Data.GetData(DataFormats.FileDrop), String())
             Dim extensoesValidas = {".m4v", ".mp4", ".avi", ".mkv", ".mov", ".3gp"}
             For Each arq In arquivos
-                If extensoesValidas.Contains(Path.GetExtension(arq).ToLower()) Then
+                If extensoesValidas.Contains(Path.GetExtension(arq).ToLower()) AndAlso Not VideoJaExiste(arq) Then
                     lstGaleria.Items.Add(New VideoTarefa() With {.Caminho = arq})
                 End If
             Next
