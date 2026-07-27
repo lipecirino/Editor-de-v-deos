@@ -382,6 +382,23 @@
                                     </DataGridTextColumn.EditingElementStyle>
                                 </DataGridTextColumn>
 
+                                <!-- Cliente -->
+                                <DataGridTextColumn Header="Cliente" Binding="{Binding Cliente, UpdateSourceTrigger=PropertyChanged}" Width="160" MinWidth="120">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style>
+                                            <Setter Property="TextBlock.Margin" Value="4,2"/>
+                                            <Setter Property="TextBlock.TextWrapping" Value="Wrap"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                    <DataGridTextColumn.EditingElementStyle>
+                                        <Style TargetType="TextBox">
+                                            <Setter Property="TextWrapping" Value="Wrap"/>
+                                            <Setter Property="AcceptsReturn" Value="True"/>
+                                            <Setter Property="Margin" Value="3,2"/>
+                                        </Style>
+                                    </DataGridTextColumn.EditingElementStyle>
+                                </DataGridTextColumn>
+
                                 <!-- Número de Amostras -->
                                 <DataGridTextColumn Header="Nº Amostras" Binding="{Binding NumeroAmostras, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Width="90" MinWidth="70">
                                     <DataGridTextColumn.ElementStyle>

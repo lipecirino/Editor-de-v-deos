@@ -20,6 +20,7 @@ Imports System.Windows.Media.Imaging
 <Serializable()>
 Public Class CronoAnaliseCacheEntry
     Public Property Operacao As String = ""
+    Public Property Cliente As String = ""
     Public Property NumeroAmostras As Integer = 0
     Public Property Inicio1 As Double = 0
     Public Property Fim1 As Double = 0
@@ -188,6 +189,18 @@ Public Class CronoAnaliseEntry
             If value < 0 Then value = 0
             _numeroAmostras = value
             RaisePropertyChanged(NameOf(NumeroAmostras))
+        End Set
+    End Property
+
+    Private _cliente As String
+
+    Public Property Cliente As String
+        Get
+            Return _cliente
+        End Get
+        Set(value As String)
+            _cliente = value
+            RaisePropertyChanged(NameOf(Cliente))
         End Set
     End Property
 
@@ -763,6 +776,7 @@ Partial Class MainWindow
         For Each cronoDados In cache.CronoAnalises
             Dim entry As New CronoAnaliseEntry() With {
                 .Operacao = cronoDados.Operacao,
+                .Cliente = cronoDados.Cliente,
                 .NumeroAmostras = cronoDados.NumeroAmostras,
                 .Inicio1 = cronoDados.Inicio1,
                 .Fim1 = cronoDados.Fim1,
@@ -792,6 +806,7 @@ Partial Class MainWindow
         For Each entry In cronoEntries
             Dim cronoDados As New CronoAnaliseCacheEntry() With {
                 .Operacao = entry.Operacao,
+                .Cliente = entry.Cliente,
                 .NumeroAmostras = entry.NumeroAmostras,
                 .Inicio1 = entry.Inicio1,
                 .Fim1 = entry.Fim1,
@@ -1474,8 +1489,8 @@ Partial Class MainWindow
 
         If gridCrono.CurrentCell.Column IsNot Nothing Then
             Dim displayIndex = gridCrono.CurrentCell.Column.DisplayIndex
-            If displayIndex >= 3 AndAlso displayIndex <= 10 Then
-                campoSelecionado = displayIndex - 3
+            If displayIndex >= 4 AndAlso displayIndex <= 11 Then
+                campoSelecionado = displayIndex - 4
             End If
         End If
 
@@ -1503,8 +1518,8 @@ Partial Class MainWindow
 
         If campoIndice < 0 OrElse campoIndice > CronoAnaliseEntry.IDX_FIM4 Then Return
 
-        ' +3 para saltar colunas Botão Excluir (0), Operação (1) e Nº Amostras (2)
-        Dim colunaDataGrid = campoIndice + 3
+        ' +4 para saltar colunas Botão Excluir (0), Operação (1), Cliente (2) e Nº Amostras (3)
+        Dim colunaDataGrid = campoIndice + 4
         If colunaDataGrid >= gridCrono.Columns.Count Then Return
 
         gridCrono.CurrentCell = New DataGridCellInfo(entry, gridCrono.Columns(colunaDataGrid))
@@ -1590,7 +1605,7 @@ Partial Class MainWindow
                 AtualizarAnaliseEstatistica()
 
                 Using sw As New StreamWriter(save.FileName, False, Text.Encoding.UTF8)
-                    sw.WriteLine("Nome do vídeo;Caminho do vídeo;Operação;Nº Amostras;Início1;Fim1;Início2;Fim2;Início3;Fim3;Início4;Fim4;Duração")
+                    sw.WriteLine("Nome do vídeo;Caminho do vídeo;Operação;Cliente;Nº Amostras;Início1;Fim1;Início2;Fim2;Início3;Fim3;Início4;Fim4;Duração")
                     Dim nomeVideo = If(videoAtual IsNot Nothing, Path.GetFileName(videoAtual.Caminho), String.Empty)
                     Dim caminhoVideo = If(videoAtual IsNot Nothing, videoAtual.Caminho, String.Empty)
                     For Each entry In cronoEntries
@@ -1602,6 +1617,7 @@ Partial Class MainWindow
                             EscaparCampoCsv(nomeVideo),
                             EscaparCampoCsv(caminhoVideo),
                             EscaparCampoCsv(entry.Operacao),
+                            EscaparCampoCsv(entry.Cliente),
                             EscaparCampoCsv(entry.NumeroAmostras.ToString()),
                             If(entry.Inicio1 > 0, EscaparCampoCsv(entry.Inicio1Display), ""),
                             If(entry.Fim1 > 0, EscaparCampoCsv(entry.Fim1Display), ""),
@@ -1649,7 +1665,7 @@ Partial Class MainWindow
         ' Validar entrada conforme a coluna em edição
         If gridCrono.CurrentCell.Column IsNot Nothing Then
             Dim colIndex = gridCrono.CurrentCell.Column.DisplayIndex
-            If colIndex = 2 Then
+            If colIndex = 3 Then
                 ' Nº Amostras: apenas dígitos
                 For Each ch As Char In e.Text
                     If Not Char.IsDigit(ch) Then
@@ -1657,7 +1673,7 @@ Partial Class MainWindow
                         Exit For
                     End If
                 Next
-            ElseIf colIndex >= 3 AndAlso colIndex <= 10 Then
+            ElseIf colIndex >= 4 AndAlso colIndex <= 11 Then
                 ' Colunas de tempo (Início1..Fim4): apenas dígitos, ':' e ','
                 For Each ch As Char In e.Text
                     If Not Char.IsDigit(ch) AndAlso ch <> ":"c AndAlso ch <> ","c Then
@@ -1682,23 +1698,25 @@ Partial Class MainWindow
                             Case 0 ' Botão Excluir (ignorar)
                             Case 1 ' Operação
                                 entry.Operacao = ""
-                            Case 2 ' Nº Amostras
+                            Case 2 ' Cliente
+                                entry.Cliente = ""
+                            Case 3 ' Nº Amostras
                                 entry.NumeroAmostras = 0
-                            Case 3 ' Início1
+                            Case 4 ' Início1
                                 entry.Inicio1 = 0
-                            Case 4 ' Fim1
+                            Case 5 ' Fim1
                                 entry.Fim1 = 0
-                            Case 5 ' Início2
+                            Case 6 ' Início2
                                 entry.Inicio2 = 0
-                            Case 6 ' Fim2
+                            Case 7 ' Fim2
                                 entry.Fim2 = 0
-                            Case 7 ' Início3
+                            Case 8 ' Início3
                                 entry.Inicio3 = 0
-                            Case 8 ' Fim3
+                            Case 9 ' Fim3
                                 entry.Fim3 = 0
-                            Case 9 ' Início4
+                            Case 10 ' Início4
                                 entry.Inicio4 = 0
-                            Case 10 ' Fim4
+                            Case 11 ' Fim4
                                 entry.Fim4 = 0
                         End Select
                         entriesProcessadas.Add(entry)
