@@ -503,7 +503,10 @@ Public Class CronoAnaliseEntry
             total += Math.Max(0, Fim3 - Inicio3)
             total += Math.Max(0, Fim4 - Inicio4)
             If total <= 0 Then Return ""
-            Return SegundosParaCrono(total)
+            ' Formatar como segundos,centésimos (ex: 125,67)
+            Dim segundosInt = CInt(Math.Floor(total))
+            Dim centesimos = CInt((total - segundosInt) * 100)
+            Return $"{segundosInt},{centesimos:D2}"
         End Get
     End Property
 
@@ -1590,7 +1593,7 @@ Partial Class MainWindow
                             If(entry.Fim3 > 0, EscaparCampoCsv(entry.Fim3Display), ""),
                             If(entry.Inicio4 > 0, EscaparCampoCsv(entry.Inicio4Display), ""),
                             If(entry.Fim4 > 0, EscaparCampoCsv(entry.Fim4Display), ""),
-                            If(duracaoTotal > 0, EscaparCampoCsv(CronoAnaliseEntry.SegundosParaCrono(duracaoTotal)), "")
+                            If(duracaoTotal > 0, EscaparCampoCsv(duracaoTotal.ToString("F2", System.Globalization.CultureInfo.InvariantCulture).Replace(".", ",")), "")
                         })
                         sw.WriteLine(linha)
                     Next
