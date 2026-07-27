@@ -1442,7 +1442,7 @@ Partial Class MainWindow
             ' Selecionar a última entry se nenhuma estiver selecionada
             If cronoEntries.Count > 0 Then
                 entry = cronoEntries.Last()
-                gridCrono.CurrentCell = New DataGridCellInfo(entry, gridCrono.Columns(0))
+                gridCrono.CurrentCell = New DataGridCellInfo(entry, gridCrono.Columns(1))
             Else
                 Return
             End If
@@ -1453,8 +1453,8 @@ Partial Class MainWindow
 
         If gridCrono.CurrentCell.Column IsNot Nothing Then
             Dim displayIndex = gridCrono.CurrentCell.Column.DisplayIndex
-            If displayIndex >= 2 AndAlso displayIndex <= 9 Then
-                campoSelecionado = displayIndex - 2
+            If displayIndex >= 3 AndAlso displayIndex <= 10 Then
+                campoSelecionado = displayIndex - 3
             End If
         End If
 
@@ -1464,7 +1464,7 @@ Partial Class MainWindow
             ' Todos os campos estão preenchidos, criar nova operação
             AdicionarNovaOperacao(False)
             entry = cronoEntries.Last()
-            gridCrono.CurrentCell = New DataGridCellInfo(entry, gridCrono.Columns(0))
+            gridCrono.CurrentCell = New DataGridCellInfo(entry, gridCrono.Columns(1))
             proxCampo = CronoAnaliseEntry.IDX_INICIO1
         End If
 
@@ -1482,8 +1482,8 @@ Partial Class MainWindow
 
         If campoIndice < 0 OrElse campoIndice > CronoAnaliseEntry.IDX_FIM4 Then Return
 
-        ' +2 para saltar colunas Operação (0) e Nº Amostras (1)
-        Dim colunaDataGrid = campoIndice + 2
+        ' +3 para saltar colunas Botão Excluir (0), Operação (1) e Nº Amostras (2)
+        Dim colunaDataGrid = campoIndice + 3
         If colunaDataGrid >= gridCrono.Columns.Count Then Return
 
         gridCrono.CurrentCell = New DataGridCellInfo(entry, gridCrono.Columns(colunaDataGrid))
@@ -1503,7 +1503,7 @@ Partial Class MainWindow
             .NumeroAmostras = 1
         }
         cronoEntries.Add(entry)
-        gridCrono.CurrentCell = New DataGridCellInfo(entry, gridCrono.Columns(0))
+        gridCrono.CurrentCell = New DataGridCellInfo(entry, gridCrono.Columns(1))
         gridCrono.ScrollIntoView(entry)
         gridCrono.Focus()
 
@@ -1513,7 +1513,7 @@ Partial Class MainWindow
         If iniciarEdicaoOperacao Then
             ' Iniciar edição da célula Operação
             Dispatcher.BeginInvoke(Sub()
-                                       gridCrono.CurrentCell = New DataGridCellInfo(entry, gridCrono.Columns(0))
+                                       gridCrono.CurrentCell = New DataGridCellInfo(entry, gridCrono.Columns(1))
                                        gridCrono.BeginEdit()
                                    End Sub)
         End If
@@ -1535,6 +1535,17 @@ Partial Class MainWindow
 
         Return texto
     End Function
+
+    Private Sub BtnExcluirLinhaCrono_Click(sender As Object, e As RoutedEventArgs)
+        Dim button = TryCast(sender, Button)
+        If button IsNot Nothing Then
+            Dim entry = TryCast(button.DataContext, CronoAnaliseEntry)
+            If entry IsNot Nothing Then
+                cronoEntries.Remove(entry)
+                AtualizarAnaliseEstatistica()
+            End If
+        End If
+    End Sub
 
     Private Sub BtnExportarCrono_Click(sender As Object, e As RoutedEventArgs)
         ' Salvar cronoanálise antes de exportar
@@ -1647,25 +1658,26 @@ Partial Class MainWindow
                     If entry IsNot Nothing AndAlso cellInfo.Column IsNot Nothing Then
                         Dim colIndex = cellInfo.Column.DisplayIndex
                         Select Case colIndex
-                            Case 0 ' Operação
+                            Case 0 ' Botão Excluir (ignorar)
+                            Case 1 ' Operação
                                 entry.Operacao = ""
-                            Case 1 ' Nº Amostras
+                            Case 2 ' Nº Amostras
                                 entry.NumeroAmostras = 0
-                            Case 2 ' Início1
+                            Case 3 ' Início1
                                 entry.Inicio1 = 0
-                            Case 3 ' Fim1
+                            Case 4 ' Fim1
                                 entry.Fim1 = 0
-                            Case 4 ' Início2
+                            Case 5 ' Início2
                                 entry.Inicio2 = 0
-                            Case 5 ' Fim2
+                            Case 6 ' Fim2
                                 entry.Fim2 = 0
-                            Case 6 ' Início3
+                            Case 7 ' Início3
                                 entry.Inicio3 = 0
-                            Case 7 ' Fim3
+                            Case 8 ' Fim3
                                 entry.Fim3 = 0
-                            Case 8 ' Início4
+                            Case 9 ' Início4
                                 entry.Inicio4 = 0
-                            Case 9 ' Fim4
+                            Case 10 ' Fim4
                                 entry.Fim4 = 0
                         End Select
                         entriesProcessadas.Add(entry)

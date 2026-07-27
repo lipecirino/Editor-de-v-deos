@@ -350,6 +350,20 @@
                                 </Style>
                             </DataGrid.Resources>
                             <DataGrid.Columns>
+                                <!-- Botão Excluir -->
+                                <DataGridTemplateColumn Header=" " Width="36" CanUserResize="False" CanUserReorder="False" IsReadOnly="True">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="✕" Width="24" Height="24" FontSize="12"
+                                                    Foreground="#FFE81123" Background="Transparent"
+                                                    BorderThickness="0" Cursor="Hand"
+                                                    ToolTip="Excluir este registo"
+                                                    Click="BtnExcluirLinhaCrono_Click">
+                                            </Button>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
                                 <DataGridTextColumn Header="Operação" Binding="{Binding Operacao, UpdateSourceTrigger=PropertyChanged}" Width="220" MinWidth="160">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style>
