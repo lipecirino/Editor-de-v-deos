@@ -108,6 +108,21 @@
             </Grid.RowDefinitions>
             <TextBlock Text="GALERIA (Arraste seu Vídeo aqui)" FontWeight="Bold" Foreground="#888" Margin="0,0,0,10"/>
             <ListBox Name="lstGaleria" Grid.Row="1" SelectionChanged="LstGaleria_SelectionChanged" BorderThickness="0" Background="#F9F9F9" AllowDrop="True" Drop="LstGaleria_Drop" MouseRightButtonUp="LstGaleria_MouseRightButtonUp">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{Binding NomeComFlag}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="2,1,4,1"/>
+                            <Button Grid.Column="1" Content="✕" Width="20" Height="20" FontSize="10"
+                                    Foreground="#FFE81123" Background="Transparent" BorderThickness="0"
+                                    Cursor="Hand" ToolTip="Remover este vídeo"
+                                    Click="BtnRemoverVideoGaleria_Click"/>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
                 <ListBox.ContextMenu>
                     <ContextMenu>
                         <MenuItem Header="✓ Marcar/Desmarcar Cronoanálise" Click="ToggleCronoAnaliseFlag_Click"/>

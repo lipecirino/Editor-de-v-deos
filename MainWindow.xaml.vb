@@ -960,6 +960,23 @@ Partial Class MainWindow
         End If
     End Sub
 
+    Private Sub BtnRemoverVideoGaleria_Click(sender As Object, e As RoutedEventArgs)
+        Dim button = TryCast(sender, Button)
+        If button IsNot Nothing Then
+            Dim video = TryCast(button.DataContext, VideoTarefa)
+            If video IsNot Nothing Then
+                ' Se o vídeo removido é o que está ativo, limpar
+                If videoAtual IsNot Nothing AndAlso videoAtual.Caminho.Equals(video.Caminho, StringComparison.OrdinalIgnoreCase) Then
+                    If mediaClock IsNot Nothing Then
+                        mediaClock.Controller.Stop()
+                    End If
+                    videoAtual = Nothing
+                End If
+                lstGaleria.Items.Remove(video)
+            End If
+        End If
+    End Sub
+
     Private Sub BtnLimpar_Click(sender As Object, e As RoutedEventArgs)
         lstGaleria.Items.Clear()
         cronoEntries.Clear()
