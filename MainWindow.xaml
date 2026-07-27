@@ -165,19 +165,24 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <Button Name="btnFrameAnterior" Content="⏮" Width="45" Height="35" Style="{StaticResource BotaoArredondado}" Click="BtnFrameAnterior_Click" ToolTip="Frame Anterior (Seta Esquerda)"/>
                 <Button Name="btnPlayPause" Content="▶" Width="45" Height="35" Style="{StaticResource BotaoArredondado}" Click="BtnPlayPause_Click" Grid.Column="1" Margin="5,0,0,0"/>
                 <Button Name="btnFrameProximo" Content="⏭" Width="45" Height="35" Style="{StaticResource BotaoArredondado}" Click="BtnFrameProximo_Click" Grid.Column="2" Margin="5,0,0,0" ToolTip="Próximo Frame (Seta Direita)"/>
-                <ToggleButton Name="btnModoCrono" Content="⏱ Crono" Width="85" Height="35" Grid.Column="3" Margin="8,0,0,0"
+                <ToggleButton Name="btnMuteAudio" Content="🔊" Width="45" Height="35" Grid.Column="3" Margin="5,0,0,0"
+                              Style="{StaticResource BotaoArredondadoToggle}" Background="#FF033150"
+                              Checked="BtnMuteAudio_Checked" Unchecked="BtnMuteAudio_Unchecked"
+                              ToolTip="Ativar/Desativar Áudio do Vídeo"/>
+                <ToggleButton Name="btnModoCrono" Content="⏱ Crono" Width="85" Height="35" Grid.Column="4" Margin="8,0,0,0"
                               Style="{StaticResource BotaoArredondadoToggle}" Background="#FF6A4C93"
                               Checked="BtnModoCrono_Checked" Unchecked="BtnModoCrono_Unchecked"
                               ToolTip="Ativar/Desativar Modo Cronoanálise"/>
-                <TextBlock Name="lblTempoAtual" Text="00:00:00" Grid.Column="4" VerticalAlignment="Center" Margin="15,0" Foreground="#666"/>
+                <TextBlock Name="lblTempoAtual" Text="00:00:00" Grid.Column="5" VerticalAlignment="Center" Margin="15,0" Foreground="#666"/>
 
-                <Grid Grid.Column="5" Name="gridSliderCorte" SizeChanged="GridSliderCorte_SizeChanged">
+                <Grid Grid.Column="6" Name="gridSliderCorte" SizeChanged="GridSliderCorte_SizeChanged">
 
                     <Slider Name="slLinhaTempo" Style="{StaticResource SliderYoutube}" 
                             Thumb.DragStarted="SlLinhaTempo_DragStarted" 
@@ -195,7 +200,7 @@
                         </Border>
                     </Popup>
                 </Grid>
-                <TextBlock Name="lblTempoTotal" Text="00:00:00" Grid.Column="6" VerticalAlignment="Center" Margin="15,0" Foreground="#666"/>
+                <TextBlock Name="lblTempoTotal" Text="00:00:00" Grid.Column="7" VerticalAlignment="Center" Margin="15,0" Foreground="#666"/>
             </Grid>  <!-- fecha barra de controlos -->
             </Grid>  <!-- fecha wrapper topo (video + controlos) -->
 

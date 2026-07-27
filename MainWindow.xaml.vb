@@ -1021,6 +1021,18 @@ Partial Class MainWindow
         End If
     End Sub
 
+    Private Sub BtnMuteAudio_Checked(sender As Object, e As RoutedEventArgs)
+        VisualizadorVideo.IsMuted = True
+        btnMuteAudio.Content = "🔇"
+        btnMuteAudio.Background = New SolidColorBrush(Color.FromRgb(&HCC, &H33, &H33))
+    End Sub
+
+    Private Sub BtnMuteAudio_Unchecked(sender As Object, e As RoutedEventArgs)
+        VisualizadorVideo.IsMuted = False
+        btnMuteAudio.Content = "🔊"
+        btnMuteAudio.Background = New SolidColorBrush(Color.FromRgb(&H03, &H31, &H50))
+    End Sub
+
     Private Sub VisualizadorVideo_MediaOpened(sender As Object, e As RoutedEventArgs)
         If VisualizadorVideo.NaturalDuration.HasTimeSpan Then
             slLinhaTempo.Maximum = VisualizadorVideo.NaturalDuration.TimeSpan.TotalSeconds
