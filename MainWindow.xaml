@@ -369,8 +369,16 @@
                                         <Style>
                                             <Setter Property="TextBlock.Margin" Value="4,2"/>
                                             <Setter Property="TextBlock.FontWeight" Value="SemiBold"/>
+                                            <Setter Property="TextBlock.TextWrapping" Value="Wrap"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
+                                    <DataGridTextColumn.EditingElementStyle>
+                                        <Style TargetType="TextBox">
+                                            <Setter Property="TextWrapping" Value="Wrap"/>
+                                            <Setter Property="AcceptsReturn" Value="True"/>
+                                            <Setter Property="Margin" Value="3,2"/>
+                                        </Style>
+                                    </DataGridTextColumn.EditingElementStyle>
                                 </DataGridTextColumn>
 
                                 <!-- Número de Amostras -->
