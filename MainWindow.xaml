@@ -192,6 +192,7 @@
                             Thumb.DragStarted="SlLinhaTempo_DragStarted" 
                             Thumb.DragCompleted="SlLinhaTempo_DragCompleted"
                             ValueChanged="SlLinhaTempo_ValueChanged"
+                            PreviewMouseLeftButtonDown="SlLinhaTempo_PreviewMouseLeftButtonDown"
                             Panel.ZIndex="1"/>
 
                     <Canvas Name="canvasCorte" IsHitTestVisible="False" VerticalAlignment="Center" Height="16" Margin="6,0,6,0" Panel.ZIndex="2">

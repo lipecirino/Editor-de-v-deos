@@ -1181,6 +1181,41 @@ Partial Class MainWindow
         End If
     End Sub
 
+    Private Sub SlLinhaTempo_PreviewMouseLeftButtonDown(sender As Object, e As MouseButtonEventArgs)
+        If mediaClock Is Nothing Then Return
+
+        ' Calcular a posição do clique em relação ao slider
+        Dim posicaoMouse = e.GetPosition(slLinhaTempo)
+        Dim larguraSlider = slLinhaTempo.ActualWidth
+
+        If larguraSlider <= 0 Then Return
+
+        ' Calcular proporção (0 a 1)
+        Dim proporcao = Math.Max(0.0, Math.Min(1.0, posicaoMouse.X / larguraSlider))
+
+        ' Converter para valor no range do slider
+        Dim range = slLinhaTempo.Maximum - slLinhaTempo.Minimum
+        Dim novoValor = slLinhaTempo.Minimum + (range * proporcao)
+
+        ' Atualizar slider e seek no vídeo
+        slLinhaTempo.Value = novoValor
+        mediaClock.Controller.Seek(TimeSpan.FromSeconds(novoValor), TimeSeekOrigin.BeginTime)
+        lblTempoAtual.Text = FormatarTempo(novoValor)
+
+        ' Se estava pausado, manter pausado após o seek
+        If Not estaReproduzindo Then
+            Dispatcher.BeginInvoke(DispatcherPriority.Background, Sub()
+                                                                      mediaClock.Controller.Pause()
+                                                                  End Sub)
+        End If
+
+        ' Carregar buffer na nova posição
+        ultimaPosicaoBuffer = novoValor
+        CarregarBufferFrames(novoValor)
+
+        e.Handled = True
+    End Sub
+
     ' --- SISTEMA VISUAL DE CORTE ---
     Private Sub BtnCapturarInicio_Click(sender As Object, e As RoutedEventArgs)
         If mediaClock IsNot Nothing AndAlso mediaClock.CurrentTime.HasValue Then
