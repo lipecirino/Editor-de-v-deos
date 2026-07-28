@@ -151,7 +151,7 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <Border Background="Black" CornerRadius="10">
+                <Border Background="Black" CornerRadius="10" MouseLeftButtonDown="BorderVideo_MouseLeftButtonDown">
                 <Grid>
                     <MediaElement Name="VisualizadorVideo" LoadedBehavior="Manual" UnloadedBehavior="Stop" Stretch="Uniform" MediaOpened="VisualizadorVideo_MediaOpened"/>
                     <Image Name="imgFrameBuffer" Stretch="Uniform" Visibility="Collapsed"/>
@@ -167,6 +167,9 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
@@ -212,6 +215,19 @@
                         <Path Data="M9.5,1 L9.5,3.5 C9.1,3.6 8.7,3.7 8.3,3.9 L6.3,2.5 L5.5,3.9 L7.3,5.6 C7.1,5.9 6.9,6.3 6.8,6.7 L4.5,7.2 L4.5,8.8 L6.8,9.3 C6.9,9.7 7.1,10.1 7.3,10.4 L5.5,12.1 L6.3,13.5 L8.3,12.1 C8.7,12.3 9.1,12.4 9.5,12.5 L9.5,15 L10.5,15 L10.5,12.5 C10.9,12.4 11.3,12.3 11.7,12.1 L13.7,13.5 L14.5,12.1 L12.7,10.4 C12.9,10.1 13.1,9.7 13.2,9.3 L15.5,8.8 L15.5,7.2 L13.2,6.7 C13.1,6.3 12.9,5.9 12.7,5.6 L14.5,3.9 L13.7,2.5 L11.7,3.9 C11.3,3.7 10.9,3.6 10.5,3.5 L10.5,1 L9.5,1 Z M10,5 C11.7,5 13,6.3 13,8 C13,9.7 11.7,11 10,11 C8.3,11 7,9.7 7,8 C7,6.3 8.3,5 10,5 Z" Fill="White"/>
                     </Viewbox>
                 </Button>
+
+                <!-- Controlos de Velocidade -->
+                <Button Name="btnVelocidadeMenos" Content="−" Width="32" Height="35" Grid.Column="9" Margin="5,0,0,0"
+                        Style="{StaticResource BotaoArredondado}" Background="#FF444444"
+                        Click="BtnVelocidadeMenos_Click" FontSize="18" FontWeight="Bold"
+                        ToolTip="Diminuir Velocidade"/>
+                <TextBlock Name="lblVelocidade" Text="1.0×" Grid.Column="10" VerticalAlignment="Center" 
+                           Margin="4,0" Foreground="#FFCC6600" FontWeight="Bold" FontSize="13"
+                           ToolTip="Velocidade atual de reprodução"/>
+                <Button Name="btnVelocidadeMais" Content="+" Width="32" Height="35" Grid.Column="11" Margin="2,0,0,0"
+                        Style="{StaticResource BotaoArredondado}" Background="#FF444444"
+                        Click="BtnVelocidadeMais_Click" FontSize="18" FontWeight="Bold"
+                        ToolTip="Aumentar Velocidade"/>
             </Grid>  <!-- fecha barra de controlos -->
             </Grid>  <!-- fecha wrapper topo (video + controlos) -->
 

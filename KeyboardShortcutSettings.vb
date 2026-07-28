@@ -11,7 +11,9 @@ Public Class KeyboardShortcutSettings
         {"FrameProximo", "Right"},
         {"PlayPause", "Down"},
         {"RegistrarTempo", "Up"},
-        {"NovaOperacao", "Insert"}
+        {"NovaOperacao", "Insert"},
+        {"VelocidadeMais", "O"},
+        {"VelocidadeMenos", "P"}
     }
 End Class
 
@@ -99,7 +101,9 @@ Public Class SettingsManager
             {"FrameProximo", "Right"},
             {"PlayPause", "Down"},
             {"RegistrarTempo", "Up"},
-            {"NovaOperacao", "Insert"}
+            {"NovaOperacao", "Insert"},
+            {"VelocidadeMais", "O"},
+            {"VelocidadeMenos", "P"}
         }
 
         Dim modificado As Boolean = False

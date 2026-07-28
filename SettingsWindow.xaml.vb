@@ -89,6 +89,16 @@ Public Class SettingsWindow
             .NomeExibicao = "Nova Operação (Crono)",
             .TeclaAtual = _settings.Atalhos("NovaOperacao")
         })
+        _atalhos.Add(New AtalhoItem() With {
+            .NomeAcao = "VelocidadeMais",
+            .NomeExibicao = "Aumentar Velocidade",
+            .TeclaAtual = _settings.Atalhos("VelocidadeMais")
+        })
+        _atalhos.Add(New AtalhoItem() With {
+            .NomeAcao = "VelocidadeMenos",
+            .NomeExibicao = "Diminuir Velocidade",
+            .TeclaAtual = _settings.Atalhos("VelocidadeMenos")
+        })
 
         listaAtalhos.ItemsSource = _atalhos
 

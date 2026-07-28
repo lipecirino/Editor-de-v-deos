@@ -589,6 +589,7 @@ Partial Class MainWindow
     Private videoAtual As VideoTarefa = Nothing
     Private mediaTimeline As MediaTimeline
     Private mediaClock As MediaClock
+    Private _velocidadeReproducao As Double = 1.0
 
     ' --- REPRODUÇÃO FLUIDA COM FRAMES EM MEMÓRIA ---
     Private estaReproduzindo As Boolean = False
@@ -934,9 +935,12 @@ Partial Class MainWindow
 
             mediaTimeline = New MediaTimeline(New Uri(videoAtual.Caminho))
             mediaTimeline.RepeatBehavior = New RepeatBehavior(1)
+            mediaTimeline.SpeedRatio = _velocidadeReproducao
             mediaClock = mediaTimeline.CreateClock(True)
             VisualizadorVideo.Clock = mediaClock
             mediaClock.Controller.Begin()
+
+            AtualizarLabelVelocidade()
 
             ' Garantir que o MediaElement está visível
             VisualizadorVideo.Visibility = Visibility.Visible
@@ -1018,9 +1022,86 @@ Partial Class MainWindow
             mediaClock.Controller.Pause()
             AtualizarEstadoPlayPause(False)
         Else
-            ' Reproduzir (sempre a 1x pelo MediaElement)
+            ' Reproduzir
             mediaClock.Controller.Resume()
             AtualizarEstadoPlayPause(True)
+        End If
+    End Sub
+
+    Private Sub BorderVideo_MouseLeftButtonDown(sender As Object, e As MouseButtonEventArgs)
+        BtnPlayPause_Click(Nothing, Nothing)
+    End Sub
+
+    Private Sub BtnVelocidadeMenos_Click(sender As Object, e As RoutedEventArgs)
+        Dim velocidades = {0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0}
+        Dim idxAtual = Array.IndexOf(velocidades, _velocidadeReproducao)
+        If idxAtual > 0 Then
+            _velocidadeReproducao = velocidades(idxAtual - 1)
+        Else
+            _velocidadeReproducao = 0.25
+        End If
+        RecriarClockComVelocidade()
+    End Sub
+
+    Private Sub BtnVelocidadeMais_Click(sender As Object, e As RoutedEventArgs)
+        Dim velocidades = {0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0}
+        Dim idxAtual = Array.IndexOf(velocidades, _velocidadeReproducao)
+        If idxAtual >= 0 AndAlso idxAtual < velocidades.Length - 1 Then
+            _velocidadeReproducao = velocidades(idxAtual + 1)
+        Else
+            _velocidadeReproducao = 4.0
+        End If
+        RecriarClockComVelocidade()
+    End Sub
+
+    Private Sub RecriarClockComVelocidade()
+        If videoAtual Is Nothing OrElse mediaClock Is Nothing Then
+            AtualizarLabelVelocidade()
+            Return
+        End If
+
+        ' Guardar estado atual
+        Dim estavaTocando = estaReproduzindo
+        Dim posicaoAtual As TimeSpan? = mediaClock.CurrentTime
+
+        ' Parar clock atual
+        mediaClock.Controller.Stop()
+        VisualizadorVideo.Clock = Nothing
+        mediaClock = Nothing
+
+        ' Criar novo timeline com a nova velocidade
+        mediaTimeline = New MediaTimeline(New Uri(videoAtual.Caminho))
+        mediaTimeline.RepeatBehavior = New RepeatBehavior(1)
+        mediaTimeline.SpeedRatio = _velocidadeReproducao
+        mediaClock = mediaTimeline.CreateClock(True)
+        VisualizadorVideo.Clock = mediaClock
+        mediaClock.Controller.Begin()
+
+        ' Restaurar posição
+        If posicaoAtual.HasValue Then
+            mediaClock.Controller.Seek(posicaoAtual.Value, TimeSeekOrigin.BeginTime)
+        End If
+
+        ' Restaurar estado de reprodução
+        If Not estavaTocando Then
+            Dispatcher.BeginInvoke(DispatcherPriority.Background, Sub()
+                                                                      mediaClock.Controller.Pause()
+                                                                  End Sub)
+        End If
+
+        AtualizarLabelVelocidade()
+    End Sub
+
+    Private Sub AtualizarLabelVelocidade()
+        If _velocidadeReproducao = 1.0 Then
+            lblVelocidade.Text = "1.0×"
+            lblVelocidade.Foreground = New SolidColorBrush(Color.FromRgb(&HCC, &H66, &H00))
+        ElseIf _velocidadeReproducao > 1.0 Then
+            lblVelocidade.Text = $"{_velocidadeReproducao:F1}×"
+            lblVelocidade.Foreground = New SolidColorBrush(Color.FromRgb(&H00, &HCC, &H66))
+        Else
+            lblVelocidade.Text = $"{_velocidadeReproducao:F1}×"
+            lblVelocidade.Foreground = New SolidColorBrush(Color.FromRgb(&HCC, &H66, &H00))
         End If
     End Sub
 
@@ -1862,6 +1943,20 @@ Partial Class MainWindow
             End If
         End If
 
+        ' Atalhos de velocidade (funcionam sempre, não só no modo crono)
+        Dim teclaVelMais As Key = CType([Enum].Parse(GetType(Key), settings.Atalhos("VelocidadeMais")), Key)
+        Dim teclaVelMenos As Key = CType([Enum].Parse(GetType(Key), settings.Atalhos("VelocidadeMenos")), Key)
+
+        If e.Key = teclaVelMais Then
+            BtnVelocidadeMais_Click(Nothing, Nothing)
+            Return True
+        End If
+
+        If e.Key = teclaVelMenos Then
+            BtnVelocidadeMenos_Click(Nothing, Nothing)
+            Return True
+        End If
+
         Return False
     End Function
 
@@ -1894,6 +1989,9 @@ Partial Class MainWindow
         If btnNovaOperacao IsNot Nothing Then
             btnNovaOperacao.ToolTip = $"Nova Operação ({FormatTeclaTooltip(settings.Atalhos("NovaOperacao"))})"
         End If
+
+        btnVelocidadeMenos.ToolTip = $"Diminuir Velocidade ({FormatTeclaTooltip(settings.Atalhos("VelocidadeMenos"))})"
+        btnVelocidadeMais.ToolTip = $"Aumentar Velocidade ({FormatTeclaTooltip(settings.Atalhos("VelocidadeMais"))})"
     End Sub
 
     Private Shared Function FormatTeclaTooltip(tecla As String) As String
@@ -1902,6 +2000,8 @@ Partial Class MainWindow
             Case "Right" : Return "→ Seta Direita"
             Case "Up" : Return "↑ Seta Para Cima"
             Case "Down" : Return "↓ Seta Para Baixo"
+            Case "O" : Return "O"
+            Case "P" : Return "P"
             Case Else : Return tecla
         End Select
     End Function
