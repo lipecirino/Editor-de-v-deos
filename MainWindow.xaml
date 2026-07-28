@@ -109,7 +109,8 @@
             </Grid.RowDefinitions>
             <TextBlock Text="GALERIA (Arraste seu Vídeo aqui)" FontWeight="Bold" Foreground="#888" Margin="0,0,0,10"/>
             <ListBox Name="lstGaleria" Grid.Row="1" SelectionChanged="LstGaleria_SelectionChanged" BorderThickness="0" Background="#F9F9F9" AllowDrop="True" Drop="LstGaleria_Drop" MouseRightButtonUp="LstGaleria_MouseRightButtonUp"
-                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                 HorizontalContentAlignment="Stretch">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <Grid>
