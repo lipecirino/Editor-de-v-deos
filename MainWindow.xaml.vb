@@ -1512,7 +1512,7 @@ Partial Class MainWindow
             ' Selecionar a última entry se nenhuma estiver selecionada
             If cronoEntries.Count > 0 Then
                 entry = cronoEntries.Last()
-                gridCrono.CurrentCell = New DataGridCellInfo(entry, gridCrono.Columns(1))
+                SelecionarCelulaNoGrid(entry, 1)
             Else
                 Return
             End If
@@ -1534,7 +1534,7 @@ Partial Class MainWindow
             ' Todos os campos estão preenchidos, criar nova operação
             AdicionarNovaOperacao(False)
             entry = cronoEntries.Last()
-            gridCrono.CurrentCell = New DataGridCellInfo(entry, gridCrono.Columns(1))
+            SelecionarCelulaNoGrid(entry, 1)
             proxCampo = CronoAnaliseEntry.IDX_INICIO1
         End If
 
@@ -1547,6 +1547,27 @@ Partial Class MainWindow
         MoverParaCampoCrono(entry, proxCampo + 1)
     End Sub
 
+    ''' <summary>
+    ''' Seleciona visualmente uma célula no grid de cronoanálise.
+    ''' Apenas define CurrentCell (foco) mas também adiciona a célula a SelectedCells (destaque azul).
+    ''' </summary>
+    Private Sub SelecionarCelulaNoGrid(entry As CronoAnaliseEntry, colunaDataGrid As Integer)
+        If entry Is Nothing Then Return
+        If colunaDataGrid < 0 OrElse colunaDataGrid >= gridCrono.Columns.Count Then Return
+
+        ' Limpar seleção visual anterior
+        gridCrono.SelectedCells.Clear()
+
+        ' Definir célula atual (foco)
+        gridCrono.CurrentCell = New DataGridCellInfo(entry, gridCrono.Columns(colunaDataGrid))
+
+        ' Adicionar à coleção SelectedCells para que fique com destaque visual (azul)
+        gridCrono.SelectedCells.Add(New DataGridCellInfo(entry, gridCrono.Columns(colunaDataGrid)))
+
+        gridCrono.ScrollIntoView(entry)
+        gridCrono.Focus()
+    End Sub
+
     Private Sub MoverParaCampoCrono(entry As CronoAnaliseEntry, campoIndice As Integer)
         If entry Is Nothing Then Return
 
@@ -1556,9 +1577,7 @@ Partial Class MainWindow
         Dim colunaDataGrid = campoIndice + 4
         If colunaDataGrid >= gridCrono.Columns.Count Then Return
 
-        gridCrono.CurrentCell = New DataGridCellInfo(entry, gridCrono.Columns(colunaDataGrid))
-        gridCrono.ScrollIntoView(entry)
-        gridCrono.Focus()
+        SelecionarCelulaNoGrid(entry, colunaDataGrid)
     End Sub
 
     Private Sub AdicionarNovaOperacao(Optional iniciarEdicaoOperacao As Boolean = True)
@@ -1573,9 +1592,7 @@ Partial Class MainWindow
             .NumeroAmostras = 1
         }
         cronoEntries.Add(entry)
-        gridCrono.CurrentCell = New DataGridCellInfo(entry, gridCrono.Columns(1))
-        gridCrono.ScrollIntoView(entry)
-        gridCrono.Focus()
+        SelecionarCelulaNoGrid(entry, 1)
 
         ' Atualizar análise estatística
         AtualizarAnaliseEstatistica()
@@ -1583,7 +1600,7 @@ Partial Class MainWindow
         If iniciarEdicaoOperacao Then
             ' Iniciar edição da célula Operação
             Dispatcher.BeginInvoke(Sub()
-                                       gridCrono.CurrentCell = New DataGridCellInfo(entry, gridCrono.Columns(1))
+                                       SelecionarCelulaNoGrid(entry, 1)
                                        gridCrono.BeginEdit()
                                    End Sub)
         End If
