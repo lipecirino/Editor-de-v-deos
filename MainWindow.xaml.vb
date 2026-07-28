@@ -1075,18 +1075,18 @@ Partial Class MainWindow
         mediaTimeline.SpeedRatio = _velocidadeReproducao
         mediaClock = mediaTimeline.CreateClock(True)
         VisualizadorVideo.Clock = mediaClock
-        mediaClock.Controller.Begin()
 
-        ' Restaurar posição
+        ' Seek antes de Begin para definir a posição inicial correta
         If posicaoAtual.HasValue Then
             mediaClock.Controller.Seek(posicaoAtual.Value, TimeSeekOrigin.BeginTime)
         End If
 
-        ' Restaurar estado de reprodução
+        ' Iniciar o clock
+        mediaClock.Controller.Begin()
+
+        ' Se estava pausado, pausar imediatamente após Begin
         If Not estavaTocando Then
-            Dispatcher.BeginInvoke(DispatcherPriority.Background, Sub()
-                                                                      mediaClock.Controller.Pause()
-                                                                  End Sub)
+            mediaClock.Controller.Pause()
         End If
 
         AtualizarLabelVelocidade()

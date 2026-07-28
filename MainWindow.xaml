@@ -208,7 +208,7 @@
                 <TextBlock Name="lblTempoTotal" Text="00:00:00" Grid.Column="7" VerticalAlignment="Center" Margin="15,0" Foreground="#666"/>
                 
                 <!-- Botão de Configurações (Engrenagem) -->
-                <Button Name="btnConfigAtalhos" Width="35" Height="35" Grid.Column="8" Margin="5,0,0,0"
+                <Button Name="btnConfigAtalhos" Width="50" Height="35" Grid.Column="8" Margin="5,0,0,0"
                         Style="{StaticResource BotaoArredondado}" Background="#FF555555"
                         Click="BtnConfigAtalhos_Click"
                         ToolTip="Configurar Atalhos de Teclado">
