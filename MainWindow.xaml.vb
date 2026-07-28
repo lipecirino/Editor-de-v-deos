@@ -694,7 +694,9 @@ Partial Class MainWindow
 
     ' --- CACHE DE CRONOANÁLISE ---
     Private cacheGlobal As CacheGlobal = Nothing
-    Private caminhoCache As String = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "crono_cache.json")
+    Private caminhoCache As String = Path.Combine(
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "EditorDeVideos"),
+        "crono_cache.json")
 
     ' --- PAINEL DOCKABLE ---
     Private cronoPanelWindow As CronoPanelWindow = Nothing
@@ -1844,6 +1846,41 @@ Partial Class MainWindow
             If MessageBox.Show("Limpar todos os registos da cronoanálise?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Question) = MessageBoxResult.Yes Then
                 cronoEntries.Clear()
             End If
+        End If
+    End Sub
+
+    Private Sub BtnLimparCache_Click(sender As Object, e As RoutedEventArgs)
+        Dim resultado = MessageBox.Show(
+            "Limpar todo o cache de cronoanálise?" & vbCrLf &
+            "Isso irá apagar todos os dados salvos de todos os vídeos." & vbCrLf &
+            "Os registos atuais na grelha também serão limpos.",
+            "Limpar Cache",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning)
+
+        If resultado = MessageBoxResult.Yes Then
+            ' Limpar dados em memória
+            cronoEntries.Clear()
+            cacheGlobal = New CacheGlobal()
+
+            ' Apagar o ficheiro de cache
+            Try
+                If File.Exists(caminhoCache) Then
+                    File.Delete(caminhoCache)
+                End If
+            Catch ex As Exception
+                MessageBox.Show("Erro ao apagar ficheiro de cache: " & ex.Message)
+            End Try
+
+            ' Limpar flag de cronoanálise dos vídeos
+            For Each video In lstGaleria.Items
+                Dim vt = TryCast(video, VideoTarefa)
+                If vt IsNot Nothing Then
+                    vt.TemCronoAnalise = False
+                End If
+            Next
+
+            MessageBox.Show("Cache limpo com sucesso!", "Concluído", MessageBoxButton.OK, MessageBoxImage.Information)
         End If
     End Sub
 
