@@ -27,11 +27,12 @@
         </Style>
 
         <Style x:Key="SliderYoutube" TargetType="Slider">
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Slider">
-                        <Grid>
-                            <Border Height="4" Background="#FF444444" VerticalAlignment="Center" CornerRadius="2"/>
+                        <Grid Cursor="Hand">
+                            <Border Height="4" Background="#FF5A5A5A" VerticalAlignment="Center" CornerRadius="2"/>
                             <Track x:Name="PART_Track">
                                 <Track.DecreaseRepeatButton>
                                     <RepeatButton>
@@ -43,10 +44,10 @@
                                     </RepeatButton>
                                 </Track.DecreaseRepeatButton>
                                 <Track.Thumb>
-                                    <Thumb x:Name="Thumb">
+                                    <Thumb x:Name="Thumb" Cursor="Hand">
                                         <Thumb.Template>
                                             <ControlTemplate TargetType="Thumb">
-                                                <Ellipse x:Name="bolinha" Width="12" Height="12" Fill="#FF888888" Margin="-1,0"/>
+                                                <Ellipse x:Name="bolinha" Width="16" Height="16" Fill="#FFAAAAAA" Margin="-1,0"/>
                                             </ControlTemplate>
                                         </Thumb.Template>
                                     </Thumb>

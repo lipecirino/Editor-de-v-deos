@@ -1189,6 +1189,15 @@ Partial Class MainWindow
     Private Sub SlLinhaTempo_PreviewMouseLeftButtonDown(sender As Object, e As MouseButtonEventArgs)
         If mediaClock Is Nothing Then Return
 
+        ' Se o clique foi no Thumb (bolinha), deixar o evento passar para permitir arrasto
+        Dim origem = TryCast(e.OriginalSource, DependencyObject)
+        While origem IsNot Nothing
+            If TypeOf origem Is Thumb Then
+                Return ' Não Handled - deixa o Thumb processar o arrasto
+            End If
+            origem = VisualTreeHelper.GetParent(origem)
+        End While
+
         ' Calcular a posição do clique em relação ao slider
         Dim posicaoMouse = e.GetPosition(slLinhaTempo)
         Dim larguraSlider = slLinhaTempo.ActualWidth
