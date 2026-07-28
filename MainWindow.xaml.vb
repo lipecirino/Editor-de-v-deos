@@ -82,12 +82,7 @@ Public Class VideoTarefa
 
     Public ReadOnly Property NomeComFlag As String
         Get
-            Dim nome = Path.GetFileName(Caminho)
-            If TemCronoAnalise Then
-                Return $"✓ {nome}"
-            Else
-                Return nome
-            End If
+            Return Path.GetFileName(Caminho)
         End Get
     End Property
 
