@@ -1520,34 +1520,54 @@ Partial Class MainWindow
             AdicionarNovaOperacao(False)
         End If
 
-        Dim entry = TryCast(gridCrono.CurrentItem, CronoAnaliseEntry)
+        Dim tempoSeg = mediaClock.CurrentTime.Value.TotalSeconds
+
+        ' --- Determinar a entry (linha) e o campo alvo ---
+        ' Prioridade 1: célula manualmente selecionada pelo utilizador (SelectedCells)
+        Dim entry As CronoAnaliseEntry = Nothing
+        Dim proxCampo As Integer = -1
+
+        If gridCrono.SelectedCells.Count > 0 Then
+            ' Usar a última célula selecionada (a mais recente)
+            Dim ultimaCell = gridCrono.SelectedCells(gridCrono.SelectedCells.Count - 1)
+            entry = TryCast(ultimaCell.Item, CronoAnaliseEntry)
+            If ultimaCell.Column IsNot Nothing Then
+                Dim di = ultimaCell.Column.DisplayIndex
+                If di >= 4 AndAlso di <= 11 Then
+                    proxCampo = di - 4
+                End If
+            End If
+        End If
+
+        ' Prioridade 2: CurrentCell (célula com foco)
         If entry Is Nothing Then
-            ' Selecionar a última entry se nenhuma estiver selecionada
+            entry = TryCast(gridCrono.CurrentItem, CronoAnaliseEntry)
+        End If
+        If proxCampo < 0 AndAlso gridCrono.CurrentCell.Column IsNot Nothing Then
+            Dim di = gridCrono.CurrentCell.Column.DisplayIndex
+            If di >= 4 AndAlso di <= 11 Then
+                proxCampo = di - 4
+            End If
+        End If
+
+        ' Prioridade 3: fallback para a última entry
+        If entry Is Nothing Then
             If cronoEntries.Count > 0 Then
                 entry = cronoEntries.Last()
-                SelecionarCelulaNoGrid(entry, 1)
             Else
                 Return
             End If
         End If
 
-        Dim tempoSeg = mediaClock.CurrentTime.Value.TotalSeconds
-        Dim campoSelecionado As Integer = -1
-
-        If gridCrono.CurrentCell.Column IsNot Nothing Then
-            Dim displayIndex = gridCrono.CurrentCell.Column.DisplayIndex
-            If displayIndex >= 4 AndAlso displayIndex <= 11 Then
-                campoSelecionado = displayIndex - 4
-            End If
+        ' Prioridade 4: próximo campo vazio na entry
+        If proxCampo < 0 Then
+            proxCampo = entry.ObterProximoCampoVazio()
         End If
 
-        Dim proxCampo = If(campoSelecionado >= 0, campoSelecionado, entry.ObterProximoCampoVazio())
-
+        ' Se todos os campos estão preenchidos, criar nova operação
         If proxCampo < 0 Then
-            ' Todos os campos estão preenchidos, criar nova operação
             AdicionarNovaOperacao(False)
             entry = cronoEntries.Last()
-            SelecionarCelulaNoGrid(entry, 1)
             proxCampo = CronoAnaliseEntry.IDX_INICIO1
         End If
 
