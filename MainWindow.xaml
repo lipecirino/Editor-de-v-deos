@@ -31,7 +31,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Slider">
                         <Grid>
-                            <Border Height="4" Background="#33FFFFFF" VerticalAlignment="Center" CornerRadius="2"/>
+                            <Border Height="4" Background="#FF444444" VerticalAlignment="Center" CornerRadius="2"/>
                             <Track x:Name="PART_Track">
                                 <Track.DecreaseRepeatButton>
                                     <RepeatButton>
@@ -326,13 +326,13 @@
 
                     <!-- Controlos de reprodução -->
                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,6">
-                        <Button Name="btnCronoFrameAnt" Content="⏮" Width="32" Height="26" FontSize="12"
+                        <Button Name="btnCronoFrameAnt" Content="⏮" Width="40" Height="26" FontSize="12"
                                 Style="{StaticResource BotaoArredondado}" Background="#555"
                                 Click="BtnCronoFrameAnt_Click"/>
                         <Button Name="btnCronoPlayPause" Content="▶" Width="32" Height="26" FontSize="12" Margin="4,0,0,0"
                                 Style="{StaticResource BotaoArredondado}" Background="#FF6A4C93"
                                 Click="BtnCronoPlayPause_Click"/>
-                        <Button Name="btnCronoFrameProx" Content="⏭" Width="32" Height="26" FontSize="12" Margin="4,0,0,0"
+                        <Button Name="btnCronoFrameProx" Content="⏭" Width="40" Height="26" FontSize="12" Margin="4,0,0,0"
                                 Style="{StaticResource BotaoArredondado}" Background="#555"
                                 Click="BtnCronoFrameProx_Click"/>
                         <Button Name="btnCronoRegistrar" Content="⏱ Registrar" Padding="8,3" FontSize="11" Margin="8,0,0,0"
