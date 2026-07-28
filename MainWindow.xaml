@@ -124,7 +124,7 @@
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Name="icoCrono" Grid.Column="0" Text="⏱" FontSize="12" Foreground="#FF6A4C93" VerticalAlignment="Center" Margin="0,0,6,0" Visibility="Collapsed"/>
-                                    <TextBlock Grid.Column="1" Text="{Binding NomeComFlag}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,1,4,1"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding NomeComFlag}" VerticalAlignment="Center" TextWrapping="WrapWithOverflow" Margin="0,1,4,1"/>
                                     <Button Grid.Column="2" Content="✕" Width="20" Height="20" FontSize="10"
                                             Foreground="#FFE81123" Background="Transparent" BorderThickness="0"
                                             Cursor="Hand" ToolTip="Remover este vídeo"
