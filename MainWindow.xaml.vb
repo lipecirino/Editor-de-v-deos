@@ -1779,10 +1779,6 @@ Partial Class MainWindow
                     AtualizarAnaliseEstatistica()
                 End If
             End If
-        ElseIf modoCronoAtivo Then
-            If Not editandoCelulaCrono AndAlso (e.Key = Key.Up OrElse e.Key = Key.Down OrElse e.Key = Key.Left OrElse e.Key = Key.Right) Then
-                e.Handled = True
-            End If
         End If
     End Sub
 
