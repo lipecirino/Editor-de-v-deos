@@ -1035,7 +1035,7 @@ Partial Class MainWindow
     End Sub
 
     Private Sub BtnVelocidadeMenos_Click(sender As Object, e As RoutedEventArgs)
-        Dim velocidades = {0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0}
+        Dim velocidades = {0.25, 0.5, 0.75, 1.0, 1.5, 2.0}
         Dim idxAtual = Array.IndexOf(velocidades, _velocidadeReproducao)
         If idxAtual > 0 Then
             _velocidadeReproducao = velocidades(idxAtual - 1)
@@ -1046,12 +1046,12 @@ Partial Class MainWindow
     End Sub
 
     Private Sub BtnVelocidadeMais_Click(sender As Object, e As RoutedEventArgs)
-        Dim velocidades = {0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0}
+        Dim velocidades = {0.25, 0.5, 0.75, 1.0, 1.5, 2.0}
         Dim idxAtual = Array.IndexOf(velocidades, _velocidadeReproducao)
         If idxAtual >= 0 AndAlso idxAtual < velocidades.Length - 1 Then
             _velocidadeReproducao = velocidades(idxAtual + 1)
         Else
-            _velocidadeReproducao = 4.0
+            _velocidadeReproducao = 2.0
         End If
         RecriarClockComVelocidade()
     End Sub
@@ -1062,7 +1062,7 @@ Partial Class MainWindow
             Return
         End If
 
-        ' Guardar estado atual
+        ' Guardar estado atual (antes de parar o clock)
         Dim estavaTocando = estaReproduzindo
         Dim posicaoAtual As TimeSpan? = mediaClock.CurrentTime
 
@@ -1078,17 +1078,20 @@ Partial Class MainWindow
         mediaClock = mediaTimeline.CreateClock(True)
         VisualizadorVideo.Clock = mediaClock
 
-        ' Seek antes de Begin para definir a posição inicial correta
+        ' Iniciar o clock
+        mediaClock.Controller.Begin()
+
+        ' Pausar imediatamente para evitar que o vídeo comece do tempo 0
+        mediaClock.Controller.Pause()
+
+        ' Restaurar posição
         If posicaoAtual.HasValue Then
             mediaClock.Controller.Seek(posicaoAtual.Value, TimeSeekOrigin.BeginTime)
         End If
 
-        ' Iniciar o clock
-        mediaClock.Controller.Begin()
-
-        ' Se estava pausado, pausar imediatamente após Begin
-        If Not estavaTocando Then
-            mediaClock.Controller.Pause()
+        ' Se estava a reproduzir, retomar
+        If estavaTocando Then
+            mediaClock.Controller.Resume()
         End If
 
         AtualizarLabelVelocidade()
