@@ -716,6 +716,9 @@ Partial Class MainWindow
         ' Carregar cache de cronoanálise
         CarregarCache()
 
+        ' Atualizar tooltips dos botões com os atalhos configurados
+        AtualizarTooltipsAtalhos()
+
         ' Configurar fechamento da janela para salvar cache
         AddHandler Me.Closing, AddressOf MainWindow_Closing
     End Sub
@@ -1770,23 +1773,91 @@ Partial Class MainWindow
         ' Se o DataGrid estiver em modo de edição de célula, não interceptar setas
         Dim editandoCelula As Boolean = modoCronoAtivo AndAlso editandoCelulaCrono
 
-        If e.Key = Key.Right AndAlso Not editandoCelula Then
-            AvancarFrame(1)
-            Return True
-        ElseIf e.Key = Key.Left AndAlso Not editandoCelula Then
+        ' Carregar configurações de atalhos
+        Dim settings = SettingsManager.Carregar()
+
+        ' Converter string da tecla para o enum Key
+        Dim teclaFrameAnt As Key = CType([Enum].Parse(GetType(Key), settings.Atalhos("FrameAnterior")), Key)
+        Dim teclaFrameProx As Key = CType([Enum].Parse(GetType(Key), settings.Atalhos("FrameProximo")), Key)
+
+        ' Verificar atalho para Frame Anterior
+        If e.Key = teclaFrameAnt AndAlso Not editandoCelula Then
             AvancarFrame(-1)
             Return True
-        ElseIf modoCronoAtivo AndAlso Not editandoCelula Then
-            If e.Key = Key.Up Then
+        End If
+
+        ' Verificar atalho para Próximo Frame
+        If e.Key = teclaFrameProx AndAlso Not editandoCelula Then
+            AvancarFrame(1)
+            Return True
+        End If
+
+        If modoCronoAtivo AndAlso Not editandoCelula Then
+            Dim teclaRegistrar As Key = CType([Enum].Parse(GetType(Key), settings.Atalhos("RegistrarTempo")), Key)
+            Dim teclaPlayPause As Key = CType([Enum].Parse(GetType(Key), settings.Atalhos("PlayPause")), Key)
+            Dim teclaNovaOp As Key = CType([Enum].Parse(GetType(Key), settings.Atalhos("NovaOperacao")), Key)
+
+            ' Verificar atalho para Registrar Tempo
+            If e.Key = teclaRegistrar Then
                 RegistrarTempoAtual()
                 Return True
-            ElseIf e.Key = Key.Down Then
+            End If
+
+            ' Verificar atalho para Play/Pause
+            If e.Key = teclaPlayPause Then
                 BtnPlayPause_Click(Nothing, Nothing)
+                Return True
+            End If
+
+            ' Verificar atalho para Nova Operação
+            If e.Key = teclaNovaOp Then
+                AdicionarNovaOperacao()
                 Return True
             End If
         End If
 
         Return False
+    End Function
+
+    Private Sub BtnConfigAtalhos_Click(sender As Object, e As RoutedEventArgs)
+        Dim settingsWin As New SettingsWindow()
+        settingsWin.Owner = Me
+        If settingsWin.ShowDialog() = True Then
+            ' Atualizar tooltips com os novos atalhos
+            AtualizarTooltipsAtalhos()
+        End If
+    End Sub
+
+    Private Sub AtualizarTooltipsAtalhos()
+        Dim settings = SettingsManager.Carregar()
+        btnFrameAnterior.ToolTip = $"Frame Anterior ({FormatTeclaTooltip(settings.Atalhos("FrameAnterior"))})"
+        btnFrameProximo.ToolTip = $"Próximo Frame ({FormatTeclaTooltip(settings.Atalhos("FrameProximo"))})"
+
+        If btnCronoFrameAnt IsNot Nothing Then
+            btnCronoFrameAnt.ToolTip = $"Frame Anterior ({FormatTeclaTooltip(settings.Atalhos("FrameAnterior"))})"
+        End If
+        If btnCronoFrameProx IsNot Nothing Then
+            btnCronoFrameProx.ToolTip = $"Próximo Frame ({FormatTeclaTooltip(settings.Atalhos("FrameProximo"))})"
+        End If
+        If btnCronoPlayPause IsNot Nothing Then
+            btnCronoPlayPause.ToolTip = $"Play / Pause ({FormatTeclaTooltip(settings.Atalhos("PlayPause"))})"
+        End If
+        If btnCronoRegistrar IsNot Nothing Then
+            btnCronoRegistrar.ToolTip = $"Registrar tempo atual ({FormatTeclaTooltip(settings.Atalhos("RegistrarTempo"))})"
+        End If
+        If btnNovaOperacao IsNot Nothing Then
+            btnNovaOperacao.ToolTip = $"Nova Operação ({FormatTeclaTooltip(settings.Atalhos("NovaOperacao"))})"
+        End If
+    End Sub
+
+    Private Shared Function FormatTeclaTooltip(tecla As String) As String
+        Select Case tecla
+            Case "Left" : Return "← Seta Esquerda"
+            Case "Right" : Return "→ Seta Direita"
+            Case "Up" : Return "↑ Seta Para Cima"
+            Case "Down" : Return "↓ Seta Para Baixo"
+            Case Else : Return tecla
+        End Select
     End Function
 
     ' --- MÉTODOS PARA PAINEL DOCKABLE ---

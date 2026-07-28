@@ -168,10 +168,11 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <Button Name="btnFrameAnterior" Content="⏮" Width="45" Height="35" Style="{StaticResource BotaoArredondado}" Click="BtnFrameAnterior_Click" ToolTip="Frame Anterior (Seta Esquerda)"/>
+                <Button Name="btnFrameAnterior" Content="⏮" Width="45" Height="35" Style="{StaticResource BotaoArredondado}" Click="BtnFrameAnterior_Click" ToolTip="Frame Anterior"/>
                 <Button Name="btnPlayPause" Content="▶" Width="45" Height="35" Style="{StaticResource BotaoArredondado}" Click="BtnPlayPause_Click" Grid.Column="1" Margin="5,0,0,0"/>
-                <Button Name="btnFrameProximo" Content="⏭" Width="45" Height="35" Style="{StaticResource BotaoArredondado}" Click="BtnFrameProximo_Click" Grid.Column="2" Margin="5,0,0,0" ToolTip="Próximo Frame (Seta Direita)"/>
+                <Button Name="btnFrameProximo" Content="⏭" Width="45" Height="35" Style="{StaticResource BotaoArredondado}" Click="BtnFrameProximo_Click" Grid.Column="2" Margin="5,0,0,0" ToolTip="Próximo Frame"/>
                 <ToggleButton Name="btnMuteAudio" Content="🔊" Width="45" Height="35" Grid.Column="3" Margin="5,0,0,0"
                               Style="{StaticResource BotaoArredondadoToggle}" Background="#FF033150"
                               Checked="BtnMuteAudio_Checked" Unchecked="BtnMuteAudio_Unchecked"
@@ -201,6 +202,16 @@
                     </Popup>
                 </Grid>
                 <TextBlock Name="lblTempoTotal" Text="00:00:00" Grid.Column="7" VerticalAlignment="Center" Margin="15,0" Foreground="#666"/>
+                
+                <!-- Botão de Configurações (Engrenagem) -->
+                <Button Name="btnConfigAtalhos" Width="35" Height="35" Grid.Column="8" Margin="5,0,0,0"
+                        Style="{StaticResource BotaoArredondado}" Background="#FF555555"
+                        Click="BtnConfigAtalhos_Click"
+                        ToolTip="Configurar Atalhos de Teclado">
+                    <Viewbox Width="18" Height="18" Stretch="Uniform">
+                        <Path Data="M9.5,1 L9.5,3.5 C9.1,3.6 8.7,3.7 8.3,3.9 L6.3,2.5 L5.5,3.9 L7.3,5.6 C7.1,5.9 6.9,6.3 6.8,6.7 L4.5,7.2 L4.5,8.8 L6.8,9.3 C6.9,9.7 7.1,10.1 7.3,10.4 L5.5,12.1 L6.3,13.5 L8.3,12.1 C8.7,12.3 9.1,12.4 9.5,12.5 L9.5,15 L10.5,15 L10.5,12.5 C10.9,12.4 11.3,12.3 11.7,12.1 L13.7,13.5 L14.5,12.1 L12.7,10.4 C12.9,10.1 13.1,9.7 13.2,9.3 L15.5,8.8 L15.5,7.2 L13.2,6.7 C13.1,6.3 12.9,5.9 12.7,5.6 L14.5,3.9 L13.7,2.5 L11.7,3.9 C11.3,3.7 10.9,3.6 10.5,3.5 L10.5,1 L9.5,1 Z M10,5 C11.7,5 13,6.3 13,8 C13,9.7 11.7,11 10,11 C8.3,11 7,9.7 7,8 C7,6.3 8.3,5 10,5 Z" Fill="White"/>
+                    </Viewbox>
+                </Button>
             </Grid>  <!-- fecha barra de controlos -->
             </Grid>  <!-- fecha wrapper topo (video + controlos) -->
 
@@ -300,16 +311,16 @@
                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,6">
                         <Button Name="btnCronoFrameAnt" Content="⏮" Width="32" Height="26" FontSize="12"
                                 Style="{StaticResource BotaoArredondado}" Background="#555"
-                                ToolTip="Frame Anterior (Seta Esquerda)" Click="BtnCronoFrameAnt_Click"/>
+                                Click="BtnCronoFrameAnt_Click"/>
                         <Button Name="btnCronoPlayPause" Content="▶" Width="32" Height="26" FontSize="12" Margin="4,0,0,0"
                                 Style="{StaticResource BotaoArredondado}" Background="#FF6A4C93"
-                                ToolTip="Play / Pause (Seta Para Baixo)" Click="BtnCronoPlayPause_Click"/>
+                                Click="BtnCronoPlayPause_Click"/>
                         <Button Name="btnCronoFrameProx" Content="⏭" Width="32" Height="26" FontSize="12" Margin="4,0,0,0"
                                 Style="{StaticResource BotaoArredondado}" Background="#555"
-                                ToolTip="Próximo Frame (Seta Direita)" Click="BtnCronoFrameProx_Click"/>
+                                Click="BtnCronoFrameProx_Click"/>
                         <Button Name="btnCronoRegistrar" Content="⏱ Registrar" Padding="8,3" FontSize="11" Margin="8,0,0,0"
                                 Style="{StaticResource BotaoArredondado}" Background="#FF033150"
-                                ToolTip="Registar tempo atual (Seta Para Cima)" Click="BtnCronoRegistrar_Click"/>
+                                Click="BtnCronoRegistrar_Click"/>
                     </StackPanel>
 
                     <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
