@@ -1266,6 +1266,19 @@ Partial Class MainWindow
                 If chkDeletarOriginal.IsChecked = True AndAlso Not cts.Token.IsCancellationRequested Then
                     Try
                         File.Delete(tarefa.Caminho)
+
+                        ' Após deletar o original, renomear o ficheiro de saída removendo "_editado"
+                        ' para que o nome fique igual ao original
+                        Dim nomeOriginalSemExt = Path.GetFileNameWithoutExtension(tarefa.Caminho)
+                        Dim extensaoOriginal = Path.GetExtension(tarefa.Caminho)
+                        Dim novoNome = nomeOriginalSemExt & extensaoOriginal
+                        Dim caminhoRenomeado = Path.Combine(Path.GetDirectoryName(saida), novoNome)
+
+                        ' Só renomear se o ficheiro de saída realmente contém "_editado" e o nome de destino é diferente
+                        If saida <> caminhoRenomeado AndAlso File.Exists(saida) AndAlso Not File.Exists(caminhoRenomeado) Then
+                            File.Move(saida, caminhoRenomeado)
+                            saida = caminhoRenomeado
+                        End If
                     Catch exDel As Exception
                         Debug.WriteLine($"Não foi possível eliminar o original: {exDel.Message}")
                     End Try
