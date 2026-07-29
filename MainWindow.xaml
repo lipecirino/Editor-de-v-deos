@@ -289,16 +289,16 @@
                         <StackPanel Margin="0,10,0,0">
                             <TextBlock Text="Local de Guardar:" FontWeight="Bold" Margin="0,0,0,5" Foreground="#333"/>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                <RadioButton Name="rbSalvarPastaEscolhida" Content="Escolher uma pasta" IsChecked="True" Margin="0,0,15,0"/>
-                                <RadioButton Name="rbSalvarPastaOriginal" Content="Guardar na mesma pasta do original (adiciona '_editado')"/>
+                                <RadioButton Name="rbSalvarPastaEscolhida" Content="Escolher uma pasta" IsChecked="True" Margin="0,0,15,0" Checked="RbSalvarPasta_Checked"/>
+                                <RadioButton Name="rbSalvarPastaOriginal" Content="Guardar na mesma pasta do original (adiciona '_editado')" Checked="RbSalvarPasta_Checked"/>
                             </StackPanel>
 
-                            <CheckBox Name="chkDeletarOriginal" Content="Eliminar vídeo original após a conversão com sucesso" Margin="0,0,0,15"/>
+                            <CheckBox Name="chkDeletarOriginal" Content="Eliminar vídeo original após a conversão com sucesso" Margin="0,0,0,15" Checked="ChkDeletarOriginal_Checked" Unchecked="ChkDeletarOriginal_Checked"/>
 
                             <TextBlock Text="Uso de Processador (CPU):" FontWeight="Bold" Margin="0,0,0,5" Foreground="#333"/>
                             <StackPanel Orientation="Horizontal">
-                                <RadioButton Name="rbDesempenhoAlto" Content="Alto Desempenho (Sem limites)" IsChecked="True" Margin="0,0,15,0"/>
-                                <RadioButton Name="rbDesempenhoEco" Content="Modo Económico (Limitar a 50% para não bloquear o PC)"/>
+                                <RadioButton Name="rbDesempenhoAlto" Content="Alto Desempenho (Sem limites)" IsChecked="True" Margin="0,0,15,0" Checked="RbDesempenho_Checked"/>
+                                <RadioButton Name="rbDesempenhoEco" Content="Modo Económico (Limitar a 50% para não bloquear o PC)" Checked="RbDesempenho_Checked"/>
                             </StackPanel>
                         </StackPanel>
                     </Expander>

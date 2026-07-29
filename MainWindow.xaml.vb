@@ -702,6 +702,8 @@ Partial Class MainWindow
         Return videoAtual IsNot Nothing AndAlso Not String.IsNullOrWhiteSpace(videoAtual.Caminho)
     End Function
 
+    Private _isLoading As Boolean = True
+
     Public Sub New()
         InitializeComponent()
         GlobalFFOptions.Configure(New FFOptions With {.BinaryFolder = AppDomain.CurrentDomain.BaseDirectory})
@@ -714,11 +716,16 @@ Partial Class MainWindow
         ' Carregar cache de cronoanálise
         CarregarCache()
 
+        ' Carregar configurações de exportação e aplicar à UI
+        CarregarExportSettings()
+
         ' Atualizar tooltips dos botões com os atalhos configurados
         AtualizarTooltipsAtalhos()
 
         ' Configurar fechamento da janela para salvar cache
         AddHandler Me.Closing, AddressOf MainWindow_Closing
+
+        _isLoading = False
     End Sub
 
     ' --- MÉTODOS DE CACHE ---
@@ -833,6 +840,7 @@ Partial Class MainWindow
             SalvarCronoAnaliseDoVideo(videoAtual)
         End If
         SalvarCache()
+        SalvarExportSettings()
 
         ' Limpar buffer de frames
         LimparBufferFrames()
@@ -1298,6 +1306,7 @@ Partial Class MainWindow
         End If
 
         SalvarConfiguracoesAtuais()
+        SalvarExportSettings()
 
         Dim destino As String = ""
 
@@ -1395,7 +1404,7 @@ Partial Class MainWindow
                         ' Após deletar o original, renomear o ficheiro de saída removendo "_editado"
                         ' para que o nome fique igual ao original
                         Dim nomeOriginalSemExt = Path.GetFileNameWithoutExtension(tarefa.Caminho)
-                        Dim extensaoOriginal = Path.GetExtension(tarefa.Caminho)
+                        Dim extensaoOriginal = Path.GetExtension(tarefa.Caminho).ToLower()
                         Dim novoNome = nomeOriginalSemExt & extensaoOriginal
                         Dim caminhoRenomeado = Path.Combine(Path.GetDirectoryName(saida), novoNome)
 
@@ -2227,5 +2236,63 @@ Partial Class MainWindow
             ' Atualizar visualização
             lstGaleria.Items.Refresh()
         End If
+    End Sub
+
+    ' --- CONFIGURAÇÕES DE EXPORTAÇÃO (SALVAS EM JSON NO APPDATA) ---
+
+    Private Sub CarregarExportSettings()
+        Dim settings = ExportSettingsManager.Carregar()
+
+        ' Aplicar configurações de local de guardar
+        rbSalvarPastaOriginal.IsChecked = settings.SalvarNaPastaOriginal
+        rbSalvarPastaEscolhida.IsChecked = Not settings.SalvarNaPastaOriginal
+
+        ' Aplicar configuração de deletar original
+        chkDeletarOriginal.IsChecked = settings.DeletarOriginal
+
+        ' Aplicar modo de desempenho
+        rbDesempenhoEco.IsChecked = settings.ModoEconomico
+        rbDesempenhoAlto.IsChecked = Not settings.ModoEconomico
+
+        ' Atualizar estado do checkbox conforme a opção de pasta selecionada
+        AtualizarEstadoCheckboxDeletar()
+    End Sub
+
+    Private Sub SalvarExportSettings()
+        Dim settings As New ExportSettings() With {
+            .SalvarNaPastaOriginal = rbSalvarPastaOriginal.IsChecked.HasValue AndAlso rbSalvarPastaOriginal.IsChecked.Value,
+            .DeletarOriginal = chkDeletarOriginal.IsChecked.HasValue AndAlso chkDeletarOriginal.IsChecked.Value,
+            .ModoEconomico = rbDesempenhoEco.IsChecked.HasValue AndAlso rbDesempenhoEco.IsChecked.Value
+        }
+        ExportSettingsManager.Salvar(settings)
+    End Sub
+
+    Private Sub AtualizarEstadoCheckboxDeletar()
+        ' Desabilitar o checkbox "Eliminar original" quando a opção "Escolher uma pasta" estiver ativa,
+        ' pois o utilizador está a guardar noutra pasta e não faz sentido eliminar o original.
+        ' Habilitar quando "Guardar na mesma pasta do original" estiver selecionado.
+        Dim salvarNaOriginal As Boolean = rbSalvarPastaOriginal.IsChecked.HasValue AndAlso rbSalvarPastaOriginal.IsChecked.Value
+        chkDeletarOriginal.IsEnabled = salvarNaOriginal
+
+        ' Se estiver desabilitado e estiver marcado, desmarcar automaticamente
+        If Not chkDeletarOriginal.IsEnabled Then
+            chkDeletarOriginal.IsChecked = False
+        End If
+    End Sub
+
+    Private Sub RbSalvarPasta_Checked(sender As Object, e As RoutedEventArgs)
+        If _isLoading Then Return
+        AtualizarEstadoCheckboxDeletar()
+        SalvarExportSettings()
+    End Sub
+
+    Private Sub ChkDeletarOriginal_Checked(sender As Object, e As RoutedEventArgs)
+        If _isLoading Then Return
+        SalvarExportSettings()
+    End Sub
+
+    Private Sub RbDesempenho_Checked(sender As Object, e As RoutedEventArgs)
+        If _isLoading Then Return
+        SalvarExportSettings()
     End Sub
 End Class
