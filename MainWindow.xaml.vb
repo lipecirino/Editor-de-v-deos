@@ -1103,13 +1103,13 @@ Partial Class MainWindow
     Private Sub AtualizarLabelVelocidade()
         If _velocidadeReproducao = 1.0 Then
             lblVelocidade.Text = "1.0×"
-            lblVelocidade.Foreground = New SolidColorBrush(Color.FromRgb(&HCC, &H66, &H00))
+            lblVelocidade.Foreground = New SolidColorBrush(Color.FromRgb(&HCC, &H66, &H0))
         ElseIf _velocidadeReproducao > 1.0 Then
             lblVelocidade.Text = $"{_velocidadeReproducao:F1}×"
-            lblVelocidade.Foreground = New SolidColorBrush(Color.FromRgb(&H00, &HCC, &H66))
+            lblVelocidade.Foreground = New SolidColorBrush(Color.FromRgb(&H0, &HCC, &H66))
         Else
             lblVelocidade.Text = $"{_velocidadeReproducao:F1}×"
-            lblVelocidade.Foreground = New SolidColorBrush(Color.FromRgb(&HCC, &H66, &H00))
+            lblVelocidade.Foreground = New SolidColorBrush(Color.FromRgb(&HCC, &H66, &H0))
         End If
     End Sub
 
@@ -1122,7 +1122,7 @@ Partial Class MainWindow
     Private Sub BtnMuteAudio_Unchecked(sender As Object, e As RoutedEventArgs)
         VisualizadorVideo.IsMuted = False
         btnMuteAudio.Content = "🔊"
-        btnMuteAudio.Background = New SolidColorBrush(Color.FromRgb(&H03, &H31, &H50))
+        btnMuteAudio.Background = New SolidColorBrush(Color.FromRgb(&H3, &H31, &H50))
     End Sub
 
     Private Sub VisualizadorVideo_MediaOpened(sender As Object, e As RoutedEventArgs)
