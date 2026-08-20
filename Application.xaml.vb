@@ -1,4 +1,6 @@
 ﻿Imports System.Windows.Input
+Imports System.IO
+Imports FFMpegCore
 
 Class Application
 
@@ -7,6 +9,9 @@ Class Application
 
     Protected Overrides Sub OnStartup(e As StartupEventArgs)
         MyBase.OnStartup(e)
+        GlobalFFOptions.Configure(New FFOptions With {
+            .BinaryFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg")
+        })
         EventManager.RegisterClassHandler(GetType(Window), Window.PreviewKeyDownEvent, New KeyEventHandler(AddressOf GlobalWindow_PreviewKeyDown), True)
     End Sub
 

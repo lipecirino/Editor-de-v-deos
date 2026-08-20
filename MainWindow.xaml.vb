@@ -1505,7 +1505,7 @@ Partial Class MainWindow
                                    ' Extrair todos os frames de uma vez (muito mais rápido!)
                                    Dim outputPattern = Path.Combine(tempFolder, "frame_%04d.png")
                                    Dim processInfo As New ProcessStartInfo() With {
-                                       .FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg.exe"),
+                                       .FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg", "ffmpeg.exe"),
                                        .Arguments = $"-ss {timestampInicio.ToString("F3", System.Globalization.CultureInfo.InvariantCulture)} -i ""{videoAtual.Caminho}"" -t {duracao.ToString("F3", System.Globalization.CultureInfo.InvariantCulture)} -vf ""fps={frameRate}"" ""{outputPattern}""",
                                        .UseShellExecute = False,
                                        .CreateNoWindow = True,
