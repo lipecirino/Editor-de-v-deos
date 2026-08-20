@@ -2027,25 +2027,11 @@ Partial Class MainWindow
             If e.Key = teclaNovaOp Then
                 AdicionarNovaOperacao()
                 Return True
-            End If
-        End If
+                    End If
+                End If
 
-        ' Atalhos de velocidade (funcionam sempre, não só no modo crono)
-        Dim teclaVelMais As Key = CType([Enum].Parse(GetType(Key), settings.Atalhos("VelocidadeMais")), Key)
-        Dim teclaVelMenos As Key = CType([Enum].Parse(GetType(Key), settings.Atalhos("VelocidadeMenos")), Key)
-
-        If e.Key = teclaVelMais Then
-            BtnVelocidadeMais_Click(Nothing, Nothing)
-            Return True
-        End If
-
-        If e.Key = teclaVelMenos Then
-            BtnVelocidadeMenos_Click(Nothing, Nothing)
-            Return True
-        End If
-
-        Return False
-    End Function
+                Return False
+            End Function
 
     Private Sub BtnConfigAtalhos_Click(sender As Object, e As RoutedEventArgs)
         Dim settingsWin As New SettingsWindow()
@@ -2073,13 +2059,10 @@ Partial Class MainWindow
         If btnCronoRegistrar IsNot Nothing Then
             btnCronoRegistrar.ToolTip = $"Registrar tempo atual ({FormatTeclaTooltip(settings.Atalhos("RegistrarTempo"))})"
         End If
-        If btnNovaOperacao IsNot Nothing Then
-            btnNovaOperacao.ToolTip = $"Nova Operação ({FormatTeclaTooltip(settings.Atalhos("NovaOperacao"))})"
-        End If
-
-        btnVelocidadeMenos.ToolTip = $"Diminuir Velocidade ({FormatTeclaTooltip(settings.Atalhos("VelocidadeMenos"))})"
-        btnVelocidadeMais.ToolTip = $"Aumentar Velocidade ({FormatTeclaTooltip(settings.Atalhos("VelocidadeMais"))})"
-    End Sub
+            If btnNovaOperacao IsNot Nothing Then
+                btnNovaOperacao.ToolTip = $"Nova Operação ({FormatTeclaTooltip(settings.Atalhos("NovaOperacao"))})"
+            End If
+        End Sub
 
     Private Shared Function FormatTeclaTooltip(tecla As String) As String
         Select Case tecla
@@ -2087,8 +2070,6 @@ Partial Class MainWindow
             Case "Right" : Return "→ Seta Direita"
             Case "Up" : Return "↑ Seta Para Cima"
             Case "Down" : Return "↓ Seta Para Baixo"
-            Case "O" : Return "O"
-            Case "P" : Return "P"
             Case Else : Return tecla
         End Select
     End Function

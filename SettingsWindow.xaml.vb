@@ -82,25 +82,15 @@ Public Class SettingsWindow
         _atalhos.Add(New AtalhoItem() With {
             .NomeAcao = "RegistrarTempo",
             .NomeExibicao = "Registrar Tempo (Crono)",
-            .TeclaAtual = _settings.Atalhos("RegistrarTempo")
-        })
-        _atalhos.Add(New AtalhoItem() With {
-            .NomeAcao = "NovaOperacao",
-            .NomeExibicao = "Nova Operação (Crono)",
-            .TeclaAtual = _settings.Atalhos("NovaOperacao")
-        })
-        _atalhos.Add(New AtalhoItem() With {
-            .NomeAcao = "VelocidadeMais",
-            .NomeExibicao = "Aumentar Velocidade",
-            .TeclaAtual = _settings.Atalhos("VelocidadeMais")
-        })
-        _atalhos.Add(New AtalhoItem() With {
-            .NomeAcao = "VelocidadeMenos",
-            .NomeExibicao = "Diminuir Velocidade",
-            .TeclaAtual = _settings.Atalhos("VelocidadeMenos")
-        })
+                .TeclaAtual = _settings.Atalhos("RegistrarTempo")
+            })
+            _atalhos.Add(New AtalhoItem() With {
+                .NomeAcao = "NovaOperacao",
+                .NomeExibicao = "Nova Operação (Crono)",
+                .TeclaAtual = _settings.Atalhos("NovaOperacao")
+            })
 
-        listaAtalhos.ItemsSource = _atalhos
+            listaAtalhos.ItemsSource = _atalhos
 
         ' Registrar preview key down global na janela
         AddHandler Me.PreviewKeyDown, AddressOf SettingsWindow_PreviewKeyDown
