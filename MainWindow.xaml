@@ -193,6 +193,7 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <Button Name="btnFrameAnterior" Content="⏮" Width="45" Height="35" Style="{StaticResource BotaoArredondado}" Click="BtnFrameAnterior_Click" ToolTip="Frame Anterior"/>
                 <Button Name="btnPlayPause" Content="▶" Width="45" Height="35" Style="{StaticResource BotaoArredondado}" Click="BtnPlayPause_Click" Grid.Column="1" Margin="5,0,0,0"/>
@@ -238,15 +239,23 @@
                     </Viewbox>
                 </Button>
 
+                <!-- Botão Propriedades do Vídeo -->
+                <Button Name="btnPropriedades" Width="50" Height="35" Grid.Column="9" Margin="5,0,0,0"
+                        Style="{StaticResource BotaoArredondado}" Background="#FF555555"
+                        Click="BtnPropriedades_Click"
+                        ToolTip="Propriedades do arquivo de vídeo">
+                    <TextBlock Text="ℹ" FontSize="16" FontWeight="Bold"/>
+                </Button>
+
                 <!-- Controlos de Velocidade -->
-                <Button Name="btnVelocidadeMenos" Content="−" Width="32" Height="35" Grid.Column="9" Margin="5,0,0,0"
+                <Button Name="btnVelocidadeMenos" Content="−" Width="32" Height="35" Grid.Column="10" Margin="5,0,0,0"
                         Style="{StaticResource BotaoArredondado}" Background="#FF555555"
                         Click="BtnVelocidadeMenos_Click" FontSize="18" FontWeight="Bold"
                         ToolTip="Diminuir Velocidade"/>
-                <TextBlock Name="lblVelocidade" Text="1.0×" Grid.Column="10" VerticalAlignment="Center" 
+                <TextBlock Name="lblVelocidade" Text="1.0×" Grid.Column="11" VerticalAlignment="Center" 
                            Margin="4,0" Foreground="#FFCC6600" FontWeight="Bold" FontSize="13"
                            ToolTip="Velocidade atual de reprodução"/>
-                <Button Name="btnVelocidadeMais" Content="+" Width="32" Height="35" Grid.Column="11" Margin="2,0,0,0"
+                <Button Name="btnVelocidadeMais" Content="+" Width="32" Height="35" Grid.Column="12" Margin="2,0,0,0"
                         Style="{StaticResource BotaoArredondado}" Background="#FF555555"
                         Click="BtnVelocidadeMais_Click" FontSize="18" FontWeight="Bold"
                         ToolTip="Aumentar Velocidade"/>

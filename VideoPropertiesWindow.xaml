@@ -1,0 +1,202 @@
+<Window x:Class="VideoPropertiesWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Propriedades do Vídeo"
+        Height="520" Width="460"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False">
+
+    <Window.Resources>
+        <Style x:Key="LabelProp" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#444"/>
+            <Setter Property="Width" Value="160"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+        </Style>
+        <Style x:Key="ValorProp" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#222"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+        <Style x:Key="LinhaGrid" TargetType="StackPanel">
+            <Setter Property="Orientation" Value="Horizontal"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="0,0,0,10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Cabeçalho com ícone e nome do arquivo -->
+        <Border Grid.Row="0" Background="#FF033150" Padding="16,12">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="🎬" FontSize="28" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Name="lblNomeArquivo" Text="nome_do_arquivo.mp4"
+                               Foreground="White" FontSize="14" FontWeight="Bold"
+                               TextWrapping="Wrap" MaxWidth="340"/>
+                    <TextBlock Name="lblTipoArquivo" Text="Arquivo de Vídeo"
+                               Foreground="#AACDE8" FontSize="11" Margin="0,2,0,0"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Abas de conteúdo -->
+        <TabControl Grid.Row="1" BorderThickness="0" Background="White" Margin="0">
+            <TabItem Header="  Geral  ">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16,14,16,0">
+                    <StackPanel>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Nome:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propNome" Style="{StaticResource ValorProp}" MaxWidth="240"/>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Tipo:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propTipo" Style="{StaticResource ValorProp}"/>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Localização:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propLocalizacao" Style="{StaticResource ValorProp}" MaxWidth="240" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Tamanho:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propTamanho" Style="{StaticResource ValorProp}"/>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Tamanho em disco:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propTamanhoBytes" Style="{StaticResource ValorProp}"/>
+                        </StackPanel>
+                        <Separator Margin="0,8,0,8"/>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Criado em:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propCriadoEm" Style="{StaticResource ValorProp}"/>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Modificado em:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propModificadoEm" Style="{StaticResource ValorProp}"/>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Acessado em:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propAcessadoEm" Style="{StaticResource ValorProp}"/>
+                        </StackPanel>
+                        <Separator Margin="0,8,0,8"/>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Atributos:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propAtributos" Style="{StaticResource ValorProp}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="  Vídeo  ">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16,14,16,0">
+                    <StackPanel>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Duração:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propDuracao" Style="{StaticResource ValorProp}"/>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Resolução:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propResolucao" Style="{StaticResource ValorProp}"/>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Largura:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propLargura" Style="{StaticResource ValorProp}"/>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Altura:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propAltura" Style="{StaticResource ValorProp}"/>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Taxa de quadros:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propFps" Style="{StaticResource ValorProp}"/>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Codec de vídeo:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propCodecVideo" Style="{StaticResource ValorProp}"/>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Perfil:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propPerfil" Style="{StaticResource ValorProp}"/>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Bitrate total:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propBitrateTotal" Style="{StaticResource ValorProp}"/>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Bitrate de vídeo:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propBitrateVideo" Style="{StaticResource ValorProp}"/>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Formato do pixel:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propFormatoPixel" Style="{StaticResource ValorProp}"/>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Rotação:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propRotacao" Style="{StaticResource ValorProp}"/>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Aspect ratio:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propAspectRatio" Style="{StaticResource ValorProp}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="  Áudio  ">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16,14,16,0">
+                    <StackPanel>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Codec de áudio:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propCodecAudio" Style="{StaticResource ValorProp}"/>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Canais:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propCanais" Style="{StaticResource ValorProp}"/>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Layout dos canais:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propLayoutCanais" Style="{StaticResource ValorProp}"/>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Taxa de amostragem:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propTaxaAmostragem" Style="{StaticResource ValorProp}"/>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Bitrate de áudio:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propBitrateAudio" Style="{StaticResource ValorProp}"/>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource LinhaGrid}">
+                            <TextBlock Text="Idioma:" Style="{StaticResource LabelProp}"/>
+                            <TextBlock Name="propIdioma" Style="{StaticResource ValorProp}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <!-- Botão Fechar -->
+        <Button Grid.Row="2" Content="Fechar" Width="90" Height="30"
+                HorizontalAlignment="Right" Margin="0,8,16,0"
+                Click="BtnFechar_Click"
+                Background="#FF033150" Foreground="White" BorderThickness="0">
+            <Button.Template>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="{TemplateBinding Background}" CornerRadius="6">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Opacity" Value="0.85"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Button.Template>
+        </Button>
+    </Grid>
+</Window>

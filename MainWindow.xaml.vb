@@ -2042,6 +2042,15 @@ Partial Class MainWindow
         End If
     End Sub
 
+    Private Sub BtnPropriedades_Click(sender As Object, e As RoutedEventArgs)
+        If videoAtual Is Nothing OrElse String.IsNullOrEmpty(videoAtual.Caminho) Then
+            MessageBox.Show("Nenhum vídeo em reprodução.", "Propriedades", MessageBoxButton.OK, MessageBoxImage.Information)
+            Return
+        End If
+        Dim propWin As New VideoPropertiesWindow(videoAtual.Caminho, Me)
+        propWin.ShowDialog()
+    End Sub
+
     Private Sub AtualizarTooltipsAtalhos()
         Dim settings = SettingsManager.Carregar()
         btnFrameAnterior.ToolTip = $"Frame Anterior ({FormatTeclaTooltip(settings.Atalhos("FrameAnterior"))})"
