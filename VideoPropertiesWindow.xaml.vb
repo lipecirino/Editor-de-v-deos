@@ -104,8 +104,6 @@ Public Class VideoPropertiesWindow
             End If
 
         Catch ex As Exception
-            MessageBox.Show($"Erro ao ler propriedades do vídeo:{Environment.NewLine}{ex.Message}",
-                            "Erro", MessageBoxButton.OK, MessageBoxImage.Warning)
             Dispatcher.BeginInvoke(New Action(AddressOf Me.Close))
         End Try
     End Sub
