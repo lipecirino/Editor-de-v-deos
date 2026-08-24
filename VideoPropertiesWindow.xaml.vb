@@ -3,10 +3,17 @@ Imports FFMpegCore
 
 Public Class VideoPropertiesWindow
 
+    Private _caminhoVideo As String
+
     Public Sub New(caminhoVideo As String, owner As Window)
         InitializeComponent()
         Me.Owner = owner
-        CarregarPropriedades(caminhoVideo)
+        _caminhoVideo = caminhoVideo
+        AddHandler Me.Loaded, AddressOf JanelaLoaded
+    End Sub
+
+    Private Sub JanelaLoaded(sender As Object, e As RoutedEventArgs)
+        CarregarPropriedades(_caminhoVideo)
     End Sub
 
     Private Sub CarregarPropriedades(caminho As String)
@@ -99,7 +106,7 @@ Public Class VideoPropertiesWindow
         Catch ex As Exception
             MessageBox.Show($"Erro ao ler propriedades do vídeo:{Environment.NewLine}{ex.Message}",
                             "Erro", MessageBoxButton.OK, MessageBoxImage.Warning)
-            Me.Close()
+            Dispatcher.BeginInvoke(New Action(AddressOf Me.Close))
         End Try
     End Sub
 
