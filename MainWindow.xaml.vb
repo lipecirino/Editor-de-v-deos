@@ -1939,6 +1939,11 @@ Partial Class MainWindow
 
     Private Sub GridCrono_PreviewKeyDown(sender As Object, e As KeyEventArgs)
         If e.Key = Key.Delete OrElse e.Key = Key.Back Then
+            ' Em edição de célula, manter comportamento padrão do TextBox
+            If editandoCelulaCrono Then
+                Return
+            End If
+
             If gridCrono.SelectedCells.Count > 0 Then
                 ' Agrupar células por linha para não processar a mesma entry múltiplas vezes
                 Dim entriesProcessadas As New HashSet(Of CronoAnaliseEntry)()
