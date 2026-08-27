@@ -384,7 +384,8 @@
                                   CellEditEnding="GridCrono_CellEditEnding"
                                   BeginningEdit="GridCrono_BeginningEdit"
                                   PreviewTextInput="GridCrono_PreviewTextInput"
-                                  PreviewKeyDown="GridCrono_PreviewKeyDown">
+                                  PreviewKeyDown="GridCrono_PreviewKeyDown"
+                                  SelectedCellsChanged="GridCrono_SelectedCellsChanged">
                             <DataGrid.Resources>
                                 <Style TargetType="DataGridColumnHeader">
                                     <Setter Property="Background" Value="#FFF1F6FB"/>
@@ -699,6 +700,28 @@
                             </DataGrid.Columns>
                         </DataGrid>
                     </ScrollViewer>
+
+                    <!-- Barra de status de seleção (Row 4) -->
+                    <Border x:Name="pnlCronoSelecao" Grid.Row="4" Visibility="Collapsed"
+                            Background="#FFE8F0F8" BorderBrush="#FFB0C8E0" BorderThickness="0,1,0,0"
+                            Margin="0,4,0,0" Padding="8,5">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Seleção:" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="#FF033150" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="Soma:" FontSize="11" Foreground="#FF555555"
+                                       VerticalAlignment="Center" Margin="0,0,4,0"/>
+                            <TextBlock x:Name="lblCronoSoma" FontSize="11" FontWeight="SemiBold"
+                                       FontFamily="Consolas" Foreground="#FF033150"
+                                       VerticalAlignment="Center" Margin="0,0,16,0"/>
+                            <TextBlock Text="Média:" FontSize="11" Foreground="#FF555555"
+                                       VerticalAlignment="Center" Margin="0,0,4,0"/>
+                            <TextBlock x:Name="lblCronoMedia" FontSize="11" FontWeight="SemiBold"
+                                       FontFamily="Consolas" Foreground="#FF6A4C93"
+                                       VerticalAlignment="Center" Margin="0,0,16,0"/>
+                            <TextBlock x:Name="lblCronoQtd" FontSize="10" Foreground="#FF888888"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
 
                 </Grid>
             </Border>  <!-- fecha pnlCrono -->

@@ -1899,8 +1899,56 @@ Partial Class MainWindow
         End If
     End Sub
 
+    Private Sub GridCrono_SelectedCellsChanged(sender As Object, e As SelectedCellsChangedEventArgs)
+        Dim valores As New List(Of Double)
+
+        For Each cellInfo In gridCrono.SelectedCells
+            Dim entry = TryCast(cellInfo.Item, CronoAnaliseEntry)
+            If entry Is Nothing OrElse cellInfo.Column Is Nothing Then Continue For
+
+            Dim di = cellInfo.Column.DisplayIndex
+            Dim val As Double? = Nothing
+
+            Select Case di
+                Case 4 : val = CronoAnaliseEntry.CronoParaSegundos(entry.Inicio1Display)
+                Case 5 : val = CronoAnaliseEntry.CronoParaSegundos(entry.Fim1Display)
+                Case 6 : val = CronoAnaliseEntry.CronoParaSegundos(entry.Inicio2Display)
+                Case 7 : val = CronoAnaliseEntry.CronoParaSegundos(entry.Fim2Display)
+                Case 8 : val = CronoAnaliseEntry.CronoParaSegundos(entry.Inicio3Display)
+                Case 9 : val = CronoAnaliseEntry.CronoParaSegundos(entry.Fim3Display)
+                Case 10 : val = CronoAnaliseEntry.CronoParaSegundos(entry.Inicio4Display)
+                Case 11 : val = CronoAnaliseEntry.CronoParaSegundos(entry.Fim4Display)
+                Case 12
+                    Dim dur = entry.DuracaoDisplay
+                    If Not String.IsNullOrWhiteSpace(dur) Then
+                        Dim parts = dur.Split(","c)
+                        If parts.Length = 2 Then
+                            Dim sec As Double, cents As Double
+                            If Double.TryParse(parts(0), sec) AndAlso Double.TryParse(parts(1), cents) Then
+                                val = sec + cents / 100.0
+                            End If
+                        End If
+                    End If
+            End Select
+
+            If val.HasValue AndAlso val.Value > 0 Then
+                valores.Add(val.Value)
+            End If
+        Next
+
+        If valores.Count >= 2 Then
+            Dim soma = valores.Sum()
+            Dim media = soma / valores.Count
+            lblCronoSoma.Text = CronoAnaliseEntry.SegundosParaCrono(soma)
+            lblCronoMedia.Text = CronoAnaliseEntry.SegundosParaCrono(media)
+            lblCronoQtd.Text = $"({valores.Count} valores)"
+            pnlCronoSelecao.Visibility = Visibility.Visible
+        Else
+            pnlCronoSelecao.Visibility = Visibility.Collapsed
+        End If
+    End Sub
+
     Private Sub GridCrono_CellEditEnding(sender As Object, e As DataGridCellEditEndingEventArgs)
-        editandoCelulaCrono = False
         gridCrono.Focus()
 
         ' Atualizar análise estatística após edição
