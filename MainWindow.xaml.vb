@@ -706,7 +706,7 @@ Partial Class MainWindow
 
     Public Sub New()
         InitializeComponent()
-        GlobalFFOptions.Configure(New FFOptions With {.BinaryFolder = AppDomain.CurrentDomain.BaseDirectory})
+        GlobalFFOptions.Configure(New FFOptions With {.BinaryFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg")})
         cronometroVideo.Interval = TimeSpan.FromMilliseconds(200)
         AddHandler cronometroVideo.Tick, AddressOf CronometroTick
 
@@ -1348,9 +1348,18 @@ Partial Class MainWindow
                 Dim indiceAtual As Integer = i
                 Dim tarefa As VideoTarefa = DirectCast(lstGaleria.Items(indiceAtual), VideoTarefa)
 
+                If Not File.Exists(tarefa.Caminho) Then
+                    Throw New FileNotFoundException("Arquivo de entrada não encontrado: " & tarefa.Caminho)
+                End If
+
+                Dim pastaFfmpeg As String = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg")
+                If Not File.Exists(Path.Combine(pastaFfmpeg, "ffmpeg.exe")) OrElse Not File.Exists(Path.Combine(pastaFfmpeg, "ffprobe.exe")) Then
+                    Throw New FileNotFoundException("ffmpeg.exe/ffprobe.exe não encontrados em: " & pastaFfmpeg)
+                End If
+
                 Dim info = FFProbe.Analyse(tarefa.Caminho)
 
-                Dim pastaSaida As String = destino
+                Dim pastaSaida
                 If rbSalvarPastaOriginal.IsChecked = True Then
                     pastaSaida = Path.GetDirectoryName(tarefa.Caminho)
                 End If
@@ -1425,7 +1434,7 @@ Partial Class MainWindow
         Catch ex As OperationCanceledException
             MessageBox.Show("O processo de conversão foi abortado pelo utilizador.", "Cancelado", MessageBoxButton.OK, MessageBoxImage.Warning)
         Catch ex As Exception
-            MessageBox.Show("Erro: " & ex.Message, "Falha", MessageBoxButton.OK, MessageBoxImage.Error)
+            MessageBox.Show("Erro: " & ex.ToString(), "Falha", MessageBoxButton.OK, MessageBoxImage.Error)
         Finally
             estaProcessando = False
             If cts IsNot Nothing Then
