@@ -1161,6 +1161,8 @@ Partial Class MainWindow
 
     Private Sub CronometroTick(sender As Object, e As EventArgs)
         If mediaClock Is Nothing OrElse Not mediaClock.CurrentTime.HasValue Then Return
+        ' Durante passos de frame rápidos (tecla segurada) o relógio ainda está atrasado: não sobrescrever a posição
+        If Not estaReproduzindo AndAlso Environment.TickCount - ultimoPassoFrameTick < 400 Then Return
         If Not isDraggingSlider Then
             Dim pos = mediaClock.CurrentTime.Value.TotalSeconds
 
@@ -1878,6 +1880,11 @@ Partial Class MainWindow
         Return $"{totalMin:00}:{ts.Seconds:00},{centesimos:00}"
     End Function
 
+    ' Posição-alvo do último passo de frame: com a tecla pressionada (repetição rápida) o relógio de mídia
+    ' ainda não refletiu o seek anterior, então os passos seguintes partem do alvo e não de CurrentTime.
+    Private posicaoAlvoFrame As Double = 0
+    Private ultimoPassoFrameTick As Integer = 0
+
     Private Sub AvancarFrame(direcao As Integer)
         If mediaClock Is Nothing OrElse Not mediaClock.CurrentTime.HasValue Then Return
 
@@ -1887,19 +1894,32 @@ Partial Class MainWindow
         End If
 
         Dim duracaoFrame As Double = 1.0 / frameRate
-        Dim novaPosicao As Double = mediaClock.CurrentTime.Value.TotalSeconds + (duracaoFrame * direcao)
+
+        Dim basePosicao As Double
+        If Environment.TickCount - ultimoPassoFrameTick < 400 Then
+            basePosicao = posicaoAlvoFrame
+        Else
+            basePosicao = mediaClock.CurrentTime.Value.TotalSeconds
+        End If
+
+        Dim novaPosicao As Double = basePosicao + (duracaoFrame * direcao)
 
         If novaPosicao < 0 Then novaPosicao = 0
         If novaPosicao > slLinhaTempo.Maximum Then novaPosicao = slLinhaTempo.Maximum
 
+        posicaoAlvoFrame = novaPosicao
+        ultimoPassoFrameTick = Environment.TickCount
+
         ' Navegar usando sempre o MediaElement (1x)
         mediaClock.Controller.Resume()
         mediaClock.Controller.Seek(TimeSpan.FromSeconds(novaPosicao), TimeSeekOrigin.BeginTime)
-        Dispatcher.BeginInvoke(DispatcherPriority.Background, Sub()
-                                                                  If Not estaReproduzindo Then
-                                                                      mediaClock.Controller.Pause()
-                                                                  End If
-                                                              End Sub)
+        ' Prioridade Render: pausa antes do próximo evento de teclado (Background ficaria preso com a tecla repetindo
+        ' e o vídeo avançaria entre os passos)
+        Dispatcher.BeginInvoke(DispatcherPriority.Render, Sub()
+                                                              If Not estaReproduzindo AndAlso mediaClock IsNot Nothing Then
+                                                                  mediaClock.Controller.Pause()
+                                                              End If
+                                                          End Sub)
 
         slLinhaTempo.Value = novaPosicao
         lblTempoAtual.Text = FormatarTempo(novaPosicao)
