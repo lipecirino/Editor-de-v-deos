@@ -112,6 +112,35 @@ Public Class VideoTarefa
         End Set
     End Property
 
+    ' --- EXPORTAÇÃO: o card do vídeo na galeria vira uma barra de progresso ---
+    Private _exportando As Boolean = False
+    Private _progresso As Double = 0   ' 0..1
+
+    Public Property Exportando As Boolean
+        Get
+            Return _exportando
+        End Get
+        Set(value As Boolean)
+            If value <> _exportando Then
+                _exportando = value
+                RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(NameOf(Exportando)))
+            End If
+        End Set
+    End Property
+
+    Public Property Progresso As Double
+        Get
+            Return _progresso
+        End Get
+        Set(value As Double)
+            value = Math.Max(0, Math.Min(1, value))
+            If value <> _progresso Then
+                _progresso = value
+                RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(NameOf(Progresso)))
+            End If
+        End Set
+    End Property
+
     Public ReadOnly Property NomeComFlag As String
         Get
             Return Path.GetFileName(Caminho)
@@ -769,7 +798,7 @@ Partial Class MainWindow
         End If
 
         ' Botão de cortes
-        btnRegistrarTempo.IsEnabled = Not crono
+        btnRegistrarTempo.IsEnabled = Not crono AndAlso Not estaProcessando
         btnRegistrarTempo.ToolTip = If(crono,
             "Indisponível: este vídeo tem cronoanálise. Não é possível cortar um vídeo com cronoanálise.",
             "Clique no início e depois no fim do trecho. O menor tempo vira o início e o maior o fim do segmento.")
@@ -1554,7 +1583,7 @@ Partial Class MainWindow
 
     ' --- SISTEMA VISUAL DE CORTE ---
     Private Sub BtnRegistrarTempo_Click(sender As Object, e As RoutedEventArgs)
-        If TemCronoNoVideo() Then Return ' cronoanálise e cortes são excludentes
+        If TemCronoNoVideo() OrElse estaProcessando Then Return ' excludentes com cronoanálise; sem edição durante a exportação
         If videoAtual Is Nothing OrElse mediaClock Is Nothing OrElse Not mediaClock.CurrentTime.HasValue Then Return
 
         Dim t = Math.Round(mediaClock.CurrentTime.Value.TotalSeconds, 2)
@@ -1878,6 +1907,52 @@ Partial Class MainWindow
         End If
     End Sub
 
+    ' --- EXPORTAÇÃO: bloqueio de edição, bitrate e animação do card ---
+    Private Const BITRATE_ALVO_KBPS As Double = 6000     ' bitrate usado ao reencodar
+    Private Const BITRATE_LIMITE_KBPS As Double = 7000   ' até aqui (margem de erro) o vídeo já é considerado otimizado
+
+    ' Durante a exportação ninguém altera cortes, orientação, opções de exportação nem a lista de vídeos
+    Private Sub DefinirBloqueioExportacao(bloquear As Boolean)
+        svConfigCompleto.IsEnabled = Not bloquear
+        svConfigCompleto.Opacity = If(bloquear, 0.5, 1.0)
+        painelBotoesGaleria.IsEnabled = Not bloquear
+        lstGaleria.IsHitTestVisible = Not bloquear
+        lstGaleria.AllowDrop = Not bloquear
+        AtualizarBloqueiosCronoCorte()
+    End Sub
+
+    ' Vídeo com cronoanálise (a do vídeo aberto vem do grid; as demais, do cache)
+    Private Function TemCronoAnalisePersistida(v As VideoTarefa) As Boolean
+        If v Is Nothing Then Return False
+        If videoAtual IsNot Nothing AndAlso Object.ReferenceEquals(v, videoAtual) Then Return cronoEntries.Count > 0
+        If cacheGlobal Is Nothing Then Return v.TemCronoAnalise
+        Dim c = cacheGlobal.Videos.FirstOrDefault(Function(x) String.Equals(x.CaminhoVideo, v.Caminho, StringComparison.OrdinalIgnoreCase))
+        Return (c IsNot Nothing AndAlso c.CronoAnalises.Count > 0) OrElse v.TemCronoAnalise
+    End Function
+
+    ' Anima o card colapsando (altura e opacidade) e então remove o vídeo da lista
+    Private Async Function ColapsarEremover(v As VideoTarefa) As Task
+        Dim cont = TryCast(lstGaleria.ItemContainerGenerator.ContainerFromItem(v), ListBoxItem)
+        If cont Is Nothing OrElse cont.ActualHeight <= 0 Then
+            lstGaleria.Items.Remove(v)
+            Return
+        End If
+
+        Dim tcs As New TaskCompletionSource(Of Boolean)()
+        Dim alturaInicial As Double = cont.ActualHeight
+        cont.Height = alturaInicial
+        cont.ClipToBounds = True
+        Dim duracao As New Duration(TimeSpan.FromMilliseconds(380))
+        Dim suavizacao As New CubicEase() With {.EasingMode = EasingMode.EaseInOut}
+        Dim animAltura As New Animation.DoubleAnimation(alturaInicial, 0, duracao) With {.EasingFunction = suavizacao}
+        Dim animOpacidade As New Animation.DoubleAnimation(1, 0, duracao) With {.EasingFunction = suavizacao}
+        AddHandler animAltura.Completed, Sub() tcs.TrySetResult(True)
+        cont.BeginAnimation(FrameworkElement.HeightProperty, animAltura)
+        cont.BeginAnimation(UIElement.OpacityProperty, animOpacidade)
+        Await tcs.Task
+        lstGaleria.Items.Remove(v)
+    End Function
+
     ' --- PROCESSAMENTO EM LOTE (CANCELAMENTO, PREVENÇÃO E UX OTIMIZADOS) ---
     Private Async Sub BtnProcessar_Click(sender As Object, e As RoutedEventArgs)
         If lstGaleria.Items.Count = 0 Then Return
@@ -1893,12 +1968,20 @@ Partial Class MainWindow
 
         SalvarConfiguracoesAtuais()
         SalvarExportSettings()
+        If videoAtual IsNot Nothing Then SalvarCronoAnaliseDoVideo(videoAtual)
+
+        ' Vídeos com cronoanálise não são exportados nem convertidos: ficam na lista, intactos
+        Dim fila As List(Of VideoTarefa) = lstGaleria.Items.Cast(Of VideoTarefa)().Where(Function(v) Not TemCronoAnalisePersistida(v)).ToList()
+        Dim ignoradosCrono As Integer = lstGaleria.Items.Count - fila.Count
+        If fila.Count = 0 Then
+            MessageBox.Show("Todos os vídeos da lista têm cronoanálise e não são exportados.", "Nada para exportar", MessageBoxButton.OK, MessageBoxImage.Information)
+            Return
+        End If
 
         ' Se algum vídeo tem segmentos, perguntar como exportar
         Dim exportarUnico As Boolean = False
         Dim algumTemSegmentos As Boolean = False
-        For Each item In lstGaleria.Items
-            Dim t = TryCast(item, VideoTarefa)
+        For Each t In fila
             If t IsNot Nothing AndAlso t.Segmentos.Count > 0 Then
                 algumTemSegmentos = True
                 Exit For
@@ -1928,6 +2011,7 @@ Partial Class MainWindow
 
         segmentoTravado = Nothing
         estaProcessando = True
+        DefinirBloqueioExportacao(True)
         cts = New CancellationTokenSource()
 
         btnProcessar.Content = "CANCELAR CONVERSÃO (✕)"
@@ -1949,11 +2033,13 @@ Partial Class MainWindow
         End If
 
         Try
-            For i = 0 To lstGaleria.Items.Count - 1
+            For i = 0 To fila.Count - 1
                 If cts.Token.IsCancellationRequested Then Exit For
 
                 Dim indiceAtual As Integer = i
-                Dim tarefa As VideoTarefa = DirectCast(lstGaleria.Items(indiceAtual), VideoTarefa)
+                Dim tarefa As VideoTarefa = fila(indiceAtual)
+                tarefa.Progresso = 0
+                tarefa.Exportando = True
 
                 If Not File.Exists(tarefa.Caminho) Then
                     Throw New FileNotFoundException("Arquivo de entrada não encontrado: " & tarefa.Caminho)
@@ -1972,10 +2058,26 @@ Partial Class MainWindow
                 End If
 
                 Dim bitrateOriginal = info.Format.BitRate / 1000
-                Dim bitrateAlvo As Double = If(bitrateOriginal > 6000, 6000, 0)
+                ' Só reduz o bitrate quando passa da margem (7000 kbps); até lá mantém o original
+                Dim bitrateAlvo As Double = If(bitrateOriginal > BITRATE_LIMITE_KBPS, BITRATE_ALVO_KBPS, 0)
 
                 ' Partes a exportar: um vídeo por segmento; sem segmentos, o vídeo inteiro
                 Dim temSegmentos As Boolean = tarefa.Segmentos.Count > 0
+
+                ' Vídeo já otimizado (ex.: já exportado por este editor): sem cortes, sem rotação/espelho, MP4/H.264 e
+                ' bitrate dentro da margem → não precisa converter de novo
+                Dim codecVideo As String = If(info.PrimaryVideoStream IsNot Nothing, info.PrimaryVideoStream.CodecName, "")
+                Dim jaOtimizado As Boolean = bitrateOriginal > 0 AndAlso bitrateOriginal <= BITRATE_LIMITE_KBPS AndAlso
+                    Not temSegmentos AndAlso String.IsNullOrEmpty(tarefa.FiltroFFmpeg) AndAlso
+                    Path.GetExtension(tarefa.Caminho).Equals(".mp4", StringComparison.OrdinalIgnoreCase) AndAlso
+                    String.Equals(codecVideo, "h264", StringComparison.OrdinalIgnoreCase)
+                If jaOtimizado Then
+                    lblStatusLote.Text = $"{indiceAtual + 1}/{fila.Count} - {Path.GetFileName(tarefa.Caminho)}: já otimizado ({CInt(bitrateOriginal)} kbps), conversão ignorada"
+                    tarefa.Progresso = 1
+                    Await Task.Delay(500)
+                    Await ColapsarEremover(tarefa)
+                    Continue For
+                End If
                 Dim separados As Boolean = temSegmentos AndAlso Not exportarUnico   ' um vídeo por segmento
                 Dim unico As Boolean = temSegmentos AndAlso exportarUnico           ' um vídeo só com os segmentos juntos
                 Dim partes As List(Of SegmentoCorte)
@@ -2045,9 +2147,10 @@ Partial Class MainWindow
                                                  ultimaPorcentagem = porcentagemAtual
                                                  Dispatcher.BeginInvoke(Sub()
                                                                             pbProgresso.Value = perc
+                                                                            tarefa.Progresso = (indiceParte + (perc / 100.0)) / partes.Count
                                                                             lblPorcentagem.Text = porcentagemAtual.ToString() & "%"
                                                                             Dim textoParte As String = If(temSegmentos, $" (parte {indiceParte + 1}/{partes.Count})", "")
-                                                                            lblStatusLote.Text = $"A converter {indiceAtual + 1}/{lstGaleria.Items.Count} - {Path.GetFileName(tarefa.Caminho)}{textoParte}"
+                                                                            lblStatusLote.Text = $"A converter {indiceAtual + 1}/{fila.Count} - {Path.GetFileName(tarefa.Caminho)}{textoParte}"
                                                                         End Sub)
                                              End If
                                          End Sub, duracao)
@@ -2057,7 +2160,7 @@ Partial Class MainWindow
 
                 ' Um único vídeo: junta as partes (só os segmentos), descartando o restante
                 If unico AndAlso Not cts.Token.IsCancellationRequested Then
-                    lblStatusLote.Text = $"A juntar partes {indiceAtual + 1}/{lstGaleria.Items.Count} - {Path.GetFileName(tarefa.Caminho)}"
+                    lblStatusLote.Text = $"A juntar partes {indiceAtual + 1}/{fila.Count} - {Path.GetFileName(tarefa.Caminho)}"
                     Dim arquivosJuntar As String() = temporarios.ToArray()
                     Dim destinoFinal As String = saida
                     Await Task.Run(Sub() FFMpeg.Join(destinoFinal, arquivosJuntar))
@@ -2091,10 +2194,19 @@ Partial Class MainWindow
                         Debug.WriteLine($"Não foi possível eliminar o original: {exDel.Message}")
                     End Try
                 End If
+
+                ' Concluído: o card fica 100% verde, colapsa e o vídeo sai da lista
+                If Not cts.Token.IsCancellationRequested Then
+                    tarefa.Progresso = 1
+                    Await Task.Delay(350)
+                    Await ColapsarEremover(tarefa)
+                End If
             Next
 
             If Not cts.Token.IsCancellationRequested Then
-                MessageBox.Show("Lote concluído com sucesso!", "Finalizado", MessageBoxButton.OK, MessageBoxImage.Information)
+                Dim msgFim As String = "Lote concluído com sucesso!"
+                If ignoradosCrono > 0 Then msgFim &= vbCrLf & vbCrLf & $"{ignoradosCrono} vídeo(s) com cronoanálise não foram exportados."
+                MessageBox.Show(msgFim, "Finalizado", MessageBoxButton.OK, MessageBoxImage.Information)
             End If
 
         Catch ex As OperationCanceledException
@@ -2103,6 +2215,11 @@ Partial Class MainWindow
             MessageBox.Show("Erro: " & ex.ToString(), "Falha", MessageBoxButton.OK, MessageBoxImage.Error)
         Finally
             estaProcessando = False
+            DefinirBloqueioExportacao(False)
+            For Each restante In fila
+                restante.Exportando = False
+                restante.Progresso = 0
+            Next
             If cts IsNot Nothing Then
                 cts.Dispose()
                 cts = Nothing
