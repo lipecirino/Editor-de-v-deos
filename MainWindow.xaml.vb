@@ -1042,6 +1042,9 @@ Partial Class MainWindow
         Else
             ' Reproduzir
             timerPausaPasso.Stop()
+            timerRenderPasso.Stop()
+            renderPassoEmAndamento = False
+            renderPassoPendente = False
             mediaClock.Controller.SpeedRatio = 1
             mediaClock.Controller.Resume()
             AtualizarEstadoPlayPause(True)
@@ -1887,6 +1890,9 @@ Partial Class MainWindow
     Private posicaoAlvoFrame As Double = 0
     Private ultimoPassoFrameTick As Integer = 0
     Private WithEvents timerPausaPasso As New DispatcherTimer() With {.Interval = TimeSpan.FromMilliseconds(150)}
+    Private WithEvents timerRenderPasso As New DispatcherTimer() With {.Interval = TimeSpan.FromMilliseconds(70)}
+    Private renderPassoEmAndamento As Boolean = False
+    Private renderPassoPendente As Boolean = False
 
     ' Velocidade "congelada" usada durante o passo de frames: o relógio fica ativo (o MediaElement só desenha
     ' o novo quadro com o relógio rodando) mas praticamente não avança.
@@ -1917,17 +1923,41 @@ Partial Class MainWindow
         posicaoAlvoFrame = novaPosicao
         ultimoPassoFrameTick = Environment.TickCount
 
-        ' Relógio rodando em velocidade quase zero + seek: o quadro da nova posição é desenhado e fica parado
-        mediaClock.Controller.SpeedRatio = VELOCIDADE_CONGELADA
-        mediaClock.Controller.Resume()
-        mediaClock.Controller.Seek(TimeSpan.FromSeconds(novaPosicao), TimeSeekOrigin.BeginTime)
-
-        ' Pausa de verdade só depois que os passos terminarem (cada passo reinicia o contador)
-        timerPausaPasso.Stop()
-        timerPausaPasso.Start()
-
         slLinhaTempo.Value = novaPosicao
         lblTempoAtual.Text = FormatarTempo(novaPosicao)
+
+        ' Desenha o quadro de forma sincronizada: se ainda há um desenho em andamento, este pedido é ignorado
+        ' e apenas a posição final (onde você parou) será desenhada quando o anterior terminar
+        If renderPassoEmAndamento Then
+            renderPassoPendente = True
+        Else
+            ExecutarRenderQuadro()
+        End If
+    End Sub
+
+    Private Sub ExecutarRenderQuadro()
+        If mediaClock Is Nothing Then Return
+        renderPassoEmAndamento = True
+        renderPassoPendente = False
+
+        ' Relógio rodando em velocidade quase zero + seek: o quadro da posição-alvo é desenhado e fica parado
+        mediaClock.Controller.SpeedRatio = VELOCIDADE_CONGELADA
+        mediaClock.Controller.Resume()
+        mediaClock.Controller.Seek(TimeSpan.FromSeconds(posicaoAlvoFrame), TimeSeekOrigin.BeginTime)
+
+        timerRenderPasso.Stop()
+        timerRenderPasso.Start()
+
+        ' Pausa de verdade só depois que os passos terminarem (cada desenho reinicia o contador)
+        timerPausaPasso.Stop()
+        timerPausaPasso.Start()
+    End Sub
+
+    Private Sub TimerRenderPasso_Tick(sender As Object, e As EventArgs) Handles timerRenderPasso.Tick
+        timerRenderPasso.Stop()
+        renderPassoEmAndamento = False
+        ' Houve pedidos durante o desenho: desenha só a posição mais recente
+        If renderPassoPendente Then ExecutarRenderQuadro()
     End Sub
 
     Private Sub TimerPausaPasso_Tick(sender As Object, e As EventArgs) Handles timerPausaPasso.Tick
