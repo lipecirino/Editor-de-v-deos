@@ -1624,19 +1624,11 @@ Partial Class MainWindow
 
     Private duracaoTotalVideo As Double = 0
 
-    ' A timeline usa como referência de início/fim o bloco travado; sem bloco travado, o vídeo inteiro
+    ' A timeline tem sempre a escala do vídeo inteiro
     Private Sub AplicarEscalaTimeline()
+        ' A timeline sempre representa o vídeo inteiro (blocos aparecem em escala proporcional ao total)
         Dim novoMin As Double = 0
         Dim novoMax As Double = duracaoTotalVideo
-        If segmentoTravado IsNot Nothing Then
-            novoMin = Math.Max(0, segmentoTravado.Inicio)
-            novoMax = If(duracaoTotalVideo > 0, Math.Min(segmentoTravado.Fim, duracaoTotalVideo), segmentoTravado.Fim)
-        ElseIf previewTrava AndAlso previewEntry IsNot Nothing AndAlso segmentosPreview.Count > 0 Then
-            ' Visualização da cronoanálise: a timeline cobre do início do 1º trecho ao fim do último
-            novoMin = Math.Max(0, segmentosPreview.Min(Function(x) x.Inicio))
-            novoMax = segmentosPreview.Max(Function(x) x.Fim)
-            If duracaoTotalVideo > 0 Then novoMax = Math.Min(novoMax, duracaoTotalVideo)
-        End If
         If novoMax <= novoMin Then Return
         If slLinhaTempo.Minimum = novoMin AndAlso slLinhaTempo.Maximum = novoMax Then Return
         ' Ordem que evita coerção indevida do Slider ao mudar os limites
@@ -1781,11 +1773,18 @@ Partial Class MainWindow
             canvasCorte.Children.Add(circulo)
         Next
 
-        ' Visualização da cronoanálise: os intervalos entre os trechos (partes cortadas) ficam em cinza escuro sobre a timeline
-        If emPreview AndAlso previewTrava AndAlso segmentoTravado Is Nothing Then
+        ' Partes fora do(s) trecho(s) ativo(s) ficam em cinza escuro sobre a timeline (escala sempre em relação ao total):
+        ' só o bloco travado ou, na visualização da cronoanálise, todos os trechos da linha
+        Dim ativos As IEnumerable(Of SegmentoCorte) = Nothing
+        If segmentoTravado IsNot Nothing Then
+            ativos = New List(Of SegmentoCorte) From {segmentoTravado}
+        ElseIf emPreview AndAlso previewTrava Then
+            ativos = segs
+        End If
+        If ativos IsNot Nothing Then
             Dim cursor As Double = rmin
             Dim lacunas As New List(Of Double())()
-            For Each seg In segs.OrderBy(Function(x) x.Inicio)
+            For Each seg In ativos.OrderBy(Function(x) x.Inicio)
                 If seg.Inicio > cursor Then lacunas.Add({cursor, Math.Min(seg.Inicio, rmax)})
                 cursor = Math.Max(cursor, seg.Fim)
             Next
