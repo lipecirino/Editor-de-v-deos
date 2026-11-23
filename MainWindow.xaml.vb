@@ -75,8 +75,8 @@ Public Class VideoTarefa
         End Set
     End Property
 
-    Public Property Inicio As Double = 0
-    Public Property Fim As Double = 0
+    ' Primeiro tempo registrado do próximo segmento (-1 = nenhum)
+    Public Property TempoPendente As Double = -1
     Public Property FiltroFFmpeg As String = ""
 
     ' Cada segmento é exportado como um vídeo separado (sem segmentos, exporta o vídeo inteiro)
@@ -865,9 +865,6 @@ Partial Class MainWindow
     ' --- GRAVAÇÃO AUTOMÁTICA DE SETTINGS ---
     Private Sub SalvarConfiguracoesAtuais()
         If videoAtual IsNot Nothing Then
-            Double.TryParse(txtInicio.Text, videoAtual.Inicio)
-            Double.TryParse(txtFim.Text, videoAtual.Fim)
-
             If rbRotDireita.IsChecked = True Then
                 videoAtual.FiltroFFmpeg = "-vf transpose=1"
             ElseIf rbRotEsquerda.IsChecked = True Then
@@ -969,8 +966,6 @@ Partial Class MainWindow
 
             AtualizarEstadoPlayPause(True)
 
-            txtInicio.Text = videoAtual.Inicio.ToString()
-            txtFim.Text = videoAtual.Fim.ToString()
             rbNormal.IsChecked = (videoAtual.FiltroFFmpeg = "")
             rbRotDireita.IsChecked = (videoAtual.FiltroFFmpeg = "-vf transpose=1")
             rbRotEsquerda.IsChecked = (videoAtual.FiltroFFmpeg = "-vf transpose=2")
@@ -1260,59 +1255,40 @@ Partial Class MainWindow
     End Sub
 
     ' --- SISTEMA VISUAL DE CORTE ---
-    Private Sub BtnCapturarInicio_Click(sender As Object, e As RoutedEventArgs)
-        If mediaClock IsNot Nothing AndAlso mediaClock.CurrentTime.HasValue Then
-            txtInicio.Text = Math.Round(mediaClock.CurrentTime.Value.TotalSeconds, 2).ToString()
+    Private Sub BtnRegistrarTempo_Click(sender As Object, e As RoutedEventArgs)
+        If videoAtual Is Nothing OrElse mediaClock Is Nothing OrElse Not mediaClock.CurrentTime.HasValue Then Return
+
+        Dim t = Math.Round(mediaClock.CurrentTime.Value.TotalSeconds, 2)
+
+        If videoAtual.TempoPendente < 0 Then
+            ' 1º tempo: marca onde o corte começa/termina
+            videoAtual.TempoPendente = t
+        Else
+            ' 2º tempo: o menor dos dois é o início e o maior é o fim
+            Dim a = videoAtual.TempoPendente
+            If Math.Abs(t - a) < 0.01 Then Return ' mesmo instante: ignora
+            videoAtual.Segmentos.Add(New SegmentoCorte() With {.Inicio = Math.Min(a, t), .Fim = Math.Max(a, t)})
+            videoAtual.Segmentos.Sort(Function(x, y) x.Inicio.CompareTo(y.Inicio))
+            videoAtual.TempoPendente = -1
         End If
+
+        AtualizarIndicadorDeCorte()
+        AtualizarSegmentosVisuais()
     End Sub
 
-    Private Sub BtnCapturarFim_Click(sender As Object, e As RoutedEventArgs)
-        If mediaClock IsNot Nothing AndAlso mediaClock.CurrentTime.HasValue Then
-            txtFim.Text = Math.Round(mediaClock.CurrentTime.Value.TotalSeconds, 2).ToString()
-            ' Fixar o fim conclui o bloco atual e já o adiciona como a próxima parte
-            AdicionarSegmentoPendente()
-        End If
-    End Sub
-
+    ' Marcador do 1º tempo registrado (aguardando o 2º)
     Private Sub AtualizarIndicadorDeCorte()
-        If videoAtual Is Nothing OrElse slLinhaTempo.Maximum <= 0 Then
+        If videoAtual Is Nothing OrElse slLinhaTempo.Maximum <= 0 OrElse videoAtual.TempoPendente < 0 Then
             bdrCorte.Visibility = Visibility.Hidden
             Return
         End If
-
-        Dim inicio As Double = 0
-        Dim fim As Double = 0
-
-        Double.TryParse(txtInicio.Text, inicio)
-        Double.TryParse(txtFim.Text, fim)
-
-        If inicio <= 0 AndAlso fim <= 0 Then
-            bdrCorte.Visibility = Visibility.Hidden
-            Return
-        End If
-
-        If fim <= 0 OrElse fim > slLinhaTempo.Maximum Then
-            fim = slLinhaTempo.Maximum
-        End If
-
-        If inicio < 0 Then inicio = 0
-        If inicio > fim Then inicio = fim
 
         Dim larguraTotal As Double = gridSliderCorte.ActualWidth - 12
-
         If larguraTotal > 0 Then
-            Dim pxInicio = (inicio / slLinhaTempo.Maximum) * larguraTotal
-            Dim pxFim = (fim / slLinhaTempo.Maximum) * larguraTotal
-
-            bdrCorte.Width = Math.Max(0, pxFim - pxInicio)
-            Canvas.SetLeft(bdrCorte, pxInicio)
+            Dim px = (Math.Min(videoAtual.TempoPendente, slLinhaTempo.Maximum) / slLinhaTempo.Maximum) * larguraTotal
+            bdrCorte.Width = 8
+            Canvas.SetLeft(bdrCorte, px - 4)
             bdrCorte.Visibility = Visibility.Visible
-        End If
-    End Sub
-
-    Private Sub TxtCorte_TextChanged(sender As Object, e As TextChangedEventArgs)
-        If IsLoaded Then
-            AtualizarIndicadorDeCorte()
         End If
     End Sub
 
@@ -1322,41 +1298,13 @@ Partial Class MainWindow
     End Sub
 
     ' --- CORTE MÚLTIPLO ---
+    ' Alterna entre azul escuro e azul médio para manter o visual limpo
     Private Shared ReadOnly CoresSegmentos As Color() = {
-        Color.FromRgb(&HE5, &H39, &H35), Color.FromRgb(&H1E, &H88, &HE5), Color.FromRgb(&H43, &HA0, &H47),
-        Color.FromRgb(&HFB, &H8C, &H0), Color.FromRgb(&H8E, &H24, &HAA), Color.FromRgb(&H0, &H89, &H7B)}
+        Color.FromRgb(&H1B, &H3A, &H6B), Color.FromRgb(&H3B, &H82, &HC4)}
 
     Private Function CorSegmento(indice As Integer) As Color
         Return CoresSegmentos(indice Mod CoresSegmentos.Length)
     End Function
-
-    ' Conclui o segmento em edição (Início/Fim) e o adiciona como a próxima parte
-    Private Sub AdicionarSegmentoPendente()
-        If videoAtual Is Nothing Then Return
-
-        Dim inicio As Double = 0
-        Dim fim As Double = 0
-        Double.TryParse(txtInicio.Text, inicio)
-        Double.TryParse(txtFim.Text, fim)
-
-        If fim <= 0 OrElse (slLinhaTempo.Maximum > 0 AndAlso fim > slLinhaTempo.Maximum) Then
-            fim = slLinhaTempo.Maximum
-        End If
-        If inicio < 0 Then inicio = 0
-
-        If fim <= inicio Then
-            MessageBox.Show("Defina um Início menor que o Fim antes de adicionar o segmento.", "Segmento inválido", MessageBoxButton.OK, MessageBoxImage.Warning)
-            Return
-        End If
-
-        videoAtual.Segmentos.Add(New SegmentoCorte() With {.Inicio = Math.Round(inicio, 2), .Fim = Math.Round(fim, 2)})
-        videoAtual.Segmentos.Sort(Function(a, b) a.Inicio.CompareTo(b.Inicio))
-
-        ' Limpa o intervalo em edição para o próximo segmento
-        txtInicio.Text = "0"
-        txtFim.Text = "0"
-        AtualizarSegmentosVisuais()
-    End Sub
 
     Private Sub BtnLimparSegmentos_Click(sender As Object, e As RoutedEventArgs)
         If videoAtual Is Nothing Then Return
@@ -1436,7 +1384,8 @@ Partial Class MainWindow
         wrapSegmentos.Children.Clear()
 
         Dim ativo As Boolean = videoAtual IsNot Nothing
-        lblProximaParte.Text = If(ativo, $"Próxima: parte {videoAtual.Segmentos.Count + 1}", "")
+        lblProximaParte.Text = If(ativo, $"Próxima: parte {videoAtual.Segmentos.Count + 1}" &
+            If(videoAtual.TempoPendente >= 0, $"  (1º tempo em {FormatarTempo(videoAtual.TempoPendente)}, aguardando o 2º)", ""), "")
         ' Destrava se o segmento travado deixou de existir (removido, outro vídeo, modo desligado)
         If segmentoTravado IsNot Nothing AndAlso (Not ativo OrElse Not videoAtual.Segmentos.Contains(segmentoTravado)) Then
             segmentoTravado = Nothing

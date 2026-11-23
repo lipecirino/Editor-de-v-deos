@@ -285,16 +285,14 @@
                     <GroupBox Name="grpConfigVideo" Header="Configurações do Vídeo" Padding="15" Margin="0,0,0,10">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                            <TextBlock Text="Parte (seg):" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBox Name="txtInicio" Width="50" Text="0" VerticalAlignment="Center" TextChanged="TxtCorte_TextChanged"/>
-                            <Button Content="Fixar Início" Click="BtnCapturarInicio_Click" Margin="5,0,20,0" Padding="10,2" Style="{StaticResource BotaoArredondado}" Background="#FF555555" FontSize="11"/>
-                            <TextBox Name="txtFim" Width="50" Text="0" VerticalAlignment="Center" TextChanged="TxtCorte_TextChanged"/>
-                            <Button Content="Fixar Fim" Click="BtnCapturarFim_Click" Margin="5,0,0,0" Padding="10,2" Style="{StaticResource BotaoArredondado}" Background="#FF555555" FontSize="11"/>
+                            <Button Name="btnRegistrarTempo" Content="● Registrar tempo" Click="BtnRegistrarTempo_Click" Padding="12,4"
+                                    Style="{StaticResource BotaoArredondado}" Background="#FF6A4C93" FontSize="12"
+                                    ToolTip="Registre dois tempos: o menor vira o início e o maior o fim do segmento"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                             <TextBlock Name="lblProximaParte" FontWeight="SemiBold" Foreground="#FF6A4C93" VerticalAlignment="Center"
-                                       ToolTip="Fixar Início e depois Fixar Fim cria a próxima parte. Cada parte é exportada como um vídeo; sem partes, exporta o vídeo inteiro."/>
-                            <Button Name="btnLimparSegmentos" Content="Limpar segmentos" Height="26" Margin="5,0,0,0" Padding="6,0" Visibility="Collapsed"
+                                       ToolTip="Cada segmento é exportado conforme a opção escolhida ao converter; sem segmentos, exporta o vídeo inteiro."/>
+                            <Button Name="btnLimparSegmentos" Content="Limpar segmentos" Height="26" Margin="12,0,0,0" Padding="6,0" Visibility="Collapsed"
                                     Style="{StaticResource BotaoArredondado}" Background="#FFA90C0C" FontSize="11"
                                     Click="BtnLimparSegmentos_Click"/>
                         </StackPanel>
