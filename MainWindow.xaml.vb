@@ -698,6 +698,33 @@ Partial Class MainWindow
         Return If(videoAtual IsNot Nothing, videoAtual.Segmentos, New List(Of SegmentoCorte)())
     End Function
 
+    ' Cronoanálise e cortes são excludentes no mesmo vídeo: com linhas no grid (ou modo crono ligado) não se corta;
+    ' com cortes a fazer não se faz cronoanálise.
+    Private Function TemCronoNoVideo() As Boolean
+        Return videoAtual IsNot Nothing AndAlso (cronoEntries.Count > 0 OrElse modoCronoAtivo)
+    End Function
+
+    Private Sub AtualizarBloqueiosCronoCorte()
+        Dim cortes As Boolean = TemCortesNoVideo()
+        Dim crono As Boolean = TemCronoNoVideo()
+
+        ' Botão Crono
+        If cortes Then
+            If btnModoCrono.IsChecked = True Then btnModoCrono.IsChecked = False
+            btnModoCrono.IsEnabled = False
+            btnModoCrono.ToolTip = "Indisponível: este vídeo tem cortes a fazer. A cronoanálise só pode ser feita em vídeo já cortado."
+        Else
+            btnModoCrono.IsEnabled = True
+            btnModoCrono.ToolTip = "Ativar/Desativar modo cronoanálise"
+        End If
+
+        ' Botão de cortes
+        btnRegistrarTempo.IsEnabled = Not crono
+        btnRegistrarTempo.ToolTip = If(crono,
+            "Indisponível: este vídeo tem cronoanálise. Não é possível cortar um vídeo com cronoanálise.",
+            "Clique no início e depois no fim do trecho. O menor tempo vira o início e o maior o fim do segmento.")
+    End Sub
+
     ' A visualização da cronoanálise só vale quando não há cortes reais (ou 1º tempo pendente) no vídeo
     Private Function TemCortesNoVideo() As Boolean
         Return videoAtual IsNot Nothing AndAlso (videoAtual.Segmentos.Count > 0 OrElse videoAtual.TempoPendente >= 0)
@@ -927,6 +954,9 @@ Partial Class MainWindow
         AddHandler cronoEntries.CollectionChanged, Sub(s, ev)
                                                        ' Linha removida (ou lista limpa) que estava em pré-visualização
                                                        If previewEntry IsNot Nothing AndAlso Not cronoEntries.Contains(previewEntry) Then LimparPreviewCrono()
+                                                       ' Ícone da galeria assim que há linha no grid; e bloqueio dos cortes
+                                                       If videoAtual IsNot Nothing Then videoAtual.TemCronoAnalise = (cronoEntries.Count > 0)
+                                                       AtualizarBloqueiosCronoCorte()
                                                    End Sub
 
         ' Carregar cache de cronoanálise
@@ -1464,6 +1494,7 @@ Partial Class MainWindow
 
     ' --- SISTEMA VISUAL DE CORTE ---
     Private Sub BtnRegistrarTempo_Click(sender As Object, e As RoutedEventArgs)
+        If TemCronoNoVideo() Then Return ' cronoanálise e cortes são excludentes
         If videoAtual Is Nothing OrElse mediaClock Is Nothing OrElse Not mediaClock.CurrentTime.HasValue Then Return
 
         Dim t = Math.Round(mediaClock.CurrentTime.Value.TotalSeconds, 2)
@@ -1585,14 +1616,7 @@ Partial Class MainWindow
     Private Sub AtualizarSegmentosVisuais()
         ' Indicador de cortes na galeria e bloqueio da cronoanálise (só vale em vídeo já cortado)
         If videoAtual IsNot Nothing Then videoAtual.TemCortes = TemCortesNoVideo()
-        If TemCortesNoVideo() Then
-            If btnModoCrono.IsChecked = True Then btnModoCrono.IsChecked = False
-            btnModoCrono.IsEnabled = False
-            btnModoCrono.ToolTip = "Indisponível: este vídeo tem cortes a fazer. A cronoanálise só pode ser feita em vídeo já cortado."
-        Else
-            btnModoCrono.IsEnabled = True
-            btnModoCrono.ToolTip = "Ativar/Desativar modo cronoanálise"
-        End If
+        AtualizarBloqueiosCronoCorte()
         ' Com cortes reais no vídeo, desabilita a visualização da cronoanálise (e desliga a que estiver ativa)
         AtualizarPodeVisualizar()
         If TemCortesNoVideo() AndAlso previewEntry IsNot Nothing Then
@@ -2199,10 +2223,12 @@ Partial Class MainWindow
         modoCronoAtivo = True
         painelConfigCompleto.Visibility = Visibility.Collapsed
         pnlCrono.Visibility = Visibility.Visible
+        AtualizarBloqueiosCronoCorte()
     End Sub
 
     Private Sub BtnModoCrono_Unchecked(sender As Object, e As RoutedEventArgs)
         modoCronoAtivo = False
+        AtualizarBloqueiosCronoCorte()
 
         ' Se o painel estiver desacoplado, fechar a janela flutuante (isso reacopla automaticamente)
         If cronoPanelWindow IsNot Nothing Then
