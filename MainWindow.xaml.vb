@@ -1041,6 +1041,8 @@ Partial Class MainWindow
             AtualizarEstadoPlayPause(False)
         Else
             ' Reproduzir
+            timerPausaPasso.Stop()
+            mediaClock.Controller.SpeedRatio = 1
             mediaClock.Controller.Resume()
             AtualizarEstadoPlayPause(True)
         End If
@@ -1884,6 +1886,11 @@ Partial Class MainWindow
     ' ainda não refletiu o seek anterior, então os passos seguintes partem do alvo e não de CurrentTime.
     Private posicaoAlvoFrame As Double = 0
     Private ultimoPassoFrameTick As Integer = 0
+    Private WithEvents timerPausaPasso As New DispatcherTimer() With {.Interval = TimeSpan.FromMilliseconds(150)}
+
+    ' Velocidade "congelada" usada durante o passo de frames: o relógio fica ativo (o MediaElement só desenha
+    ' o novo quadro com o relógio rodando) mas praticamente não avança.
+    Private Const VELOCIDADE_CONGELADA As Double = 0.0001
 
     Private Sub AvancarFrame(direcao As Integer)
         If mediaClock Is Nothing OrElse Not mediaClock.CurrentTime.HasValue Then Return
@@ -1910,19 +1917,24 @@ Partial Class MainWindow
         posicaoAlvoFrame = novaPosicao
         ultimoPassoFrameTick = Environment.TickCount
 
-        ' Navegar usando sempre o MediaElement (1x)
+        ' Relógio rodando em velocidade quase zero + seek: o quadro da nova posição é desenhado e fica parado
+        mediaClock.Controller.SpeedRatio = VELOCIDADE_CONGELADA
         mediaClock.Controller.Resume()
         mediaClock.Controller.Seek(TimeSpan.FromSeconds(novaPosicao), TimeSeekOrigin.BeginTime)
-        ' Prioridade Render: pausa antes do próximo evento de teclado (Background ficaria preso com a tecla repetindo
-        ' e o vídeo avançaria entre os passos)
-        Dispatcher.BeginInvoke(DispatcherPriority.Render, Sub()
-                                                              If Not estaReproduzindo AndAlso mediaClock IsNot Nothing Then
-                                                                  mediaClock.Controller.Pause()
-                                                              End If
-                                                          End Sub)
+
+        ' Pausa de verdade só depois que os passos terminarem (cada passo reinicia o contador)
+        timerPausaPasso.Stop()
+        timerPausaPasso.Start()
 
         slLinhaTempo.Value = novaPosicao
         lblTempoAtual.Text = FormatarTempo(novaPosicao)
+    End Sub
+
+    Private Sub TimerPausaPasso_Tick(sender As Object, e As EventArgs) Handles timerPausaPasso.Tick
+        timerPausaPasso.Stop()
+        If mediaClock Is Nothing Then Return
+        mediaClock.Controller.SpeedRatio = 1
+        If Not estaReproduzindo Then mediaClock.Controller.Pause()
     End Sub
 
     ' --- MODO CRONOANÁLISE ---
