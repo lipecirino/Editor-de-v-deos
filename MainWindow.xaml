@@ -756,14 +756,19 @@
                                         <DataTemplate>
                                             <Button x:Name="btnVis" Content="&#xE768;" FontFamily="{StaticResource FonteIcones}" Width="28" Height="24" FontSize="12"
                                                     Foreground="#FF007AFF" Background="#FFE5F1FF" BorderThickness="0" Cursor="Hand"
-                                                    HorizontalAlignment="Center"
-                                                    ToolTip="Visualizar: reproduz só os trechos desta linha (clique de novo para desligar)"
+                                                    HorizontalAlignment="Center" IsEnabled="{Binding PodeVisualizar}"
+                                                    ToolTip="Visualizar: reproduz só os trechos desta linha (indisponível enquanto houver cortes no vídeo)"
                                                     Click="BtnVisualizarCrono_Click">
                                                 <Button.Template>
                                                     <ControlTemplate TargetType="Button">
                                                         <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="6">
                                                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                         </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsEnabled" Value="False">
+                                                                <Setter TargetName="bd" Property="Opacity" Value="0.35"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
                                                     </ControlTemplate>
                                                 </Button.Template>
                                             </Button>

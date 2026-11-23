@@ -214,6 +214,20 @@ Public Class CronoAnaliseEntry
         End Set
     End Property
 
+    ' False quando há cortes reais a fazer no vídeo (a visualização fica desabilitada)
+    Private _podeVisualizar As Boolean = True
+
+    Public Property PodeVisualizar As Boolean
+        Get
+            Return _podeVisualizar
+        End Get
+        Set(value As Boolean)
+            If _podeVisualizar = value Then Return
+            _podeVisualizar = value
+            RaisePropertyChanged(NameOf(PodeVisualizar))
+        End Set
+    End Property
+
     ' Indica que a reprodução está travada nos trechos desta linha (botão "visualizar")
     Private _visualizando As Boolean = False
 
@@ -669,6 +683,18 @@ Partial Class MainWindow
         Return If(videoAtual IsNot Nothing, videoAtual.Segmentos, New List(Of SegmentoCorte)())
     End Function
 
+    ' A visualização da cronoanálise só vale quando não há cortes reais (ou 1º tempo pendente) no vídeo
+    Private Function TemCortesNoVideo() As Boolean
+        Return videoAtual IsNot Nothing AndAlso (videoAtual.Segmentos.Count > 0 OrElse videoAtual.TempoPendente >= 0)
+    End Function
+
+    Private Sub AtualizarPodeVisualizar()
+        Dim permitido As Boolean = Not TemCortesNoVideo()
+        For Each ce In cronoEntries
+            ce.PodeVisualizar = permitido
+        Next
+    End Sub
+
     Private Sub RecalcularSegmentosPreview()
         segmentosPreview = New List(Of SegmentoCorte)()
         If previewEntry Is Nothing Then Return
@@ -724,6 +750,7 @@ Partial Class MainWindow
         Dim entry = If(btn IsNot Nothing, TryCast(btn.DataContext, CronoAnaliseEntry), Nothing)
         If entry Is Nothing Then Return
         e.Handled = True
+        If TemCortesNoVideo() Then Return
 
         If Object.ReferenceEquals(entry, previewEntry) AndAlso previewTrava Then
             ' Desliga a trava (os trechos continuam visíveis na timeline)
@@ -951,6 +978,7 @@ Partial Class MainWindow
         Next
 
         videoTarefa.TemCronoAnalise = (cache.CronoAnalises.Count > 0)
+        AtualizarPodeVisualizar()
 
         ' Atualizar análise estatística após carregar dados
         AtualizarAnaliseEstatistica()
@@ -1527,6 +1555,13 @@ Partial Class MainWindow
     End Sub
 
     Private Sub AtualizarSegmentosVisuais()
+        ' Com cortes reais no vídeo, desabilita a visualização da cronoanálise (e desliga a que estiver ativa)
+        AtualizarPodeVisualizar()
+        If TemCortesNoVideo() AndAlso previewEntry IsNot Nothing Then
+            LimparPreviewCrono()
+            Return
+        End If
+
         ' Remove marcadores antigos (círculos/faixas) da linha do tempo principal
         For i = canvasCorte.Children.Count - 1 To 0 Step -1
             Dim fe = TryCast(canvasCorte.Children(i), FrameworkElement)
@@ -2418,7 +2453,7 @@ Partial Class MainWindow
         ' Clique num registro: mostra os trechos dele na timeline como cortes
         If Not removendoSelecaoInvalida AndAlso gridCrono.SelectedCells.Count > 0 Then
             Dim ultima = TryCast(gridCrono.SelectedCells(gridCrono.SelectedCells.Count - 1).Item, CronoAnaliseEntry)
-            If ultima IsNot Nothing Then MostrarPreviewCrono(ultima)
+            If ultima IsNot Nothing AndAlso Not TemCortesNoVideo() Then MostrarPreviewCrono(ultima)
         End If
 
         Dim valores As New List(Of Double)
