@@ -1564,6 +1564,12 @@ Partial Class MainWindow
     Private Sub SegmentoTag_MouseLeftButtonDown(sender As Object, e As MouseButtonEventArgs)
         Dim fe = TryCast(sender, FrameworkElement)
         Dim seg = If(fe IsNot Nothing, TryCast(fe.Tag, SegmentoCorte), Nothing)
+        AlternarTravaSegmento(seg)
+        e.Handled = True
+    End Sub
+
+    ' Trava/destrava a reprodução no segmento (usado pelos círculos/linhas numerados da timeline e pelos chips)
+    Private Sub AlternarTravaSegmento(seg As SegmentoCorte)
         If seg Is Nothing OrElse mediaClock Is Nothing Then Return
 
         If Object.ReferenceEquals(seg, segmentoTravado) Then
@@ -1572,7 +1578,6 @@ Partial Class MainWindow
             segmentoTravado = seg
             IrParaTempo(seg.Inicio)
         End If
-        e.Handled = True
         AtualizarSegmentosVisuais()
     End Sub
 
@@ -1629,7 +1634,6 @@ Partial Class MainWindow
             Dim fe = TryCast(canvasCorte.Children(i), FrameworkElement)
             If fe IsNot Nothing AndAlso Object.Equals(fe.Tag, "seg") Then canvasCorte.Children.RemoveAt(i)
         Next
-        canvasSegmentos.Children.Clear()
         wrapSegmentos.Children.Clear()
 
         Dim ativo As Boolean = videoAtual IsNot Nothing
@@ -1666,7 +1670,6 @@ Partial Class MainWindow
         svSegmentos.Visibility = If(ativo AndAlso segs.Count > 0, Visibility.Visible, Visibility.Collapsed)
 
         If Not ativo OrElse segs.Count = 0 Then
-            canvasSegmentos.Visibility = Visibility.Collapsed
             Return
         End If
 
@@ -1698,10 +1701,8 @@ Partial Class MainWindow
         Dim maximo = slLinhaTempo.Maximum
         Dim larguraCanvas = canvasCorte.ActualWidth
         If maximo <= 0 OrElse larguraCanvas <= 0 Then
-            canvasSegmentos.Visibility = Visibility.Collapsed
             Return
         End If
-        canvasSegmentos.Visibility = Visibility.Visible
 
         For i = 0 To segs.Count - 1
             Dim seg = segs(i)
@@ -1718,35 +1719,31 @@ Partial Class MainWindow
             ' Linha fina com a largura do segmento; cada segmento ocupa uma "pista" empilhada acima da linha do tempo
             Dim centroPista As Double = -4 - (pistas(i) * 7)
             Dim linha As New Border() With {
-                .Width = largura, .Height = 4, .CornerRadius = New CornerRadius(2), .Tag = "seg", .IsHitTestVisible = False,
+                .Width = largura, .Height = 4, .CornerRadius = New CornerRadius(2), .Tag = "seg", .Cursor = Cursors.Hand, .ToolTip = dica & vbCrLf & "Clique para travar/destravar a reprodução neste segmento",
                 .Background = New SolidColorBrush(cor)}
             Canvas.SetLeft(linha, pxInicio)
             Canvas.SetTop(linha, centroPista - 2)
+            Dim segClique = seg
+            AddHandler linha.MouseLeftButtonDown, Sub(s, ev)
+                                                      AlternarTravaSegmento(segClique)
+                                                      ev.Handled = True
+                                                  End Sub
             canvasCorte.Children.Add(linha)
 
             ' Círculo numerado na pista do segmento (centro do segmento)
             Dim circulo As New Border() With {
-                .Width = 18, .Height = 18, .CornerRadius = New CornerRadius(9), .Tag = "seg", .IsHitTestVisible = False,
+                .Width = 18, .Height = 18, .CornerRadius = New CornerRadius(9), .Tag = "seg", .Cursor = Cursors.Hand, .ToolTip = dica & vbCrLf & "Clique para travar/destravar a reprodução neste segmento",
                 .Background = New SolidColorBrush(cor), .BorderBrush = If(travado, Brushes.Black, Brushes.White),
                 .BorderThickness = New Thickness(If(travado, 2, 1.5)),
                 .Child = New TextBlock() With {.Text = (i + 1).ToString(), .Foreground = Brushes.White, .FontSize = 10,
                     .FontWeight = FontWeights.Bold, .HorizontalAlignment = HorizontalAlignment.Center, .VerticalAlignment = VerticalAlignment.Center}}
             Canvas.SetLeft(circulo, pxInicio + (largura / 2) - 9)
             Canvas.SetTop(circulo, centroPista - 9)
+            AddHandler circulo.MouseLeftButtonDown, Sub(s, ev)
+                                                        AlternarTravaSegmento(segClique)
+                                                        ev.Handled = True
+                                                    End Sub
             canvasCorte.Children.Add(circulo)
-
-            ' Bloco abaixo da linha do tempo, com o comprimento do segmento (clique = travar reprodução)
-            Dim bloco As New Border() With {
-                .Width = largura, .Height = 24, .CornerRadius = New CornerRadius(4), .ToolTip = dica & vbCrLf & "Clique para travar/destravar a reprodução neste segmento",
-                .Background = New SolidColorBrush(cor), .ClipToBounds = True, .Cursor = Cursors.Hand, .Tag = seg,
-                .BorderBrush = Brushes.Black, .BorderThickness = New Thickness(If(travado, 2, 0)),
-                .Child = New TextBlock() With {.Text = $"{If(travado, ChrW(&HE72E) & " ", "")}{i + 1} · {FormatarTempo(seg.Duracao)}", .FontFamily = New FontFamily("Segoe UI Variable Text, Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"), .Foreground = Brushes.White,
-                    .FontSize = 10, .FontWeight = FontWeights.SemiBold, .HorizontalAlignment = HorizontalAlignment.Center,
-                    .VerticalAlignment = VerticalAlignment.Center, .TextTrimming = TextTrimming.CharacterEllipsis}}
-            AddHandler bloco.MouseLeftButtonDown, AddressOf SegmentoTag_MouseLeftButtonDown
-            Canvas.SetLeft(bloco, pxInicio)
-            Canvas.SetTop(bloco, 0)
-            canvasSegmentos.Children.Add(bloco)
         Next
     End Sub
 

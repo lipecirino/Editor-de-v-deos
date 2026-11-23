@@ -195,7 +195,7 @@
                             PreviewMouseLeftButtonDown="SlLinhaTempo_PreviewMouseLeftButtonDown"
                             Panel.ZIndex="1"/>
 
-                    <Canvas Name="canvasCorte" IsHitTestVisible="False" VerticalAlignment="Center" Height="16" Margin="6,0,6,0" Panel.ZIndex="2">
+                    <Canvas Name="canvasCorte" VerticalAlignment="Center" Height="16" Margin="6,0,6,0" Panel.ZIndex="2">
                         <Border Name="bdrCorte" Height="16" BorderBrush="Black" BorderThickness="4,1,4,1" Background="Transparent" Visibility="Hidden" CornerRadius="2"/>
                     </Canvas>
 
@@ -208,9 +208,6 @@
 
                 <TextBlock Name="lblTempoTotal" Text="00:00:00" Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="#FF86868B" FontFamily="Consolas"/>
 
-                <!-- ===== LINHA 2: Blocos dos segmentos, logo abaixo da linha do tempo ===== -->
-                <Canvas Name="canvasSegmentos" Grid.Row="1" Grid.Column="1" Height="26" Margin="6,8,6,0"
-                        ClipToBounds="False" Visibility="Collapsed"/>
 
                 <!-- ===== LINHA 3: Barra de ferramentas (reprodução | cortar | ferramentas) ===== -->
                 <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,12,0,0">
