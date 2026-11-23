@@ -5,18 +5,19 @@
         Height="520" Width="460"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
-        ShowInTaskbar="False">
+        ShowInTaskbar="False"
+        Background="#FFF5F5F7" FontFamily="Segoe UI Variable Text, Segoe UI" TextElement.Foreground="#FF1D1D1F">
 
     <Window.Resources>
         <Style x:Key="LabelProp" TargetType="TextBlock">
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="#444"/>
+            <Setter Property="Foreground" Value="#FF86868B"/>
             <Setter Property="Width" Value="160"/>
             <Setter Property="VerticalAlignment" Value="Top"/>
             <Setter Property="Margin" Value="0,0,8,0"/>
         </Style>
         <Style x:Key="ValorProp" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#222"/>
+            <Setter Property="Foreground" Value="#FF1D1D1F"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
         </Style>
         <Style x:Key="LinhaGrid" TargetType="StackPanel">
@@ -33,21 +34,21 @@
         </Grid.RowDefinitions>
 
         <!-- Cabeçalho com ícone e nome do arquivo -->
-        <Border Grid.Row="0" Background="#FF033150" Padding="16,12">
+        <Border Grid.Row="0" Background="Transparent" Padding="20,16,20,8">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="🎬" FontSize="28" VerticalAlignment="Center" Margin="0,0,12,0"/>
                 <StackPanel VerticalAlignment="Center">
                     <TextBlock Name="lblNomeArquivo" Text="nome_do_arquivo.mp4"
-                               Foreground="White" FontSize="14" FontWeight="Bold"
+                               Foreground="#FF1D1D1F" FontSize="16" FontWeight="SemiBold"
                                TextWrapping="Wrap" MaxWidth="340"/>
                     <TextBlock Name="lblTipoArquivo" Text="Arquivo de Vídeo"
-                               Foreground="#AACDE8" FontSize="11" Margin="0,2,0,0"/>
+                               Foreground="#FF86868B" FontSize="11" Margin="0,2,0,0"/>
                 </StackPanel>
             </StackPanel>
         </Border>
 
         <!-- Abas de conteúdo -->
-        <TabControl Grid.Row="1" BorderThickness="0" Background="White" Margin="0">
+        <TabControl Grid.Row="1" BorderThickness="0" Background="White" Margin="16,4,16,0">
             <TabItem Header="  Geral  ">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16,14,16,0">
                     <StackPanel>
@@ -181,22 +182,8 @@
         </TabControl>
 
         <!-- Botão Fechar -->
-        <Button Grid.Row="2" Content="Fechar" Width="90" Height="30"
-                HorizontalAlignment="Right" Margin="0,8,16,0"
-                Click="BtnFechar_Click"
-                Background="#FF033150" Foreground="White" BorderThickness="0">
-            <Button.Template>
-                <ControlTemplate TargetType="Button">
-                    <Border Background="{TemplateBinding Background}" CornerRadius="6">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Opacity" Value="0.85"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Button.Template>
-        </Button>
+        <Button Grid.Row="2" Content="Fechar" Width="90" Height="30" Style="{StaticResource BotaoPrimario}"
+                HorizontalAlignment="Right" Margin="0,8,20,0" FontSize="13"
+                Click="BtnFechar_Click"/>
     </Grid>
 </Window>

@@ -6,37 +6,11 @@
         WindowStartupLocation="CenterOwner"
         WindowStyle="ToolWindow"
         ResizeMode="CanResize"
-        Background="#FFF5F7FA"
-        FontFamily="Segoe UI">
-    
-    <Window.Resources>
-        <Style TargetType="Button">
-            <Setter Property="Background" Value="#FF033150"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="14,6"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="6">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Opacity" Value="0.85"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Opacity" Value="0.7"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-    </Window.Resources>
+        Background="#FFF5F5F7"
+        FontFamily="Segoe UI Variable Text, Segoe UI"
+        TextElement.Foreground="#FF1D1D1F">
 
-    <Grid Margin="16">
+    <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -44,61 +18,62 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <TextBlock Grid.Row="0" Text="Personalize os atalhos de teclado" 
-                   FontSize="16" FontWeight="SemiBold" Foreground="#FF033150" 
-                   Margin="0,0,0,16"/>
+        <TextBlock Grid.Row="0" Text="Atalhos de teclado"
+                   FontSize="18" FontWeight="SemiBold" Foreground="#FF1D1D1F"
+                   Margin="0,0,0,14"/>
 
-        <!-- Lista de atalhos -->
-        <Grid Grid.Row="1">
+        <!-- Lista de atalhos (cartão) -->
+        <Border Grid.Row="1" Background="White" BorderBrush="#FFE5E5EA" BorderThickness="1" CornerRadius="10" VerticalAlignment="Top">
+        <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <!-- Cabeçalho da lista -->
-            <Border Grid.Row="0" Background="#FFE8EEF4" CornerRadius="6,6,0,0" Padding="12,8">
+            <Border Grid.Row="0" BorderBrush="#FFE5E5EA" BorderThickness="0,0,0,1" Padding="14,8">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="Ação" FontWeight="Bold" Foreground="#FF264A66"/>
-                    <TextBlock Grid.Column="1" Text="Tecla de Atalho" FontWeight="Bold" Foreground="#FF264A66" MinWidth="140" TextAlignment="Center"/>
+                    <TextBlock Grid.Column="0" Text="Ação" FontSize="11" FontWeight="SemiBold" Foreground="#FF86868B"/>
+                    <TextBlock Grid.Column="1" Text="Tecla de atalho" FontSize="11" FontWeight="SemiBold" Foreground="#FF86868B" MinWidth="140" TextAlignment="Center"/>
                 </Grid>
             </Border>
 
             <!-- Linhas de configuração -->
-            <ItemsControl Grid.Row="1" x:Name="listaAtalhos" BorderBrush="#FFD4DEE8" BorderThickness="1,0,1,1">
+            <ItemsControl Grid.Row="1" x:Name="listaAtalhos" BorderThickness="0">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Border Padding="12,0" BorderBrush="#FFE6EDF5" BorderThickness="0,0,0,1" Background="White">
+                        <Border Padding="14,0" BorderBrush="#FFF2F2F7" BorderThickness="0,0,0,1" Background="White">
                             <Grid MinHeight="42">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
 
-                                <TextBlock Grid.Column="0" Text="{Binding NomeExibicao}" VerticalAlignment="Center" Foreground="#333" FontSize="13"/>
+                                <TextBlock Grid.Column="0" Text="{Binding NomeExibicao}" VerticalAlignment="Center" Foreground="#FF1D1D1F" FontSize="13"/>
 
-                                <Border Grid.Column="1" MinWidth="140" Height="30" Margin="0,6" 
-                                        Background="#FFF1F4F8" CornerRadius="4" 
-                                        BorderBrush="#FFCCD6E2" BorderThickness="1"
+                                <Border Grid.Column="1" MinWidth="140" Height="30" Margin="0,6"
+                                        Background="#FFF2F2F7" CornerRadius="8"
+                                        BorderBrush="Transparent" BorderThickness="1"
                                         Cursor="Hand" Tag="{Binding}"
                                         ToolTip="Clique e pressione a tecla desejada">
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Style.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter Property="Background" Value="#FFE2E8F0"/>
-                                                    <Setter Property="BorderBrush" Value="#FF3399FF"/>
+                                                    <Setter Property="Background" Value="#FFE8E8ED"/>
+                                                    <Setter Property="BorderBrush" Value="#FF007AFF"/>
                                                 </Trigger>
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
                                     <Grid>
-                                        <TextBlock x:Name="txtTecla" Text="{Binding TeclaExibicao}" 
+                                        <TextBlock x:Name="txtTecla" Text="{Binding TeclaExibicao}"
                                                    VerticalAlignment="Center" HorizontalAlignment="Center"
-                                                   Foreground="#FF033150" FontWeight="SemiBold" FontSize="13"/>
+                                                   Foreground="#FF007AFF" FontWeight="SemiBold" FontSize="13"/>
                                     </Grid>
                                 </Border>
                             </Grid>
@@ -107,18 +82,19 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
         </Grid>
+        </Border>
 
         <!-- Botões inferiores -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
-            <Button Name="btnRestaurarPadroes" Content="Restaurar Padrões" 
-                    Background="#FF666666" Click="BtnRestaurarPadroes_Click"
-                    Margin="0,0,10,0"/>
-            <Button Name="btnSalvar" Content="Salvar" Click="BtnSalvar_Click" Margin="0,0,8,0"/>
-            <Button Name="btnCancelar" Content="Cancelar" Background="#FF999999" Click="BtnCancelar_Click"/>
+            <Button Name="btnRestaurarPadroes" Content="Restaurar padrões" Style="{StaticResource BotaoArredondado}" Padding="14,7" FontSize="13"
+                    Click="BtnRestaurarPadroes_Click" Margin="0,0,8,0"/>
+            <Button Name="btnCancelar" Content="Cancelar" Style="{StaticResource BotaoArredondado}" Padding="14,7" FontSize="13"
+                    Click="BtnCancelar_Click" Margin="0,0,8,0"/>
+            <Button Name="btnSalvar" Content="Salvar" Style="{StaticResource BotaoPrimario}" Padding="18,7" FontSize="13" Click="BtnSalvar_Click"/>
         </StackPanel>
 
         <!-- Dica -->
-        <TextBlock Grid.Row="2" Text="Dica: Clique no campo da tecla e pressione a tecla desejada no teclado." 
-                   FontSize="11" Foreground="#888" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="0,16,0,0"/>
+        <TextBlock Grid.Row="2" Text="Clique no campo da tecla e pressione a tecla desejada."
+                   FontSize="11" Foreground="#FF86868B" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,16,0,0"/>
     </Grid>
 </Window>

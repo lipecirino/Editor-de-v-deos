@@ -125,16 +125,16 @@ Public Class SettingsWindow
 
         _itemEmEdicao = item
         _borderEmEdicao = border
-        border.Background = New System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(&HDD, &HEB, &HFF))
-        border.BorderBrush = New System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(&H33, &H99, &HFF))
-        border.BorderThickness = New Thickness(2)
+        border.Background = New System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(&HE5, &HF1, &HFF))
+        border.BorderBrush = New System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(&H0, &H7A, &HFF))
+        border.BorderThickness = New Thickness(1.5)
         border.ToolTip = "Aguardando tecla... Pressione uma tecla"
     End Sub
 
     Private Sub FinalizarEdicaoSemAlteracao()
         If _borderEmEdicao IsNot Nothing Then
-            _borderEmEdicao.Background = New System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(&HF1, &HF4, &HF8))
-            _borderEmEdicao.BorderBrush = New System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(&HCC, &HD6, &HE2))
+            _borderEmEdicao.Background = New System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(&HF2, &HF2, &HF7))
+            _borderEmEdicao.BorderBrush = System.Windows.Media.Brushes.Transparent
             _borderEmEdicao.BorderThickness = New Thickness(1)
             _borderEmEdicao.ToolTip = "Clique e pressione a tecla desejada"
             _borderEmEdicao = Nothing

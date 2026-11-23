@@ -6,5 +6,162 @@
  ShutdownMode="OnMainWindowClose">
     <Application.Resources>
 
+        <!-- ===== Padrão visual (inspirado no Apple): fundo cinza-claro, cartões brancos, azul #007AFF como destaque ===== -->
+
+        <!-- Botão base: secundário (cinza-claro com texto azul) -->
+        <Style x:Key="BotaoArredondado" TargetType="Button">
+            <Setter Property="Background" Value="#FFE9E9EE"/>
+            <Setter Property="Foreground" Value="#FF007AFF"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="b" Property="Opacity" Value="0.8"/></Trigger>
+                            <Trigger Property="IsPressed" Value="True"><Setter TargetName="b" Property="Opacity" Value="0.6"/></Trigger>
+                            <Trigger Property="IsEnabled" Value="False"><Setter TargetName="b" Property="Opacity" Value="0.4"/></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Ação principal: azul preenchido -->
+        <Style x:Key="BotaoPrimario" TargetType="Button" BasedOn="{StaticResource BotaoArredondado}">
+            <Setter Property="Background" Value="#FF007AFF"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <!-- Ação destrutiva: cinza-claro com texto vermelho -->
+        <Style x:Key="BotaoPerigo" TargetType="Button" BasedOn="{StaticResource BotaoArredondado}">
+            <Setter Property="Background" Value="#FFE9E9EE"/>
+            <Setter Property="Foreground" Value="#FFFF3B30"/>
+        </Style>
+
+        <!-- Alternância: cinza-claro; quando ligado, azul preenchido -->
+        <Style x:Key="BotaoArredondadoToggle" TargetType="ToggleButton">
+            <Setter Property="Background" Value="#FFE9E9EE"/>
+            <Setter Property="Foreground" Value="#FF007AFF"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="#FF007AFF"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="b" Property="Opacity" Value="0.8"/></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- GroupBox como "cartão": título pequeno e cinza acima, conteúdo em caixa branca arredondada -->
+        <Style TargetType="GroupBox">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="GroupBox">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <ContentPresenter ContentSource="Header" Margin="4,0,0,6" TextElement.FontSize="12"
+                                              TextElement.FontWeight="SemiBold" TextElement.Foreground="#FF86868B"/>
+                            <Border Grid.Row="1" Background="White" BorderBrush="#FFE5E5EA" BorderThickness="1" CornerRadius="10"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter/>
+                            </Border>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Expander como cartão, com seta que gira -->
+        <Style TargetType="Expander">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Expander">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="#FFE5E5EA" BorderThickness="1" CornerRadius="10"
+                                Padding="{TemplateBinding Padding}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <ToggleButton Grid.Row="0" Cursor="Hand" Focusable="False"
+                                              IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                    <ToggleButton.Template>
+                                        <ControlTemplate TargetType="ToggleButton">
+                                            <StackPanel Orientation="Horizontal" Background="Transparent">
+                                                <Path x:Name="chev" Data="M 0,0 L 4,4 L 8,0" Stroke="#FF86868B" StrokeThickness="1.6"
+                                                      VerticalAlignment="Center" Margin="0,0,8,0" RenderTransformOrigin="0.5,0.5">
+                                                    <Path.RenderTransform><RotateTransform Angle="-90"/></Path.RenderTransform>
+                                                </Path>
+                                                <ContentPresenter ContentSource="Content" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter TargetName="chev" Property="RenderTransform">
+                                                        <Setter.Value><RotateTransform Angle="0"/></Setter.Value>
+                                                    </Setter>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </ToggleButton.Template>
+                                    <TextBlock Text="{Binding Header, RelativeSource={RelativeSource AncestorType=Expander}}"
+                                               FontWeight="SemiBold" FontSize="12" Foreground="#FF1D1D1F"/>
+                                </ToggleButton>
+                                <ContentPresenter x:Name="conteudo" Grid.Row="1" Visibility="Collapsed"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsExpanded" Value="True">
+                                <Setter TargetName="conteudo" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Abas: texto cinza, aba ativa em azul com sublinhado -->
+        <Style TargetType="TabItem">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="tab" Background="Transparent" BorderBrush="Transparent" BorderThickness="0,0,0,2" Padding="12,8" Cursor="Hand">
+                            <ContentPresenter ContentSource="Header" TextElement.FontWeight="SemiBold" TextElement.FontSize="12"
+                                              TextElement.Foreground="#FF86868B" x:Name="cab"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="tab" Property="BorderBrush" Value="#FF007AFF"/>
+                                <Setter TargetName="cab" Property="TextElement.Foreground" Value="#FF007AFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
     </Application.Resources>
 </Application>
