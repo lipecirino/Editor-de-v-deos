@@ -1384,8 +1384,18 @@ Partial Class MainWindow
         wrapSegmentos.Children.Clear()
 
         Dim ativo As Boolean = videoAtual IsNot Nothing
-        lblProximaParte.Text = If(ativo, $"Próxima: parte {videoAtual.Segmentos.Count + 1}" &
-            If(videoAtual.TempoPendente >= 0, $"  (1º tempo em {FormatarTempo(videoAtual.TempoPendente)}, aguardando o 2º)", ""), "")
+        Dim nSeg As Integer = If(ativo, videoAtual.Segmentos.Count, 0)
+        If Not ativo Then
+            lblProximaParte.Text = "Selecione um vídeo na galeria."
+            txtDicaSegmentos.Text = ""
+        ElseIf videoAtual.TempoPendente >= 0 Then
+            lblProximaParte.Text = $"Parte {nSeg + 1}: 1º tempo em {FormatarTempo(videoAtual.TempoPendente)}. Vá ao ponto final e clique em ✂ Registrar tempo."
+        Else
+            lblProximaParte.Text = If(nSeg = 0, "Nenhum segmento", $"{nSeg} segmento(s)")
+        End If
+        txtDicaSegmentos.Text = If(ativo AndAlso nSeg = 0 AndAlso videoAtual.TempoPendente < 0,
+            "Sem segmentos, o vídeo é exportado inteiro. Para cortar, clique em ✂ Registrar tempo no início do trecho e de novo no fim; repita para criar mais partes.", "")
+        txtDicaSegmentos.Visibility = If(txtDicaSegmentos.Text = "", Visibility.Collapsed, Visibility.Visible)
         ' Destrava se o segmento travado deixou de existir (removido, outro vídeo, modo desligado)
         If segmentoTravado IsNot Nothing AndAlso (Not ativo OrElse Not videoAtual.Segmentos.Contains(segmentoTravado)) Then
             segmentoTravado = Nothing
@@ -1395,7 +1405,7 @@ Partial Class MainWindow
         Dim pistas As Integer() = If(ativo, CalcularPistas(videoAtual.Segmentos), New Integer() {})
         Dim nPistas As Integer = If(pistas.Length > 0, pistas.Max() + 1, 0)
         Dim extraTopo As Double = If(nPistas > 0, Math.Max(0, 13 + (nPistas - 1) * 7 - 24), 0)
-        gridControles.Margin = New Thickness(0, 15 + extraTopo, 0, 20)
+        gridControles.Margin = New Thickness(0, 15 + extraTopo, 0, 12)
 
         btnLimparSegmentos.Visibility = If(ativo AndAlso videoAtual.Segmentos.Count > 0, Visibility.Visible, Visibility.Collapsed)
         svSegmentos.Visibility = If(ativo AndAlso videoAtual.Segmentos.Count > 0, Visibility.Visible, Visibility.Collapsed)
@@ -1633,6 +1643,8 @@ Partial Class MainWindow
 
                     Dim engine = FFMpegArguments.FromFileInput(tarefa.Caminho).
                         OutputToFile(destinoParte, True, Sub(opt)
+                                                      ' Codificação compatível com qualquer player (evita 10-bit/4:4:4 herdados do original)
+                                                      opt.WithVideoCodec("libx264").ForcePixelFormat("yuv420p").WithAudioCodec("aac")
                                                       If bitrateAlvo > 0 Then opt.WithVideoBitrate(bitrateAlvo)
                                                       If parteInicio > 0 Then opt.Seek(TimeSpan.FromSeconds(parteInicio))
                                                       If parteFim > parteInicio Then opt.WithDuration(TimeSpan.FromSeconds(parteFim - parteInicio))
@@ -1899,8 +1911,7 @@ Partial Class MainWindow
 
     Private Sub BtnModoCrono_Checked(sender As Object, e As RoutedEventArgs)
         modoCronoAtivo = True
-        grpConfigVideo.Visibility = Visibility.Collapsed
-        painelExportacao.Visibility = Visibility.Collapsed
+        painelConfigCompleto.Visibility = Visibility.Collapsed
         pnlCrono.Visibility = Visibility.Visible
         btnModoCrono.Background = New SolidColorBrush(Color.FromRgb(106, 76, 147))
         btnModoCrono.Foreground = Brushes.White
@@ -1915,8 +1926,7 @@ Partial Class MainWindow
         End If
 
         pnlCrono.Visibility = Visibility.Collapsed
-        grpConfigVideo.Visibility = Visibility.Visible
-        painelExportacao.Visibility = Visibility.Visible
+        painelConfigCompleto.Visibility = Visibility.Visible
         btnModoCrono.ClearValue(Button.BackgroundProperty)
         btnModoCrono.ClearValue(Button.ForegroundProperty)
     End Sub

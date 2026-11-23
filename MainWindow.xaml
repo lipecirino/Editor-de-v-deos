@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Editor de Vídeo (Padronização)" 
-        Height="750" Width="1050" MinHeight="650" MinWidth="850"
+        Height="750" Width="1050" MinHeight="650" MinWidth="980"
         WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
@@ -154,7 +154,7 @@
             <StackPanel Grid.Row="2" Margin="0,10,0,0">
                 <Button Content="+ Video" Click="BtnAbrirArquivos_Click" Style="{StaticResource BotaoArredondado}" Height="35" Margin="0,0,0,5" Background="#FF033150"/>
                 <Button Content="+ Pasta" Click="BtnAbrirPasta_Click" Style="{StaticResource BotaoArredondado}" Height="35" Margin="0,0,0,5" Background="#FF033150"/>
-                <Button Content="Limpar" Click="BtnLimpar_Click" Style="{StaticResource BotaoArredondado}" Height="35" Background="#FFA90C0C"/>
+                <Button Content="Limpar lista" Click="BtnLimpar_Click" Style="{StaticResource BotaoArredondado}" Height="35" Background="#FFA90C0C"/>
             </StackPanel>
         </Grid>
 
@@ -179,43 +179,24 @@
                 </Grid>
             </Border>
 
-            <Grid Name="gridControles" Grid.Row="1" Margin="0,15,0,20">
+            <Grid Name="gridControles" Grid.Row="1" Margin="0,15,0,12">
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <Button Name="btnFrameAnterior" Content="⏮" Width="45" Height="35" Style="{StaticResource BotaoArredondado}" Click="BtnFrameAnterior_Click" ToolTip="Frame Anterior"/>
-                <Button Name="btnPlayPause" Content="▶" Width="45" Height="35" Style="{StaticResource BotaoArredondado}" Click="BtnPlayPause_Click" Grid.Column="1" Margin="5,0,0,0"/>
-                <Button Name="btnFrameProximo" Content="⏭" Width="45" Height="35" Style="{StaticResource BotaoArredondado}" Click="BtnFrameProximo_Click" Grid.Column="2" Margin="5,0,0,0" ToolTip="Próximo Frame"/>
-                <ToggleButton Name="btnMuteAudio" Content="🔊" Width="45" Height="35" Grid.Column="3" Margin="5,0,0,0"
-                              Style="{StaticResource BotaoArredondadoToggle}" Background="#FF033150"
-                              Checked="BtnMuteAudio_Checked" Unchecked="BtnMuteAudio_Unchecked"
-                              ToolTip="Ativar/Desativar Áudio do Vídeo"/>
-                <ToggleButton Name="btnModoCrono" Content="⏱ Crono" Width="85" Height="35" Grid.Column="4" Margin="8,0,0,0"
-                              Style="{StaticResource BotaoArredondadoToggle}" Background="#FF6A4C93"
-                              Checked="BtnModoCrono_Checked" Unchecked="BtnModoCrono_Unchecked"
-                              ToolTip="Ativar/Desativar Modo Cronoanálise"/>
-                <TextBlock Name="lblTempoAtual" Text="00:00:00" Grid.Column="5" VerticalAlignment="Center" Margin="15,0" Foreground="#666"/>
 
-                <Grid Grid.Column="6" Name="gridSliderCorte" SizeChanged="GridSliderCorte_SizeChanged">
+                <!-- ===== LINHA 1: Linha do tempo em largura total ===== -->
+                <TextBlock Name="lblTempoAtual" Text="00:00:00" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0" Foreground="#666" FontFamily="Consolas"/>
 
-                    <Slider Name="slLinhaTempo" Style="{StaticResource SliderYoutube}" 
-                            Thumb.DragStarted="SlLinhaTempo_DragStarted" 
+                <Grid Grid.Row="0" Grid.Column="1" Name="gridSliderCorte" Height="35" SizeChanged="GridSliderCorte_SizeChanged">
+                    <Slider Name="slLinhaTempo" Style="{StaticResource SliderYoutube}"
+                            Thumb.DragStarted="SlLinhaTempo_DragStarted"
                             Thumb.DragCompleted="SlLinhaTempo_DragCompleted"
                             ValueChanged="SlLinhaTempo_ValueChanged"
                             PreviewMouseLeftButtonDown="SlLinhaTempo_PreviewMouseLeftButtonDown"
@@ -231,42 +212,71 @@
                         </Border>
                     </Popup>
                 </Grid>
-                <TextBlock Name="lblTempoTotal" Text="00:00:00" Grid.Column="7" VerticalAlignment="Center" Margin="15,0" Foreground="#666"/>
 
-                <!-- Blocos dos segmentos (corte múltiplo), abaixo da linha do tempo principal -->
-                <Canvas Name="canvasSegmentos" Grid.Row="1" Grid.Column="6" Height="26" Margin="6,8,6,0"
+                <TextBlock Name="lblTempoTotal" Text="00:00:00" Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="#666" FontFamily="Consolas"/>
+
+                <!-- ===== LINHA 2: Blocos dos segmentos, logo abaixo da linha do tempo ===== -->
+                <Canvas Name="canvasSegmentos" Grid.Row="1" Grid.Column="1" Height="26" Margin="6,8,6,0"
                         ClipToBounds="False" Visibility="Collapsed"/>
 
-                <!-- Botão de Configurações (Engrenagem) -->
-                <Button Name="btnConfigAtalhos" Width="50" Height="35" Grid.Column="8" Margin="0,0,0,0"
-                        Style="{StaticResource BotaoArredondado}" Background="#FF555555"
-                        Click="BtnConfigAtalhos_Click"
-                        ToolTip="Configurar Atalhos de Teclado">
+                <!-- ===== LINHA 3: Barra de ferramentas (reprodução | cortar | ferramentas) ===== -->
+                <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,12,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Reprodução -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <Button Name="btnFrameAnterior" Content="⏮" Width="40" Height="35" Style="{StaticResource BotaoArredondado}" Click="BtnFrameAnterior_Click" ToolTip="Frame anterior"/>
+                        <Button Name="btnPlayPause" Content="▶" Width="40" Height="35" Style="{StaticResource BotaoArredondado}" Click="BtnPlayPause_Click" Margin="4,0,0,0" ToolTip="Reproduzir / Pausar"/>
+                        <Button Name="btnFrameProximo" Content="⏭" Width="40" Height="35" Style="{StaticResource BotaoArredondado}" Click="BtnFrameProximo_Click" Margin="4,0,0,0" ToolTip="Próximo frame"/>
+                        <ToggleButton Name="btnMuteAudio" Content="🔊" Width="40" Height="35" Margin="4,0,0,0"
+                                      Style="{StaticResource BotaoArredondadoToggle}" Background="#FF033150"
+                                      Checked="BtnMuteAudio_Checked" Unchecked="BtnMuteAudio_Unchecked"
+                                      ToolTip="Ativar/Desativar áudio do vídeo"/>
+                        <Button Name="btnVelocidadeMenos" Content="−" Width="36" Height="35" Margin="12,0,0,0"
+                                Style="{StaticResource BotaoArredondado}" Background="#FF555555"
+                                Click="BtnVelocidadeMenos_Click" FontSize="18" FontWeight="Bold"
+                                ToolTip="Diminuir velocidade"/>
+                        <TextBlock Name="lblVelocidade" Text="1.0×" VerticalAlignment="Center" TextAlignment="Center" Width="40"
+                                   Foreground="#FFCC6600" FontWeight="Bold" FontSize="13"
+                                   ToolTip="Velocidade atual de reprodução"/>
+                        <Button Name="btnVelocidadeMais" Content="+" Width="36" Height="35"
+                                Style="{StaticResource BotaoArredondado}" Background="#FF555555"
+                                Click="BtnVelocidadeMais_Click" FontSize="18" FontWeight="Bold"
+                                ToolTip="Aumentar velocidade"/>
+                    </StackPanel>
+
+                    <!-- Corte: ação principal, destacada no centro -->
+                    <Button Name="btnRegistrarTempo" Grid.Column="1" Content="✂  Registrar tempo" Click="BtnRegistrarTempo_Click"
+                            HorizontalAlignment="Center" MinWidth="160" Height="35" Padding="14,0"
+                            Style="{StaticResource BotaoArredondado}" Background="#FF0F766E" FontSize="13" FontWeight="SemiBold"
+                            ToolTip="Clique no início e depois no fim do trecho. O menor tempo vira o início e o maior o fim do segmento."/>
+
+                    <!-- Ferramentas -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                        <ToggleButton Name="btnModoCrono" Content="⏱ Crono" Width="75" Height="35"
+                                      Style="{StaticResource BotaoArredondadoToggle}" Background="#FF6A4C93"
+                                      Checked="BtnModoCrono_Checked" Unchecked="BtnModoCrono_Unchecked"
+                                      ToolTip="Ativar/Desativar modo cronoanálise"/>
+                        <Button Name="btnPropriedades" Width="40" Height="35" Margin="4,0,0,0"
+                                Style="{StaticResource BotaoArredondado}" Background="#FF555555"
+                                Click="BtnPropriedades_Click"
+                                ToolTip="Propriedades do arquivo de vídeo">
+                            <TextBlock Text="ℹ" FontSize="16" FontWeight="Bold"/>
+                        </Button>
+                        <Button Name="btnConfigAtalhos" Width="40" Height="35" Margin="4,0,0,0"
+                                Style="{StaticResource BotaoArredondado}" Background="#FF555555"
+                                Click="BtnConfigAtalhos_Click"
+                                ToolTip="Configurar atalhos de teclado">
                     <Viewbox Width="18" Height="18" Stretch="Uniform" HorizontalAlignment="Center" RenderTransformOrigin="0.62,0.529">
                         <Path Data="M9.5,1 L9.5,3.5 C9.1,3.6 8.7,3.7 8.3,3.9 L6.3,2.5 L5.5,3.9 L7.3,5.6 C7.1,5.9 6.9,6.3 6.8,6.7 L4.5,7.2 L4.5,8.8 L6.8,9.3 C6.9,9.7 7.1,10.1 7.3,10.4 L5.5,12.1 L6.3,13.5 L8.3,12.1 C8.7,12.3 9.1,12.4 9.5,12.5 L9.5,15 L10.5,15 L10.5,12.5 C10.9,12.4 11.3,12.3 11.7,12.1 L13.7,13.5 L14.5,12.1 L12.7,10.4 C12.9,10.1 13.1,9.7 13.2,9.3 L15.5,8.8 L15.5,7.2 L13.2,6.7 C13.1,6.3 12.9,5.9 12.7,5.6 L14.5,3.9 L13.7,2.5 L11.7,3.9 C11.3,3.7 10.9,3.6 10.5,3.5 L10.5,1 L9.5,1 Z M10,5 C11.7,5 13,6.3 13,8 C13,9.7 11.7,11 10,11 C8.3,11 7,9.7 7,8 C7,6.3 8.3,5 10,5 Z" Fill="White" HorizontalAlignment="Left"/>
                     </Viewbox>
-                </Button>
-
-                <!-- Botão Propriedades do Vídeo -->
-                <Button Name="btnPropriedades" Width="50" Height="35" Grid.Column="9" Margin="5,0,0,0"
-                        Style="{StaticResource BotaoArredondado}" Background="#FF555555"
-                        Click="BtnPropriedades_Click"
-                        ToolTip="Propriedades do arquivo de vídeo">
-                    <TextBlock Text="ℹ" FontSize="16" FontWeight="Bold"/>
-                </Button>
-
-                <!-- Controlos de Velocidade -->
-                <Button Name="btnVelocidadeMenos" Content="−" Width="32" Height="35" Grid.Column="10" Margin="5,0,0,0"
-                        Style="{StaticResource BotaoArredondado}" Background="#FF555555"
-                        Click="BtnVelocidadeMenos_Click" FontSize="18" FontWeight="Bold"
-                        ToolTip="Diminuir Velocidade"/>
-                <TextBlock Name="lblVelocidade" Text="1.0×" Grid.Column="11" VerticalAlignment="Center" 
-                           Margin="4,0" Foreground="#FFCC6600" FontWeight="Bold" FontSize="13"
-                           ToolTip="Velocidade atual de reprodução"/>
-                <Button Name="btnVelocidadeMais" Content="+" Width="32" Height="35" Grid.Column="12" Margin="2,0,0,0"
-                        Style="{StaticResource BotaoArredondado}" Background="#FF555555"
-                        Click="BtnVelocidadeMais_Click" FontSize="18" FontWeight="Bold"
-                        ToolTip="Aumentar Velocidade"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
             </Grid>  <!-- fecha barra de controlos -->
             </Grid>  <!-- fecha wrapper topo (video + controlos) -->
 
@@ -279,67 +289,80 @@
             <!-- ===== INFERIOR: Config Video / Exportação OU Cronoanálise ===== -->
             <Grid Grid.Row="2" x:Name="gridInferior" Margin="0,0,0,10">
 
-                <!-- Painel de Config + Export (modo normal) -->
-                <ScrollViewer Name="svConfigCompleto" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <StackPanel Name="painelConfigCompleto">
-                    <GroupBox Name="grpConfigVideo" Header="Configurações do Vídeo" Padding="15" Margin="0,0,0,10">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                            <Button Name="btnRegistrarTempo" Content="● Registrar tempo" Click="BtnRegistrarTempo_Click" Padding="12,4"
-                                    Style="{StaticResource BotaoArredondado}" Background="#FF6A4C93" FontSize="12"
-                                    ToolTip="Registre dois tempos: o menor vira o início e o maior o fim do segmento"/>
+                <!-- Painel de Cortes + Orientação + Exportação (modo normal) -->
+                <Grid Name="painelConfigCompleto">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Área rolável: passos de edição -->
+                    <ScrollViewer Name="svConfigCompleto" Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="0,0,6,0">
+                            <GroupBox Name="grpConfigVideo" Header="1 · Cortes do vídeo" Padding="12,8" Margin="0,0,0,8">
+                                <StackPanel>
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Name="lblProximaParte" Grid.Column="0" FontWeight="SemiBold" Foreground="#FF0F766E" VerticalAlignment="Center" TextWrapping="Wrap"
+                                                   ToolTip="Cada segmento é exportado conforme a opção escolhida ao converter; sem segmentos, exporta o vídeo inteiro."/>
+                                        <Button Name="btnLimparSegmentos" Grid.Column="1" Content="Remover todos" Height="24" Padding="8,0" Visibility="Collapsed"
+                                                Style="{StaticResource BotaoArredondado}" Background="#FFA90C0C" FontSize="11"
+                                                ToolTip="Remove todos os segmentos deste vídeo"
+                                                Click="BtnLimparSegmentos_Click"/>
+                                    </Grid>
+                                    <TextBlock Name="txtDicaSegmentos" Foreground="#FF777777" FontSize="11" TextWrapping="Wrap"/>
+                                    <ScrollViewer Name="svSegmentos" MaxHeight="70" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+                                        <WrapPanel Name="wrapSegmentos"/>
+                                    </ScrollViewer>
+                                </StackPanel>
+                            </GroupBox>
+
+                            <GroupBox Header="2 · Orientação" Padding="12,8" Margin="0,0,0,8">
+                                <WrapPanel>
+                                    <RadioButton Name="rbNormal" Content="Normal" IsChecked="True" Margin="0,0,15,0"/>
+                                    <RadioButton Name="rbRotDireita" Content="Girar 90° D" Margin="0,0,15,0"/>
+                                    <RadioButton Name="rbRotEsquerda" Content="Girar 90° E" Margin="0,0,15,0"/>
+                                    <RadioButton Name="rbRot180" Content="180°" Margin="0,0,15,0"/>
+                                    <RadioButton Name="rbEspelharH" Content="Espelhar H" Margin="0,0,15,0"/>
+                                    <RadioButton Name="rbEspelharV" Content="Espelhar V"/>
+                                </WrapPanel>
+                            </GroupBox>
+
+                            <Expander Name="expExportacaoDesempenho" Header="3 · Opções de exportação e desempenho" Margin="0,0,0,8" IsExpanded="False" Background="#F0F0F0" Padding="10" BorderBrush="#DDD" BorderThickness="1">
+                                <StackPanel Margin="0,10,0,0">
+                                    <TextBlock Text="Local de Guardar:" FontWeight="Bold" Margin="0,0,0,5" Foreground="#333"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                        <RadioButton Name="rbSalvarPastaEscolhida" Content="Escolher uma pasta" IsChecked="True" Margin="0,0,15,0" Checked="RbSalvarPasta_Checked"/>
+                                        <RadioButton Name="rbSalvarPastaOriginal" Content="Guardar na mesma pasta do original (adiciona '_editado')" Checked="RbSalvarPasta_Checked"/>
+                                    </StackPanel>
+
+                                    <CheckBox Name="chkDeletarOriginal" Content="Eliminar vídeo original após a conversão com sucesso" Margin="0,0,0,15" Checked="ChkDeletarOriginal_Checked" Unchecked="ChkDeletarOriginal_Checked"/>
+
+                                    <TextBlock Text="Uso de Processador (CPU):" FontWeight="Bold" Margin="0,0,0,5" Foreground="#333"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <RadioButton Name="rbDesempenhoAlto" Content="Alto Desempenho (Sem limites)" IsChecked="True" Margin="0,0,15,0" Checked="RbDesempenho_Checked"/>
+                                        <RadioButton Name="rbDesempenhoEco" Content="Modo Económico (Limitar a 50% para não bloquear o PC)" Checked="RbDesempenho_Checked"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Expander>
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                            <TextBlock Name="lblProximaParte" FontWeight="SemiBold" Foreground="#FF6A4C93" VerticalAlignment="Center"
-                                       ToolTip="Cada segmento é exportado conforme a opção escolhida ao converter; sem segmentos, exporta o vídeo inteiro."/>
-                            <Button Name="btnLimparSegmentos" Content="Limpar segmentos" Height="26" Margin="12,0,0,0" Padding="6,0" Visibility="Collapsed"
-                                    Style="{StaticResource BotaoArredondado}" Background="#FFA90C0C" FontSize="11"
-                                    Click="BtnLimparSegmentos_Click"/>
+                    </ScrollViewer>
+
+                    <!-- Ação final sempre visível (fora da rolagem) -->
+                    <StackPanel Name="painelExportacao" Grid.Row="1" Margin="0,4,0,0">
+                        <StackPanel Name="painelProgresso" Visibility="Collapsed" Margin="0,0,0,8">
+                            <TextBlock Name="lblStatusLote" Text="Vídeo 1/1" FontSize="11" Margin="0,0,0,5"/>
+                            <Grid>
+                                <ProgressBar Name="pbProgresso" Style="{StaticResource ProgressLote}"/>
+                                <TextBlock Name="lblPorcentagem" Text="0%" HorizontalAlignment="Right" Margin="0,-20,0,0" FontWeight="Bold" Foreground="#FF033150"/>
+                            </Grid>
                         </StackPanel>
-                        <ScrollViewer Name="svSegmentos" MaxHeight="56" VerticalScrollBarVisibility="Auto" Margin="0,0,0,10" Visibility="Collapsed">
-                            <WrapPanel Name="wrapSegmentos"/>
-                        </ScrollViewer>
-                        <WrapPanel>
-                            <RadioButton Name="rbNormal" Content="Normal" IsChecked="True" Margin="0,0,15,0"/>
-                            <RadioButton Name="rbRotDireita" Content="Girar 90° D" Margin="0,0,15,0"/>
-                            <RadioButton Name="rbRotEsquerda" Content="Girar 90° E" Margin="0,0,15,0"/>
-                            <RadioButton Name="rbRot180" Content="180°" Margin="0,0,15,0"/>
-                            <RadioButton Name="rbEspelharH" Content="Espelhar H" Margin="0,0,15,0"/>
-                            <RadioButton Name="rbEspelharV" Content="Espelhar V"/>
-                        </WrapPanel>
+                        <Button Name="btnProcessar" Content="CONVERTER TUDO PARA MP4" Height="46" Style="{StaticResource BotaoArredondado}" Click="BtnProcessar_Click" FontSize="14" FontWeight="Bold"/>
                     </StackPanel>
-                </GroupBox>
-
-                <StackPanel Name="painelExportacao" Margin="0,0,0,10">
-                    <Expander Name="expExportacaoDesempenho" Header="Exportação e Desempenho (Clique para expandir)" Margin="0,0,0,15" IsExpanded="False" Background="#F0F0F0" Padding="10" BorderBrush="#DDD" BorderThickness="1">
-                        <StackPanel Margin="0,10,0,0">
-                            <TextBlock Text="Local de Guardar:" FontWeight="Bold" Margin="0,0,0,5" Foreground="#333"/>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                <RadioButton Name="rbSalvarPastaEscolhida" Content="Escolher uma pasta" IsChecked="True" Margin="0,0,15,0" Checked="RbSalvarPasta_Checked"/>
-                                <RadioButton Name="rbSalvarPastaOriginal" Content="Guardar na mesma pasta do original (adiciona '_editado')" Checked="RbSalvarPasta_Checked"/>
-                            </StackPanel>
-
-                            <CheckBox Name="chkDeletarOriginal" Content="Eliminar vídeo original após a conversão com sucesso" Margin="0,0,0,15" Checked="ChkDeletarOriginal_Checked" Unchecked="ChkDeletarOriginal_Checked"/>
-
-                            <TextBlock Text="Uso de Processador (CPU):" FontWeight="Bold" Margin="0,0,0,5" Foreground="#333"/>
-                            <StackPanel Orientation="Horizontal">
-                                <RadioButton Name="rbDesempenhoAlto" Content="Alto Desempenho (Sem limites)" IsChecked="True" Margin="0,0,15,0" Checked="RbDesempenho_Checked"/>
-                                <RadioButton Name="rbDesempenhoEco" Content="Modo Económico (Limitar a 50% para não bloquear o PC)" Checked="RbDesempenho_Checked"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Expander>
-
-                    <StackPanel Name="painelProgresso" Visibility="Collapsed" Margin="0,0,0,10">
-                        <TextBlock Name="lblStatusLote" Text="Vídeo 1/1" FontSize="11" Margin="0,0,0,5"/>
-                        <Grid>
-                            <ProgressBar Name="pbProgresso" Style="{StaticResource ProgressLote}"/>
-                            <TextBlock Name="lblPorcentagem" Text="0%" HorizontalAlignment="Right" Margin="0,-20,0,0" FontWeight="Bold" Foreground="#FF033150"/>
-                        </Grid>
-                    </StackPanel>
-                    <Button Name="btnProcessar" Content="CONVERTER TUDO PARA MP4" Height="50" Style="{StaticResource BotaoArredondado}" Click="BtnProcessar_Click" FontSize="14" FontWeight="Bold"/>
-                </StackPanel>
-            </StackPanel>  <!-- fecha painelConfigCompleto -->
-            </ScrollViewer>
+                </Grid>  <!-- fecha painelConfigCompleto -->
 
             <!-- Painel de Cronoanálise (modo crono) -->
             <Border Name="pnlCrono" Visibility="Collapsed" Background="#FFF8FAFC" BorderBrush="#FFD7DEE8" BorderThickness="1" CornerRadius="10">
