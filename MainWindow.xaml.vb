@@ -1024,10 +1024,10 @@ Partial Class MainWindow
     ' --- CONTROLOS DE REPRODUÇÃO E LINHA DO TEMPO ---
 
     Private Sub AtualizarEstadoPlayPause(estaTocando As Boolean)
-        Dim simbolo = If(estaTocando, "⏸", "▶")
-        btnPlayPause.Content = simbolo
+        Dim simbolo As String = If(estaTocando, ChrW(&HE769), ChrW(&HE768))
+        btnPlayPause.Tag = simbolo
         If btnCronoPlayPause IsNot Nothing Then
-            btnCronoPlayPause.Content = simbolo
+            btnCronoPlayPause.Tag = simbolo
         End If
         estaReproduzindo = estaTocando
     End Sub
@@ -1128,12 +1128,12 @@ Partial Class MainWindow
 
     Private Sub BtnMuteAudio_Checked(sender As Object, e As RoutedEventArgs)
         VisualizadorVideo.IsMuted = True
-        btnMuteAudio.Content = "🔇"
+        btnMuteAudio.Tag = ChrW(&HE74F)
     End Sub
 
     Private Sub BtnMuteAudio_Unchecked(sender As Object, e As RoutedEventArgs)
         VisualizadorVideo.IsMuted = False
-        btnMuteAudio.Content = "🔊"
+        btnMuteAudio.Tag = ChrW(&HE767)
     End Sub
 
     Private Sub VisualizadorVideo_MediaOpened(sender As Object, e As RoutedEventArgs)
@@ -1424,7 +1424,7 @@ Partial Class MainWindow
                 .Text = $"{i + 1}:  {FormatarTempo(seg.Inicio)} → {FormatarTempo(seg.Fim)}  ({FormatarTempo(seg.Duracao)})",
                 .VerticalAlignment = VerticalAlignment.Center, .FontSize = 11, .Foreground = Brushes.White}
             Dim btnX As New Button() With {
-                .Content = "✕", .Width = 18, .Height = 18, .FontSize = 9, .Margin = New Thickness(6, 0, 0, 0),
+                .Content = ChrW(&HE711), .FontFamily = New FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), .Width = 18, .Height = 18, .FontSize = 9, .Margin = New Thickness(6, 0, 0, 0),
                 .Foreground = Brushes.White, .Background = Brushes.Transparent, .BorderThickness = New Thickness(0),
                 .Cursor = Cursors.Hand, .Tag = seg, .ToolTip = "Remover este segmento"}
             AddHandler btnX.Click, AddressOf BtnRemoverSegmento_Click
@@ -1485,7 +1485,7 @@ Partial Class MainWindow
                 .Width = largura, .Height = 24, .CornerRadius = New CornerRadius(4), .ToolTip = dica & vbCrLf & "Clique para travar/destravar a reprodução neste segmento",
                 .Background = New SolidColorBrush(cor), .ClipToBounds = True, .Cursor = Cursors.Hand, .Tag = seg,
                 .BorderBrush = Brushes.Black, .BorderThickness = New Thickness(If(travado, 2, 0)),
-                .Child = New TextBlock() With {.Text = $"{If(travado, "🔒 ", "")}{i + 1} · {FormatarTempo(seg.Duracao)}", .Foreground = Brushes.White,
+                .Child = New TextBlock() With {.Text = $"{If(travado, ChrW(&HE72E) & " ", "")}{i + 1} · {FormatarTempo(seg.Duracao)}", .FontFamily = New FontFamily("Segoe UI Variable Text, Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"), .Foreground = Brushes.White,
                     .FontSize = 10, .FontWeight = FontWeights.SemiBold, .HorizontalAlignment = HorizontalAlignment.Center,
                     .VerticalAlignment = VerticalAlignment.Center, .TextTrimming = TextTrimming.CharacterEllipsis}}
             AddHandler bloco.MouseLeftButtonDown, AddressOf SegmentoTag_MouseLeftButtonDown
@@ -2205,7 +2205,21 @@ Partial Class MainWindow
         End If
     End Sub
 
+    Private removendoSelecaoInvalida As Boolean = False
+
     Private Sub GridCrono_SelectedCellsChanged(sender As Object, e As SelectedCellsChangedEventArgs)
+        ' Colunas não selecionáveis (0 = botão excluir, 13 = análise): remove da seleção qualquer célula adicionada
+        If Not removendoSelecaoInvalida AndAlso e.AddedCells.Any(Function(c) c.Column IsNot Nothing AndAlso (c.Column.DisplayIndex = 0 OrElse c.Column.DisplayIndex = 13)) Then
+            removendoSelecaoInvalida = True
+            Try
+                For Each c In e.AddedCells.Where(Function(x) x.Column IsNot Nothing AndAlso (x.Column.DisplayIndex = 0 OrElse x.Column.DisplayIndex = 13)).ToList()
+                    gridCrono.SelectedCells.Remove(c)
+                Next
+            Finally
+                removendoSelecaoInvalida = False
+            End Try
+        End If
+
         Dim valores As New List(Of Double)
 
         For Each cellInfo In gridCrono.SelectedCells

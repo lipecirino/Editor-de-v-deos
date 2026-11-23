@@ -90,9 +90,9 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Name="icoCrono" Grid.Column="0" Text="⏱" FontSize="12" Foreground="#FF007AFF" VerticalAlignment="Center" Margin="0,0,6,0" Visibility="Collapsed"/>
+                                    <TextBlock Name="icoCrono" Grid.Column="0" Style="{StaticResource Icone}" Text="&#xE916;" FontSize="12" Foreground="#FF007AFF" VerticalAlignment="Center" Margin="0,0,6,0" Visibility="Collapsed"/>
                                     <TextBlock Grid.Column="1" Text="{Binding NomeComFlag}" VerticalAlignment="Center" TextWrapping="WrapWithOverflow" Margin="0,1,4,1"/>
-                                    <Button Grid.Column="2" Content="✕" Width="20" Height="20" FontSize="10"
+                                    <Button Grid.Column="2" Content="&#xE711;" FontFamily="{StaticResource FonteIcones}" Width="20" Height="20" FontSize="10"
                                             Foreground="#FFAEAEB2" Background="Transparent" BorderThickness="0"
                                             Cursor="Hand" ToolTip="Remover este vídeo"
                                             Click="BtnRemoverVideoGaleria_Click"/>
@@ -135,9 +135,9 @@
             </Border>
 
             <StackPanel Grid.Row="2" Margin="0,10,0,0">
-                <Button Content="+ Video" Click="BtnAbrirArquivos_Click" Style="{StaticResource BotaoArredondado}" Height="35" Margin="0,0,0,5"/>
-                <Button Content="+ Pasta" Click="BtnAbrirPasta_Click" Style="{StaticResource BotaoArredondado}" Height="35" Margin="0,0,0,5"/>
-                <Button Content="Limpar lista" Click="BtnLimpar_Click" Style="{StaticResource BotaoPerigo}" Height="35"/>
+                <Button Content="Vídeo" Tag="&#xE714;" Click="BtnAbrirArquivos_Click" Style="{StaticResource BotaoArredondado}" Height="35" Margin="0,0,0,5"/>
+                <Button Content="Pasta" Tag="&#xE8B7;" Click="BtnAbrirPasta_Click" Style="{StaticResource BotaoArredondado}" Height="35" Margin="0,0,0,5"/>
+                <Button Content="Limpar lista" Tag="&#xE74D;" Click="BtnLimpar_Click" Style="{StaticResource BotaoPerigo}" Height="35"/>
             </StackPanel>
         </Grid>
 
@@ -212,52 +212,46 @@
 
                     <!-- Reprodução -->
                     <StackPanel Grid.Column="0" Orientation="Horizontal">
-                        <Button Name="btnFrameAnterior" Padding="0" Content="⏮" Width="40" Height="35" Style="{StaticResource BotaoArredondado}" Click="BtnFrameAnterior_Click" ToolTip="Frame anterior"/>
-                        <Button Name="btnPlayPause" Padding="0" Content="▶" Width="40" Height="35" Style="{StaticResource BotaoArredondado}" Click="BtnPlayPause_Click" Margin="4,0,0,0" ToolTip="Reproduzir / Pausar"/>
-                        <Button Name="btnFrameProximo" Padding="0" Content="⏭" Width="40" Height="35" Style="{StaticResource BotaoArredondado}" Click="BtnFrameProximo_Click" Margin="4,0,0,0" ToolTip="Próximo frame"/>
-                        <ToggleButton Name="btnMuteAudio" Padding="0" Content="🔊" Width="40" Height="35" Margin="4,0,0,0"
+                        <Button Name="btnFrameAnterior" Padding="0" Tag="&#xE76B;" Width="40" Height="35" Style="{StaticResource BotaoArredondado}" Click="BtnFrameAnterior_Click" ToolTip="Frame anterior"/>
+                        <Button Name="btnPlayPause" Padding="0" Tag="&#xE768;" Width="40" Height="35" Style="{StaticResource BotaoArredondado}" Click="BtnPlayPause_Click" Margin="4,0,0,0" ToolTip="Reproduzir / Pausar"/>
+                        <Button Name="btnFrameProximo" Padding="0" Tag="&#xE76C;" Width="40" Height="35" Style="{StaticResource BotaoArredondado}" Click="BtnFrameProximo_Click" Margin="4,0,0,0" ToolTip="Próximo frame"/>
+                        <ToggleButton Name="btnMuteAudio" Padding="0" Tag="&#xE767;" Width="40" Height="35" Margin="4,0,0,0"
                                       Style="{StaticResource BotaoArredondadoToggle}"
                                       Checked="BtnMuteAudio_Checked" Unchecked="BtnMuteAudio_Unchecked"
                                       ToolTip="Ativar/Desativar áudio do vídeo"/>
-                        <Button Name="btnVelocidadeMenos" Padding="0" Content="−" Width="36" Height="35" Margin="12,0,0,0"
+                        <Button Name="btnVelocidadeMenos" Padding="0" Tag="&#xE738;" Width="36" Height="35" Margin="12,0,0,0"
                                 Style="{StaticResource BotaoArredondado}"
                                 Click="BtnVelocidadeMenos_Click" FontSize="18" FontWeight="Bold"
                                 ToolTip="Diminuir velocidade"/>
                         <TextBlock Name="lblVelocidade" Text="1.0×" VerticalAlignment="Center" TextAlignment="Center" Width="40"
                                    Foreground="#FF86868B" FontWeight="Bold" FontSize="13"
                                    ToolTip="Velocidade atual de reprodução"/>
-                        <Button Name="btnVelocidadeMais" Padding="0" Content="+" Width="36" Height="35"
+                        <Button Name="btnVelocidadeMais" Padding="0" Tag="&#xE710;" Width="36" Height="35"
                                 Style="{StaticResource BotaoArredondado}"
                                 Click="BtnVelocidadeMais_Click" FontSize="18" FontWeight="Bold"
                                 ToolTip="Aumentar velocidade"/>
                     </StackPanel>
 
                     <!-- Corte: ação principal, destacada no centro -->
-                    <Button Name="btnRegistrarTempo" Grid.Column="1" Content="✂  Registrar tempo" Click="BtnRegistrarTempo_Click"
+                    <Button Name="btnRegistrarTempo" Grid.Column="1" Content="Registrar tempo" Tag="&#xE8C6;" Click="BtnRegistrarTempo_Click"
                             HorizontalAlignment="Center" MinWidth="160" Height="35" Padding="14,0"
                             Style="{StaticResource BotaoPrimario}" FontSize="13" FontWeight="SemiBold"
                             ToolTip="Clique no início e depois no fim do trecho. O menor tempo vira o início e o maior o fim do segmento."/>
 
                     <!-- Ferramentas -->
                     <StackPanel Grid.Column="2" Orientation="Horizontal">
-                        <ToggleButton Name="btnModoCrono" Content="⏱ Crono" Width="75" Height="35"
+                        <ToggleButton Name="btnModoCrono" Content="Crono" Tag="&#xE916;" Width="90" Height="35"
                                       Style="{StaticResource BotaoArredondadoToggle}"
                                       Checked="BtnModoCrono_Checked" Unchecked="BtnModoCrono_Unchecked"
                                       ToolTip="Ativar/Desativar modo cronoanálise"/>
-                        <Button Name="btnPropriedades" Padding="0" Width="40" Height="35" Margin="4,0,0,0"
+                        <Button Name="btnPropriedades" Tag="&#xE946;" Padding="0" Width="40" Height="35" Margin="4,0,0,0"
                                 Style="{StaticResource BotaoArredondado}"
                                 Click="BtnPropriedades_Click"
-                                ToolTip="Propriedades do arquivo de vídeo">
-                            <TextBlock Text="ℹ" FontSize="16" FontWeight="Bold"/>
-                        </Button>
-                        <Button Name="btnConfigAtalhos" Padding="0" Width="40" Height="35" Margin="4,0,0,0"
+                                ToolTip="Propriedades do arquivo de vídeo"/>
+                        <Button Name="btnConfigAtalhos" Tag="&#xE713;" Padding="0" Width="40" Height="35" Margin="4,0,0,0"
                                 Style="{StaticResource BotaoArredondado}"
                                 Click="BtnConfigAtalhos_Click"
-                                ToolTip="Configurar atalhos de teclado">
-                    <Viewbox Width="18" Height="18" Stretch="Uniform" HorizontalAlignment="Center" RenderTransformOrigin="0.62,0.529">
-                        <Path Data="M9.5,1 L9.5,3.5 C9.1,3.6 8.7,3.7 8.3,3.9 L6.3,2.5 L5.5,3.9 L7.3,5.6 C7.1,5.9 6.9,6.3 6.8,6.7 L4.5,7.2 L4.5,8.8 L6.8,9.3 C6.9,9.7 7.1,10.1 7.3,10.4 L5.5,12.1 L6.3,13.5 L8.3,12.1 C8.7,12.3 9.1,12.4 9.5,12.5 L9.5,15 L10.5,15 L10.5,12.5 C10.9,12.4 11.3,12.3 11.7,12.1 L13.7,13.5 L14.5,12.1 L12.7,10.4 C12.9,10.1 13.1,9.7 13.2,9.3 L15.5,8.8 L15.5,7.2 L13.2,6.7 C13.1,6.3 12.9,5.9 12.7,5.6 L14.5,3.9 L13.7,2.5 L11.7,3.9 C11.3,3.7 10.9,3.6 10.5,3.5 L10.5,1 L9.5,1 Z M10,5 C11.7,5 13,6.3 13,8 C13,9.7 11.7,11 10,11 C8.3,11 7,9.7 7,8 C7,6.3 8.3,5 10,5 Z" Fill="#FF007AFF" HorizontalAlignment="Left"/>
-                    </Viewbox>
-                        </Button>
+                                ToolTip="Configurar atalhos de teclado"/>
                     </StackPanel>
                 </Grid>
             </Grid>  <!-- fecha barra de controlos -->
@@ -291,7 +285,7 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Name="lblProximaParte" Grid.Column="0" FontWeight="SemiBold" Foreground="#FF007AFF" VerticalAlignment="Center" TextWrapping="Wrap"
                                                    ToolTip="Cada segmento é exportado conforme a opção escolhida ao converter; sem segmentos, exporta o vídeo inteiro."/>
-                                        <Button Name="btnLimparSegmentos" Grid.Column="1" Content="Remover todos" Height="24" Padding="8,0" Visibility="Collapsed"
+                                        <Button Name="btnLimparSegmentos" Grid.Column="1" Content="Remover todos" Tag="&#xE74D;" Height="24" Padding="8,0" Visibility="Collapsed"
                                                 Style="{StaticResource BotaoPerigo}" FontSize="11"
                                                 ToolTip="Remove todos os segmentos deste vídeo"
                                                 Click="BtnLimparSegmentos_Click"/>
@@ -368,25 +362,25 @@
                         <TextBlock Grid.Column="0" Text="Cronoanálise" FontSize="15" FontWeight="SemiBold" Foreground="#FF1D1D1F" VerticalAlignment="Center"
                                    ToolTip="Arraste para desacoplar o painel"/>
                         <StackPanel Grid.Column="2" Orientation="Horizontal" Cursor="Arrow">
-                            <Button Name="btnNovaOperacao" Content="+ Operação" Style="{StaticResource BotaoArredondado}" Click="BtnNovaOperacao_Click"
+                            <Button Name="btnNovaOperacao" Content="Operação" Tag="&#xE710;" Style="{StaticResource BotaoArredondado}" Click="BtnNovaOperacao_Click"
                                     ToolTip="Adicionar uma nova linha de operação"/>
-                            <Button Name="btnExportarCrono" Content="Exportar CSV" Margin="6,0,0,0" Style="{StaticResource BotaoArredondado}" Click="BtnExportarCrono_Click"/>
-                            <Button Name="btnLimparCrono" Content="Limpar" Margin="6,0,0,0" Style="{StaticResource BotaoPerigo}" Click="BtnLimparCrono_Click"
+                            <Button Name="btnExportarCrono" Content="Exportar CSV" Tag="&#xE896;" Margin="6,0,0,0" Style="{StaticResource BotaoArredondado}" Click="BtnExportarCrono_Click"/>
+                            <Button Name="btnLimparCrono" Content="Limpar" Tag="&#xE894;" Margin="6,0,0,0" Style="{StaticResource BotaoPerigo}" Click="BtnLimparCrono_Click"
                                     ToolTip="Remove todas as operações deste vídeo"/>
-                            <Button Name="btnLimparCache" Content="🗑" Margin="6,0,0,0" Padding="9,5" Style="{StaticResource BotaoPerigo}" Click="BtnLimparCache_Click"
+                            <Button Name="btnLimparCache" Tag="&#xE74D;" Margin="6,0,0,0" Padding="9,5" Style="{StaticResource BotaoPerigo}" Click="BtnLimparCache_Click"
                                     ToolTip="Limpar todos os dados de cache da cronoanálise"/>
                         </StackPanel>
                     </Grid>
 
                     <!-- Reprodução e registro de tempo -->
                     <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,10">
-                        <Button Name="btnCronoFrameAnt" Content="⏮" Width="36" Height="28" Padding="0" Style="{StaticResource BotaoArredondado}"
+                        <Button Name="btnCronoFrameAnt" Tag="&#xE76B;" Width="36" Height="28" Padding="0" Style="{StaticResource BotaoArredondado}"
                                 Click="BtnCronoFrameAnt_Click" ToolTip="Frame anterior"/>
-                        <Button Name="btnCronoPlayPause" Content="▶" Width="36" Height="28" Padding="0" Margin="4,0,0,0" Style="{StaticResource BotaoArredondado}"
+                        <Button Name="btnCronoPlayPause" Tag="&#xE768;" Width="36" Height="28" Padding="0" Margin="4,0,0,0" Style="{StaticResource BotaoArredondado}"
                                 Click="BtnCronoPlayPause_Click" ToolTip="Reproduzir / Pausar"/>
-                        <Button Name="btnCronoFrameProx" Content="⏭" Width="36" Height="28" Padding="0" Margin="4,0,0,0" Style="{StaticResource BotaoArredondado}"
+                        <Button Name="btnCronoFrameProx" Tag="&#xE76C;" Width="36" Height="28" Padding="0" Margin="4,0,0,0" Style="{StaticResource BotaoArredondado}"
                                 Click="BtnCronoFrameProx_Click" ToolTip="Próximo frame"/>
-                        <Button Name="btnCronoRegistrar" Content="Registrar tempo" Height="28" Margin="12,0,0,0" Padding="14,0" Style="{StaticResource BotaoPrimario}"
+                        <Button Name="btnCronoRegistrar" Content="Registrar tempo" Tag="&#xE7C1;" Height="28" Margin="12,0,0,0" Padding="14,0" Style="{StaticResource BotaoPrimario}"
                                 Click="BtnCronoRegistrar_Click" ToolTip="Registra o tempo atual na célula selecionada"/>
                     </StackPanel>
 
@@ -455,9 +449,20 @@
                             <DataGrid.Columns>
                                 <!-- Botão Excluir -->
                                 <DataGridTemplateColumn Header=" " Width="36" CanUserResize="False" CanUserReorder="False" IsReadOnly="True">
+                                    <DataGridTemplateColumn.CellStyle>
+                                        <!-- Coluna de ação: não selecionável nem focável (o botão ✕ continua clicável) -->
+                                        <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+                                            <Setter Property="Focusable" Value="False"/>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter Property="Background" Value="Transparent"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGridTemplateColumn.CellStyle>
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Button Content="✕" Width="24" Height="24" FontSize="12"
+                                            <Button Content="&#xE74D;" FontFamily="{StaticResource FonteIcones}" Width="24" Height="24" FontSize="12"
                                                     Foreground="#FFAEAEB2" Background="Transparent"
                                                     BorderThickness="0" Cursor="Hand"
                                                     ToolTip="Excluir este registo"
@@ -679,6 +684,18 @@
 
                                 <!-- Análise Estatística - Desvio Padrão -->
                                 <DataGridTemplateColumn Header="Análise (Desvio)" Width="220" IsReadOnly="True" CanUserResize="False" CanUserReorder="False">
+                                    <DataGridTemplateColumn.CellStyle>
+                                        <!-- Análise é calculada: não selecionável, não focável e sem interação com o mouse -->
+                                        <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+                                            <Setter Property="Focusable" Value="False"/>
+                                            <Setter Property="IsHitTestVisible" Value="False"/>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter Property="Background" Value="Transparent"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGridTemplateColumn.CellStyle>
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Grid Margin="4,2">
