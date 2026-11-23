@@ -119,7 +119,7 @@ Public Class CronoPanelWindow
 
         ' Configurar a janela flutuante
         Me.Title = "Cronoanálise"
-        Me.Width = 1000
+        Me.Width = 1150
         Me.Height = 350
         Me.WindowStartupLocation = WindowStartupLocation.CenterOwner
         Me.Owner = mainWindow
@@ -741,8 +741,26 @@ Partial Class MainWindow
         MostrarPreviewCrono(Nothing)
     End Sub
 
+    ' Temporizador próprio da trava (independente do relógio da barra de tempo)
+    Private WithEvents timerPreview As New DispatcherTimer() With {.Interval = TimeSpan.FromMilliseconds(30)}
+
     Private Sub AplicarModoPreview()
-        cronometroVideo.Interval = TimeSpan.FromMilliseconds(If(previewTrava AndAlso previewEntry IsNot Nothing, 40, 200))
+        If previewTrava AndAlso previewEntry IsNot Nothing Then
+            timerPreview.Start()
+        Else
+            timerPreview.Stop()
+        End If
+    End Sub
+
+    Private Sub TimerPreview_Tick(sender As Object, e As EventArgs) Handles timerPreview.Tick
+        If Not previewTrava OrElse previewEntry Is Nothing OrElse segmentosPreview.Count = 0 Then Return
+        If mediaClock Is Nothing OrElse Not mediaClock.CurrentTime.HasValue OrElse mediaClock.IsPaused Then Return
+        If isDraggingSlider OrElse Environment.TickCount - ultimoSaltoPreviewTick < 250 Then Return
+        Dim alvo = SaltoPreview(mediaClock.CurrentTime.Value.TotalSeconds)
+        If alvo >= 0 Then
+            ultimoSaltoPreviewTick = Environment.TickCount
+            IrParaTempo(alvo)
+        End If
     End Sub
 
     Private Sub BtnVisualizarCrono_Click(sender As Object, e As RoutedEventArgs)
@@ -773,13 +791,18 @@ Partial Class MainWindow
 
     ' Com a trava ativa: se a posição está fora dos trechos, devolve o início do próximo trecho (ou do primeiro, em loop); senão -1
     Private Function SaltoPreview(pos As Double) As Double
-        For Each seg In segmentosPreview
+        ' Se um bloco foi clicado (travado), só ele toca; senão tocam todos os blocos da linha
+        Dim alvos As List(Of SegmentoCorte) = segmentosPreview
+        If segmentoTravado IsNot Nothing AndAlso segmentosPreview.Contains(segmentoTravado) Then
+            alvos = New List(Of SegmentoCorte) From {segmentoTravado}
+        End If
+        For Each seg In alvos
             If pos >= seg.Inicio - 0.05 AndAlso pos < seg.Fim - 0.03 Then Return -1
         Next
-        For Each seg In segmentosPreview
+        For Each seg In alvos
             If seg.Inicio > pos Then Return seg.Inicio
         Next
-        Return segmentosPreview(0).Inicio
+        Return alvos(0).Inicio
     End Function
 
     ' --- ANÁLISE ESTATÍSTICA ---
@@ -817,7 +840,7 @@ Partial Class MainWindow
 
                 ' Calcular largura da barra (baseado no desvio padrão)
                 ' Barra vai de -50% a +50% da largura disponível
-                Dim larguraMaxima As Double = 120 ' pixels (igual à largura fixa da trilha no XAML)
+                Dim larguraMaxima As Double = 80 ' pixels (igual à largura fixa da trilha no XAML)
                 Dim larguraBarra As Double = 0
 
                 If desvioPadrao > 0 Then
@@ -1335,19 +1358,9 @@ Partial Class MainWindow
         If Not isDraggingSlider Then
             Dim pos = mediaClock.CurrentTime.Value.TotalSeconds
 
-            ' Trava da cronoanálise: reproduz só os trechos da linha, pulando as partes cortadas
-            If previewTrava AndAlso estaReproduzindo AndAlso previewEntry IsNot Nothing AndAlso segmentosPreview.Count > 0 _
-               AndAlso Environment.TickCount - ultimoSaltoPreviewTick > 250 Then
-                Dim alvo = SaltoPreview(pos)
-                If alvo >= 0 Then
-                    ultimoSaltoPreviewTick = Environment.TickCount
-                    IrParaTempo(alvo)
-                    Return
-                End If
-            End If
-
             ' Reprodução travada num segmento: volta ao início ao chegar no fim (ou ao sair do intervalo)
-            If segmentoTravado IsNot Nothing AndAlso (pos >= segmentoTravado.Fim - 0.03 OrElse pos < segmentoTravado.Inicio - 0.5) Then
+            ' (com a visualização da cronoanálise ativa quem controla é o timerPreview)
+            If segmentoTravado IsNot Nothing AndAlso Not previewTrava AndAlso (pos >= segmentoTravado.Fim - 0.03 OrElse pos < segmentoTravado.Inicio - 0.5) Then
                 IrParaTempo(segmentoTravado.Inicio)
                 Return
             End If

@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Editor de Vídeo (Padronização)" 
-        Height="750" Width="1050" MinHeight="650" MinWidth="980"
+        Height="750" Width="1150" MinHeight="650" MinWidth="1100"
         WindowStartupLocation="CenterScreen"
         Background="#FFF5F5F7" FontFamily="Segoe UI Variable Text, Segoe UI" TextElement.Foreground="#FF1D1D1F"
         KeyboardNavigation.DirectionalNavigation="None">
@@ -385,7 +385,7 @@
                                 Click="BtnCronoRegistrar_Click" ToolTip="Registra o tempo atual na célula selecionada"/>
                     </StackPanel>
 
-                    <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                    <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <DataGrid Name="gridCrono" AutoGenerateColumns="False" CanUserAddRows="False"
                                   CanUserDeleteRows="True" IsReadOnly="False" HeadersVisibility="Column"
                                   BorderThickness="0" Background="White" RowBackground="White"
@@ -473,7 +473,7 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTextColumn Header="Operação" Binding="{Binding Operacao, UpdateSourceTrigger=PropertyChanged}" Width="220" MinWidth="160">
+                                <DataGridTextColumn Header="Operação" Binding="{Binding Operacao, UpdateSourceTrigger=PropertyChanged}" Width="3*" MinWidth="110">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style>
                                             <Setter Property="TextBlock.Margin" Value="4,2"/>
@@ -495,7 +495,7 @@
                                 </DataGridTextColumn>
 
                                 <!-- Cliente -->
-                                <DataGridTextColumn Header="Cliente" Binding="{Binding Cliente, UpdateSourceTrigger=PropertyChanged}" Width="160" MinWidth="120">
+                                <DataGridTextColumn Header="Cliente" Binding="{Binding Cliente, UpdateSourceTrigger=PropertyChanged}" Width="2*" MinWidth="80">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style>
                                             <Setter Property="TextBlock.Margin" Value="4,2"/>
@@ -512,7 +512,7 @@
                                 </DataGridTextColumn>
 
                                 <!-- Número de Amostras -->
-                                <DataGridTextColumn Header="Nº Amostras" Binding="{Binding NumeroAmostras, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Width="90" MinWidth="70">
+                                <DataGridTextColumn Header="Nº Amostras" Binding="{Binding NumeroAmostras, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Width="64" MinWidth="64">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style>
                                             <Setter Property="TextBlock.Margin" Value="4,2"/>
@@ -528,7 +528,7 @@
                                 </DataGridTextColumn>
 
                                 <!-- Par 1 -->
-                                <DataGridTextColumn Header="Início 1" Binding="{Binding Inicio1Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="95">
+                                <DataGridTextColumn Header="Início 1" Binding="{Binding Inicio1Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="60">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style>
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
@@ -545,7 +545,7 @@
                                         </Style>
                                     </DataGridTextColumn.EditingElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="Fim 1" Binding="{Binding Fim1Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="95">
+                                <DataGridTextColumn Header="Fim 1" Binding="{Binding Fim1Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="60">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style>
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
@@ -564,7 +564,7 @@
                                 </DataGridTextColumn>
 
                                 <!-- Par 2 -->
-                                <DataGridTextColumn Header="Início 2" Binding="{Binding Inicio2Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="95">
+                                <DataGridTextColumn Header="Início 2" Binding="{Binding Inicio2Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="60">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style>
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
@@ -581,7 +581,7 @@
                                         </Style>
                                     </DataGridTextColumn.EditingElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="Fim 2" Binding="{Binding Fim2Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="95">
+                                <DataGridTextColumn Header="Fim 2" Binding="{Binding Fim2Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="60">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style>
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
@@ -600,7 +600,7 @@
                                 </DataGridTextColumn>
 
                                 <!-- Par 3 -->
-                                <DataGridTextColumn Header="Início 3" Binding="{Binding Inicio3Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="95">
+                                <DataGridTextColumn Header="Início 3" Binding="{Binding Inicio3Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="60">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style>
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
@@ -617,7 +617,7 @@
                                         </Style>
                                     </DataGridTextColumn.EditingElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="Fim 3" Binding="{Binding Fim3Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="95">
+                                <DataGridTextColumn Header="Fim 3" Binding="{Binding Fim3Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="60">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style>
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
@@ -636,7 +636,7 @@
                                 </DataGridTextColumn>
 
                                 <!-- Par 4 -->
-                                <DataGridTextColumn Header="Início 4" Binding="{Binding Inicio4Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="95">
+                                <DataGridTextColumn Header="Início 4" Binding="{Binding Inicio4Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="60">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style>
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
@@ -653,7 +653,7 @@
                                         </Style>
                                     </DataGridTextColumn.EditingElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="Fim 4" Binding="{Binding Fim4Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="95">
+                                <DataGridTextColumn Header="Fim 4" Binding="{Binding Fim4Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="60">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style>
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
@@ -672,7 +672,7 @@
                                 </DataGridTextColumn>
 
                                 <!-- Duração total -->
-                                <DataGridTemplateColumn Header="Duração" Width="100" IsReadOnly="True" CanUserResize="False" CanUserReorder="False">
+                                <DataGridTemplateColumn Header="Duração" Width="76" IsReadOnly="True" CanUserResize="False" CanUserReorder="False">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Border Background="#FFE5F1FF" CornerRadius="6" Padding="8,2" Margin="4,3" HorizontalAlignment="Center">
@@ -684,7 +684,7 @@
                                 </DataGridTemplateColumn>
 
                                 <!-- Análise Estatística - Desvio Padrão -->
-                                <DataGridTemplateColumn Header="Análise (Desvio)" Width="220" IsReadOnly="True" CanUserResize="False" CanUserReorder="False">
+                                <DataGridTemplateColumn Header="Análise (Desvio)" Width="140" IsReadOnly="True" CanUserResize="False" CanUserReorder="False">
                                     <DataGridTemplateColumn.CellStyle>
                                         <!-- Análise é calculada: não selecionável, não focável e sem interação com o mouse -->
                                         <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
@@ -706,14 +706,14 @@
                                                 </Grid.ColumnDefinitions>
 
                                                 <!-- Mini gráfico: trilha de largura fixa (mesma escala em todas as linhas) -->
-                                                <Grid Grid.Column="0" Width="120" Height="10" HorizontalAlignment="Left"
+                                                <Grid Grid.Column="0" Width="80" Height="10" HorizontalAlignment="Left"
                                                       VerticalAlignment="Center" Margin="0,0,8,0" ClipToBounds="True">
                                                     <Border Background="#FFF2F2F7" CornerRadius="5"/>
 
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="60"/>
-                                                            <ColumnDefinition Width="60"/>
+                                                            <ColumnDefinition Width="40"/>
+                                                            <ColumnDefinition Width="40"/>
                                                         </Grid.ColumnDefinitions>
                                                         <!-- Desvio negativo: cresce para a esquerda -->
                                                         <Border Grid.Column="0" HorizontalAlignment="Right" Width="{Binding BarraLarguraEsq}"
@@ -741,7 +741,7 @@
                                 </DataGridTemplateColumn>
 
                                 <!-- Visualizar: trava a reprodução nos trechos da linha -->
-                                <DataGridTemplateColumn Header="Visualizar" Width="80" IsReadOnly="True" CanUserResize="False" CanUserReorder="False">
+                                <DataGridTemplateColumn Header="Visualizar" Width="60" IsReadOnly="True" CanUserResize="False" CanUserReorder="False">
                                     <DataGridTemplateColumn.CellStyle>
                                         <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
                                             <Setter Property="Focusable" Value="False"/>
