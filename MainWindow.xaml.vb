@@ -50,6 +50,7 @@ Public Class SegmentoCorte
     Public Property Inicio As Double = 0
     Public Property Fim As Double = 0
     Public Property Rotulo As String = ""   ' nome da operação (usado na visão geral da cronoanálise)
+    Public Property Dono As CronoAnaliseEntry = Nothing   ' linha da cronoanálise de origem (visão geral)
 
     Public ReadOnly Property Duracao As Double
         Get
@@ -704,7 +705,7 @@ Partial Class MainWindow
             Dim fim = {en.Fim1, en.Fim2, en.Fim3, en.Fim4}
             For i = 0 To 3
                 If fim(i) > ini(i) AndAlso fim(i) > 0 Then
-                    segmentosTodos.Add(New SegmentoCorte() With {.Inicio = ini(i), .Fim = fim(i), .Rotulo = If(en.Operacao, "")})
+                    segmentosTodos.Add(New SegmentoCorte() With {.Inicio = ini(i), .Fim = fim(i), .Rotulo = If(en.Operacao, ""), .Dono = en})
                 End If
             Next
         Next
@@ -1784,6 +1785,13 @@ Partial Class MainWindow
         Next
 
         Dim rmin = slLinhaTempo.Minimum, rmax = slLinhaTempo.Maximum
+        Dim selecionadas As New HashSet(Of CronoAnaliseEntry)()
+        If verTodos Then
+            For Each cel In gridCrono.SelectedCells
+                Dim en = TryCast(cel.Item, CronoAnaliseEntry)
+                If en IsNot Nothing Then selecionadas.Add(en)
+            Next
+        End If
         Dim span = rmax - rmin
         Dim larguraCanvas = canvasCorte.ActualWidth
         If span <= 0 OrElse larguraCanvas <= 0 Then
@@ -1794,7 +1802,14 @@ Partial Class MainWindow
             Dim seg = segs(i)
             Dim travado As Boolean = Object.ReferenceEquals(seg, segmentoTravado)
             ' Com um bloco travado, só ele fica na cor padrão; os demais ficam quase da cor do fundo (discretos)
-            Dim cor = If(segmentoTravado IsNot Nothing AndAlso Not travado, Color.FromRgb(&HEE, &HEE, &HF1), CorSegmento(i))
+            Dim cor = CorSegmento(i)
+            If verTodos Then
+                ' cada operação mantém a sua cor; sem seleção todas aparecem coloridas, com seleção só as selecionadas
+                cor = CorSegmento(Math.Max(0, cronoEntries.IndexOf(seg.Dono)))
+                If selecionadas.Count > 0 AndAlso Not selecionadas.Contains(seg.Dono) Then cor = Color.FromRgb(&HC7, &HC7, &HCC)
+            ElseIf segmentoTravado IsNot Nothing AndAlso Not travado Then
+                cor = Color.FromRgb(&HEE, &HEE, &HF1)
+            End If
             Dim fim = Math.Min(seg.Fim, rmax)
             Dim inicio = Math.Max(seg.Inicio, rmin)
             If fim <= inicio Then Continue For ' fora da faixa visível da timeline
@@ -2632,6 +2647,9 @@ Partial Class MainWindow
             Dim ultima = TryCast(gridCrono.SelectedCells(gridCrono.SelectedCells.Count - 1).Item, CronoAnaliseEntry)
             If ultima IsNot Nothing AndAlso Not TemCortesNoVideo() Then MostrarPreviewCrono(ultima)
         End If
+
+        ' Na visão geral, as operações selecionadas ficam na cor original e as demais em cinza
+        If verTodos AndAlso Not removendoSelecaoInvalida Then AtualizarSegmentosVisuais()
 
         Dim valores As New List(Of Double)
 
