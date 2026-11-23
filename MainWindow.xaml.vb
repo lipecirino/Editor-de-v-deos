@@ -49,6 +49,7 @@ End Class
 Public Class SegmentoCorte
     Public Property Inicio As Double = 0
     Public Property Fim As Double = 0
+    Public Property Rotulo As String = ""   ' nome da operação (usado na visão geral da cronoanálise)
 
     Public ReadOnly Property Duracao As Double
         Get
@@ -692,8 +693,56 @@ Partial Class MainWindow
     Private segmentosPreview As New List(Of SegmentoCorte)()
     Private ultimoSaltoPreviewTick As Integer = 0
 
-    ' Cortes mostrados na timeline: os trechos da linha selecionada ou, sem seleção, os cortes reais do vídeo
+    ' --- VISÃO GERAL: barras de tempo de TODAS as operações da cronoanálise ---
+    Private verTodos As Boolean = False
+    Private segmentosTodos As New List(Of SegmentoCorte)()
+
+    Private Sub RecalcularSegmentosTodos()
+        segmentosTodos = New List(Of SegmentoCorte)()
+        For Each en In cronoEntries
+            Dim ini = {en.Inicio1, en.Inicio2, en.Inicio3, en.Inicio4}
+            Dim fim = {en.Fim1, en.Fim2, en.Fim3, en.Fim4}
+            For i = 0 To 3
+                If fim(i) > ini(i) AndAlso fim(i) > 0 Then
+                    segmentosTodos.Add(New SegmentoCorte() With {.Inicio = ini(i), .Fim = fim(i), .Rotulo = If(en.Operacao, "")})
+                End If
+            Next
+        Next
+        segmentosTodos.Sort(Function(x, y) x.Inicio.CompareTo(y.Inicio))
+    End Sub
+
+    Private Sub EntryTodos_PropertyChanged(sender As Object, e As PropertyChangedEventArgs)
+        If Not verTodos OrElse e.PropertyName Is Nothing Then Return
+        If Not (e.PropertyName.StartsWith("Inicio") OrElse e.PropertyName.StartsWith("Fim") OrElse e.PropertyName = "Operacao") Then Return
+        If e.PropertyName.EndsWith("Display") Then Return
+        RecalcularSegmentosTodos()
+        segmentoTravado = Nothing
+        AtualizarSegmentosVisuais()
+    End Sub
+
+    Private Sub DefinirVerTodos(ligado As Boolean)
+        verTodos = ligado
+        If btnVerTodasCrono.IsChecked <> ligado Then btnVerTodasCrono.IsChecked = ligado
+        segmentoTravado = Nothing
+        If ligado Then
+            ' a visão geral substitui a visualização de uma única linha
+            If previewTrava AndAlso previewEntry IsNot Nothing Then
+                previewTrava = False
+                previewEntry.Visualizando = False
+                AplicarModoPreview()
+            End If
+            RecalcularSegmentosTodos()
+        End If
+        AtualizarSegmentosVisuais()
+    End Sub
+
+    Private Sub BtnVerTodasCrono_Click(sender As Object, e As RoutedEventArgs)
+        DefinirVerTodos(btnVerTodasCrono.IsChecked = True)
+    End Sub
+
+    ' Cortes mostrados na timeline: visão geral da cronoanálise, trechos da linha selecionada ou, sem seleção, os cortes reais
     Private Function SegmentosExibidos() As List(Of SegmentoCorte)
+        If verTodos Then Return segmentosTodos
         If previewEntry IsNot Nothing Then Return segmentosPreview
         Return If(videoAtual IsNot Nothing, videoAtual.Segmentos, New List(Of SegmentoCorte)())
     End Function
@@ -779,6 +828,7 @@ Partial Class MainWindow
     End Sub
 
     Private Sub LimparPreviewCrono()
+        If verTodos Then DefinirVerTodos(False)
         previewTrava = False
         MostrarPreviewCrono(Nothing)
     End Sub
@@ -811,6 +861,7 @@ Partial Class MainWindow
         If entry Is Nothing Then Return
         e.Handled = True
         If TemCortesNoVideo() Then Return
+        If verTodos Then DefinirVerTodos(False) ' a visão geral dá lugar à visualização da linha
 
         If Object.ReferenceEquals(entry, previewEntry) AndAlso previewTrava Then
             ' Desliga a trava (os trechos continuam visíveis na timeline)
@@ -958,6 +1009,21 @@ Partial Class MainWindow
                                                        ' Ícone da galeria assim que há linha no grid; e bloqueio dos cortes
                                                        If videoAtual IsNot Nothing Then videoAtual.TemCronoAnalise = (cronoEntries.Count > 0)
                                                        AtualizarBloqueiosCronoCorte()
+                                                       If ev.OldItems IsNot Nothing Then
+                                                           For Each o In ev.OldItems
+                                                               RemoveHandler DirectCast(o, CronoAnaliseEntry).PropertyChanged, AddressOf EntryTodos_PropertyChanged
+                                                           Next
+                                                       End If
+                                                       If ev.NewItems IsNot Nothing Then
+                                                           For Each n In ev.NewItems
+                                                               AddHandler DirectCast(n, CronoAnaliseEntry).PropertyChanged, AddressOf EntryTodos_PropertyChanged
+                                                           Next
+                                                       End If
+                                                       If verTodos Then
+                                                           RecalcularSegmentosTodos()
+                                                           segmentoTravado = Nothing
+                                                           AtualizarSegmentosVisuais()
+                                                       End If
                                                    End Sub
 
         ' Carregar cache de cronoanálise
@@ -1647,7 +1713,8 @@ Partial Class MainWindow
         AtualizarBloqueiosCronoCorte()
         ' Com cortes reais no vídeo, desabilita a visualização da cronoanálise (e desliga a que estiver ativa)
         AtualizarPodeVisualizar()
-        If TemCortesNoVideo() AndAlso previewEntry IsNot Nothing Then
+        If TemCortesNoVideo() AndAlso (previewEntry IsNot Nothing OrElse verTodos) Then
+            If verTodos Then DefinirVerTodos(False)
             LimparPreviewCrono()
             Return
         End If
@@ -1660,12 +1727,14 @@ Partial Class MainWindow
         wrapSegmentos.Children.Clear()
 
         Dim ativo As Boolean = videoAtual IsNot Nothing
-        Dim emPreview As Boolean = ativo AndAlso previewEntry IsNot Nothing
+        Dim emPreview As Boolean = ativo AndAlso (previewEntry IsNot Nothing OrElse verTodos)
         Dim segs As List(Of SegmentoCorte) = SegmentosExibidos()
         Dim nSeg As Integer = If(ativo, segs.Count, 0)
         If Not ativo Then
             lblProximaParte.Text = "Selecione um vídeo na galeria."
             txtDicaSegmentos.Text = ""
+        ElseIf verTodos Then
+            lblProximaParte.Text = If(nSeg = 0, "Cronoanálise: nenhum trecho registrado", $"Cronoanálise: {nSeg} trecho(s) de {cronoEntries.Count} operação(ões)")
         ElseIf emPreview Then
             Dim nome = If(String.IsNullOrWhiteSpace(previewEntry.Operacao), "linha selecionada", previewEntry.Operacao)
             lblProximaParte.Text = If(nSeg = 0, $"Cronoanálise ""{nome}"": sem trechos registrados",
@@ -1740,7 +1809,7 @@ Partial Class MainWindow
             Dim pxInicio = ((inicio - rmin) / span) * larguraCanvas
             Dim pxFim = ((fim - rmin) / span) * larguraCanvas
             Dim largura = Math.Max(2, pxFim - pxInicio)
-            Dim dica = $"Parte {i + 1}: {FormatarTempo(seg.Inicio)} → {FormatarTempo(seg.Fim)} (duração {FormatarTempo(seg.Duracao)})"
+            Dim dica = $"{If(String.IsNullOrWhiteSpace(seg.Rotulo), "", seg.Rotulo & " · ")}Parte {i + 1}: {FormatarTempo(seg.Inicio)} → {FormatarTempo(seg.Fim)} (duração {FormatarTempo(seg.Duracao)})"
 
             ' Linha fina com a largura do segmento; cada segmento ocupa uma "pista" empilhada acima da linha do tempo
             Dim centroPista As Double = -4 - (pistas(i) * 7)

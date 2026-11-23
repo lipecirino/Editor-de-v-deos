@@ -369,6 +369,8 @@
                         <TextBlock Grid.Column="0" Text="Cronoanálise" FontSize="15" FontWeight="SemiBold" Foreground="#FF1D1D1F" VerticalAlignment="Center"
                                    ToolTip="Arraste para desacoplar o painel"/>
                         <StackPanel Grid.Column="2" Orientation="Horizontal" Cursor="Arrow">
+                            <ToggleButton Name="btnVerTodasCrono" Content="Ver todas" Tag="&#xE7B3;" Margin="0,0,6,0" Style="{StaticResource BotaoArredondadoToggle}" Click="BtnVerTodasCrono_Click"
+                                          ToolTip="Mostrar na timeline as barras de tempo de todas as operações"/>
                             <Button Name="btnNovaOperacao" Content="Operação" Tag="&#xE710;" Style="{StaticResource BotaoArredondado}" Click="BtnNovaOperacao_Click"
                                     ToolTip="Adicionar uma nova linha de operação"/>
                             <Button Name="btnExportarCrono" Content="Exportar CSV" Tag="&#xE896;" Margin="6,0,0,0" Style="{StaticResource BotaoArredondado}" Click="BtnExportarCrono_Click"/>
