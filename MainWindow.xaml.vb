@@ -1133,12 +1133,12 @@ Partial Class MainWindow
 
     Private Sub BtnMuteAudio_Checked(sender As Object, e As RoutedEventArgs)
         VisualizadorVideo.IsMuted = True
-        btnMuteAudio.Tag = ChrW(&HE74F)
+        btnMuteAudio.Tag = ChrW(&HE74F).ToString()
     End Sub
 
     Private Sub BtnMuteAudio_Unchecked(sender As Object, e As RoutedEventArgs)
         VisualizadorVideo.IsMuted = False
-        btnMuteAudio.Tag = ChrW(&HE767)
+        btnMuteAudio.Tag = ChrW(&HE767).ToString()
     End Sub
 
     Private Sub VisualizadorVideo_MediaOpened(sender As Object, e As RoutedEventArgs)
