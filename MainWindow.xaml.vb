@@ -45,6 +45,18 @@ Public Class CacheGlobal
     Public Property Videos As New List(Of VideoCacheData)()
 End Class
 
+' --- SEGMENTO DE CORTE (INÍCIO/FIM EM SEGUNDOS) ---
+Public Class SegmentoCorte
+    Public Property Inicio As Double = 0
+    Public Property Fim As Double = 0
+
+    Public ReadOnly Property Duracao As Double
+        Get
+            Return Math.Max(0, Fim - Inicio)
+        End Get
+    End Property
+End Class
+
 ' --- CLASSE DE DADOS INDIVIDUAIS ---
 Public Class VideoTarefa
     Implements INotifyPropertyChanged
@@ -66,6 +78,9 @@ Public Class VideoTarefa
     Public Property Inicio As Double = 0
     Public Property Fim As Double = 0
     Public Property FiltroFFmpeg As String = ""
+
+    ' Cada segmento é exportado como um vídeo separado (sem segmentos, exporta o vídeo inteiro)
+    Public Property Segmentos As New List(Of SegmentoCorte)()
 
     Public Property TemCronoAnalise As Boolean
         Get
@@ -600,6 +615,7 @@ Partial Class MainWindow
     Private frameBufferLock As New Object()
     Private bufferTaskCts As CancellationTokenSource
     Private ultimaPosicaoBuffer As Double = -1
+    Private segmentoTravado As SegmentoCorte = Nothing
     Private Const BUFFER_SEGUNDOS As Double = 3.0 ' 3 segundos para frente e para trás
 
     ' --- MODO CRONOANÁLISE ---
@@ -963,12 +979,14 @@ Partial Class MainWindow
             rbEspelharV.IsChecked = (videoAtual.FiltroFFmpeg = "-vf vflip")
 
             AtualizarIndicadorDeCorte()
+            AtualizarSegmentosVisuais()
 
             ' Iniciar buffer de frames na posição inicial
             ultimaPosicaoBuffer = -1
         Else
             videoAtual = Nothing
             cronoEntries.Clear()
+            AtualizarSegmentosVisuais()
         End If
     End Sub
 
@@ -1141,6 +1159,7 @@ Partial Class MainWindow
             End Try
 
             AtualizarIndicadorDeCorte()
+            AtualizarSegmentosVisuais()
 
             ' Iniciar carregamento do buffer de frames na posição inicial
             CarregarBufferFrames(0)
@@ -1151,6 +1170,13 @@ Partial Class MainWindow
         If mediaClock Is Nothing OrElse Not mediaClock.CurrentTime.HasValue Then Return
         If Not isDraggingSlider Then
             Dim pos = mediaClock.CurrentTime.Value.TotalSeconds
+
+            ' Reprodução travada num segmento: volta ao início ao chegar no fim (ou ao sair do intervalo)
+            If segmentoTravado IsNot Nothing AndAlso (pos >= segmentoTravado.Fim - 0.03 OrElse pos < segmentoTravado.Inicio - 0.5) Then
+                IrParaTempo(segmentoTravado.Inicio)
+                Return
+            End If
+
             slLinhaTempo.Value = pos
             lblTempoAtual.Text = FormatarTempo(mediaClock.CurrentTime.Value.TotalSeconds)
         End If
@@ -1243,6 +1269,8 @@ Partial Class MainWindow
     Private Sub BtnCapturarFim_Click(sender As Object, e As RoutedEventArgs)
         If mediaClock IsNot Nothing AndAlso mediaClock.CurrentTime.HasValue Then
             txtFim.Text = Math.Round(mediaClock.CurrentTime.Value.TotalSeconds, 2).ToString()
+            ' Fixar o fim conclui o bloco atual e já o adiciona como a próxima parte
+            AdicionarSegmentoPendente()
         End If
     End Sub
 
@@ -1290,6 +1318,222 @@ Partial Class MainWindow
 
     Private Sub GridSliderCorte_SizeChanged(sender As Object, e As SizeChangedEventArgs)
         AtualizarIndicadorDeCorte()
+        AtualizarSegmentosVisuais()
+    End Sub
+
+    ' --- CORTE MÚLTIPLO ---
+    Private Shared ReadOnly CoresSegmentos As Color() = {
+        Color.FromRgb(&HE5, &H39, &H35), Color.FromRgb(&H1E, &H88, &HE5), Color.FromRgb(&H43, &HA0, &H47),
+        Color.FromRgb(&HFB, &H8C, &H0), Color.FromRgb(&H8E, &H24, &HAA), Color.FromRgb(&H0, &H89, &H7B)}
+
+    Private Function CorSegmento(indice As Integer) As Color
+        Return CoresSegmentos(indice Mod CoresSegmentos.Length)
+    End Function
+
+    ' Conclui o segmento em edição (Início/Fim) e o adiciona como a próxima parte
+    Private Sub AdicionarSegmentoPendente()
+        If videoAtual Is Nothing Then Return
+
+        Dim inicio As Double = 0
+        Dim fim As Double = 0
+        Double.TryParse(txtInicio.Text, inicio)
+        Double.TryParse(txtFim.Text, fim)
+
+        If fim <= 0 OrElse (slLinhaTempo.Maximum > 0 AndAlso fim > slLinhaTempo.Maximum) Then
+            fim = slLinhaTempo.Maximum
+        End If
+        If inicio < 0 Then inicio = 0
+
+        If fim <= inicio Then
+            MessageBox.Show("Defina um Início menor que o Fim antes de adicionar o segmento.", "Segmento inválido", MessageBoxButton.OK, MessageBoxImage.Warning)
+            Return
+        End If
+
+        videoAtual.Segmentos.Add(New SegmentoCorte() With {.Inicio = Math.Round(inicio, 2), .Fim = Math.Round(fim, 2)})
+        videoAtual.Segmentos.Sort(Function(a, b) a.Inicio.CompareTo(b.Inicio))
+
+        ' Limpa o intervalo em edição para o próximo segmento
+        txtInicio.Text = "0"
+        txtFim.Text = "0"
+        AtualizarSegmentosVisuais()
+    End Sub
+
+    Private Sub BtnLimparSegmentos_Click(sender As Object, e As RoutedEventArgs)
+        If videoAtual Is Nothing Then Return
+        videoAtual.Segmentos.Clear()
+        AtualizarSegmentosVisuais()
+    End Sub
+
+    Private Sub BtnRemoverSegmento_Click(sender As Object, e As RoutedEventArgs)
+        Dim btn = TryCast(sender, Button)
+        Dim seg = If(btn IsNot Nothing, TryCast(btn.Tag, SegmentoCorte), Nothing)
+        If seg IsNot Nothing AndAlso videoAtual IsNot Nothing Then
+            videoAtual.Segmentos.Remove(seg)
+            AtualizarSegmentosVisuais()
+        End If
+    End Sub
+
+    ' Clique num bloco/chip: trava a reprodução no período do segmento (novo clique destrava)
+    Private Sub SegmentoTag_MouseLeftButtonDown(sender As Object, e As MouseButtonEventArgs)
+        Dim fe = TryCast(sender, FrameworkElement)
+        Dim seg = If(fe IsNot Nothing, TryCast(fe.Tag, SegmentoCorte), Nothing)
+        If seg Is Nothing OrElse mediaClock Is Nothing Then Return
+
+        If Object.ReferenceEquals(seg, segmentoTravado) Then
+            segmentoTravado = Nothing
+        Else
+            segmentoTravado = seg
+            IrParaTempo(seg.Inicio)
+        End If
+        e.Handled = True
+        AtualizarSegmentosVisuais()
+    End Sub
+
+    ' Distribui os segmentos (ordenados por início) em pistas: sobrepostos sobem um nível, os demais reaproveitam o nível
+    Private Shared Function CalcularPistas(segmentos As List(Of SegmentoCorte)) As Integer()
+        Dim pistas(segmentos.Count - 1) As Integer
+        Dim fimPorPista As New List(Of Double)()
+        For i = 0 To segmentos.Count - 1
+            Dim escolhida As Integer = -1
+            For p = 0 To fimPorPista.Count - 1
+                If segmentos(i).Inicio >= fimPorPista(p) Then
+                    escolhida = p
+                    Exit For
+                End If
+            Next
+            If escolhida = -1 Then
+                fimPorPista.Add(segmentos(i).Fim)
+                escolhida = fimPorPista.Count - 1
+            Else
+                fimPorPista(escolhida) = segmentos(i).Fim
+            End If
+            pistas(i) = escolhida
+        Next
+        Return pistas
+    End Function
+
+    Private Sub IrParaTempo(segundos As Double)
+        If mediaClock Is Nothing Then Return
+        slLinhaTempo.Value = segundos
+        mediaClock.Controller.Seek(TimeSpan.FromSeconds(segundos), TimeSeekOrigin.BeginTime)
+        lblTempoAtual.Text = FormatarTempo(segundos)
+        If Not estaReproduzindo Then
+            Dispatcher.BeginInvoke(DispatcherPriority.Background, Sub()
+                                                                      If mediaClock IsNot Nothing Then mediaClock.Controller.Pause()
+                                                                  End Sub)
+        End If
+        ultimaPosicaoBuffer = segundos
+        CarregarBufferFrames(segundos)
+    End Sub
+
+    Private Sub AtualizarSegmentosVisuais()
+        ' Remove marcadores antigos (círculos/faixas) da linha do tempo principal
+        For i = canvasCorte.Children.Count - 1 To 0 Step -1
+            Dim fe = TryCast(canvasCorte.Children(i), FrameworkElement)
+            If fe IsNot Nothing AndAlso Object.Equals(fe.Tag, "seg") Then canvasCorte.Children.RemoveAt(i)
+        Next
+        canvasSegmentos.Children.Clear()
+        wrapSegmentos.Children.Clear()
+
+        Dim ativo As Boolean = videoAtual IsNot Nothing
+        lblProximaParte.Text = If(ativo, $"Próxima: parte {videoAtual.Segmentos.Count + 1}", "")
+        ' Destrava se o segmento travado deixou de existir (removido, outro vídeo, modo desligado)
+        If segmentoTravado IsNot Nothing AndAlso (Not ativo OrElse Not videoAtual.Segmentos.Contains(segmentoTravado)) Then
+            segmentoTravado = Nothing
+        End If
+
+        ' Abre espaço acima da linha do tempo para as pistas empilhadas
+        Dim pistas As Integer() = If(ativo, CalcularPistas(videoAtual.Segmentos), New Integer() {})
+        Dim nPistas As Integer = If(pistas.Length > 0, pistas.Max() + 1, 0)
+        Dim extraTopo As Double = If(nPistas > 0, Math.Max(0, 13 + (nPistas - 1) * 7 - 24), 0)
+        gridControles.Margin = New Thickness(0, 15 + extraTopo, 0, 20)
+
+        btnLimparSegmentos.Visibility = If(ativo AndAlso videoAtual.Segmentos.Count > 0, Visibility.Visible, Visibility.Collapsed)
+        svSegmentos.Visibility = If(ativo AndAlso videoAtual.Segmentos.Count > 0, Visibility.Visible, Visibility.Collapsed)
+
+        If Not ativo OrElse videoAtual.Segmentos.Count = 0 Then
+            canvasSegmentos.Visibility = Visibility.Collapsed
+            Return
+        End If
+
+        ' Chips de edição (um por segmento, com botão de remover)
+        For i = 0 To videoAtual.Segmentos.Count - 1
+            Dim seg = videoAtual.Segmentos(i)
+            Dim cor = CorSegmento(i)
+
+            Dim txt As New TextBlock() With {
+                .Text = $"{i + 1}:  {FormatarTempo(seg.Inicio)} → {FormatarTempo(seg.Fim)}  ({FormatarTempo(seg.Duracao)})",
+                .VerticalAlignment = VerticalAlignment.Center, .FontSize = 11, .Foreground = Brushes.White}
+            Dim btnX As New Button() With {
+                .Content = "✕", .Width = 18, .Height = 18, .FontSize = 9, .Margin = New Thickness(6, 0, 0, 0),
+                .Foreground = Brushes.White, .Background = Brushes.Transparent, .BorderThickness = New Thickness(0),
+                .Cursor = Cursors.Hand, .Tag = seg, .ToolTip = "Remover este segmento"}
+            AddHandler btnX.Click, AddressOf BtnRemoverSegmento_Click
+            Dim painel As New StackPanel() With {.Orientation = Orientation.Horizontal}
+            painel.Children.Add(txt)
+            painel.Children.Add(btnX)
+            Dim chip As New Border() With {
+                .Background = New SolidColorBrush(cor), .CornerRadius = New CornerRadius(10), .Cursor = Cursors.Hand, .Tag = seg,
+                .BorderBrush = Brushes.Black, .BorderThickness = New Thickness(If(Object.ReferenceEquals(seg, segmentoTravado), 2, 0)),
+                .ToolTip = "Clique para travar/destravar a reprodução neste segmento",
+                .Padding = New Thickness(10, 2, 4, 2), .Margin = New Thickness(0, 0, 6, 4), .Child = painel}
+            AddHandler chip.MouseLeftButtonDown, AddressOf SegmentoTag_MouseLeftButtonDown
+            wrapSegmentos.Children.Add(chip)
+        Next
+
+        Dim maximo = slLinhaTempo.Maximum
+        Dim larguraCanvas = canvasCorte.ActualWidth
+        If maximo <= 0 OrElse larguraCanvas <= 0 Then
+            canvasSegmentos.Visibility = Visibility.Collapsed
+            Return
+        End If
+        canvasSegmentos.Visibility = Visibility.Visible
+
+        For i = 0 To videoAtual.Segmentos.Count - 1
+            Dim seg = videoAtual.Segmentos(i)
+            Dim cor = CorSegmento(i)
+            Dim fim = Math.Min(seg.Fim, maximo)
+            Dim inicio = Math.Min(seg.Inicio, fim)
+            Dim pxInicio = (inicio / maximo) * larguraCanvas
+            Dim pxFim = (fim / maximo) * larguraCanvas
+            Dim largura = Math.Max(2, pxFim - pxInicio)
+            Dim dica = $"Parte {i + 1}: {FormatarTempo(seg.Inicio)} → {FormatarTempo(seg.Fim)} (duração {FormatarTempo(seg.Duracao)})"
+
+            Dim travado As Boolean = Object.ReferenceEquals(seg, segmentoTravado)
+
+            ' Linha fina com a largura do segmento; cada segmento ocupa uma "pista" empilhada acima da linha do tempo
+            Dim centroPista As Double = -4 - (pistas(i) * 7)
+            Dim linha As New Border() With {
+                .Width = largura, .Height = 4, .CornerRadius = New CornerRadius(2), .Tag = "seg", .IsHitTestVisible = False,
+                .Background = New SolidColorBrush(cor)}
+            Canvas.SetLeft(linha, pxInicio)
+            Canvas.SetTop(linha, centroPista - 2)
+            canvasCorte.Children.Add(linha)
+
+            ' Círculo numerado na pista do segmento (centro do segmento)
+            Dim circulo As New Border() With {
+                .Width = 18, .Height = 18, .CornerRadius = New CornerRadius(9), .Tag = "seg", .IsHitTestVisible = False,
+                .Background = New SolidColorBrush(cor), .BorderBrush = If(travado, Brushes.Black, Brushes.White),
+                .BorderThickness = New Thickness(If(travado, 2, 1.5)),
+                .Child = New TextBlock() With {.Text = (i + 1).ToString(), .Foreground = Brushes.White, .FontSize = 10,
+                    .FontWeight = FontWeights.Bold, .HorizontalAlignment = HorizontalAlignment.Center, .VerticalAlignment = VerticalAlignment.Center}}
+            Canvas.SetLeft(circulo, pxInicio + (largura / 2) - 9)
+            Canvas.SetTop(circulo, centroPista - 9)
+            canvasCorte.Children.Add(circulo)
+
+            ' Bloco abaixo da linha do tempo, com o comprimento do segmento (clique = travar reprodução)
+            Dim bloco As New Border() With {
+                .Width = largura, .Height = 24, .CornerRadius = New CornerRadius(4), .ToolTip = dica & vbCrLf & "Clique para travar/destravar a reprodução neste segmento",
+                .Background = New SolidColorBrush(cor), .ClipToBounds = True, .Cursor = Cursors.Hand, .Tag = seg,
+                .BorderBrush = Brushes.Black, .BorderThickness = New Thickness(If(travado, 2, 0)),
+                .Child = New TextBlock() With {.Text = $"{If(travado, "🔒 ", "")}{i + 1} · {FormatarTempo(seg.Duracao)}", .Foreground = Brushes.White,
+                    .FontSize = 10, .FontWeight = FontWeights.SemiBold, .HorizontalAlignment = HorizontalAlignment.Center,
+                    .VerticalAlignment = VerticalAlignment.Center, .TextTrimming = TextTrimming.CharacterEllipsis}}
+            AddHandler bloco.MouseLeftButtonDown, AddressOf SegmentoTag_MouseLeftButtonDown
+            Canvas.SetLeft(bloco, pxInicio)
+            Canvas.SetTop(bloco, 0)
+            canvasSegmentos.Children.Add(bloco)
+        Next
     End Sub
 
     ' --- PROCESSAMENTO EM LOTE (CANCELAMENTO, PREVENÇÃO E UX OTIMIZADOS) ---
@@ -1308,6 +1552,26 @@ Partial Class MainWindow
         SalvarConfiguracoesAtuais()
         SalvarExportSettings()
 
+        ' Se algum vídeo tem segmentos, perguntar como exportar
+        Dim exportarUnico As Boolean = False
+        Dim algumTemSegmentos As Boolean = False
+        For Each item In lstGaleria.Items
+            Dim t = TryCast(item, VideoTarefa)
+            If t IsNot Nothing AndAlso t.Segmentos.Count > 0 Then
+                algumTemSegmentos = True
+                Exit For
+            End If
+        Next
+        If algumTemSegmentos Then
+            Dim resp = MessageBox.Show("Como deseja exportar os segmentos?" & vbCrLf & vbCrLf &
+                                       "SIM  =  Vários vídeos (um para cada segmento)" & vbCrLf &
+                                       "NÃO  =  Um único vídeo só com os segmentos (o restante é cortado)" & vbCrLf &
+                                       "CANCELAR  =  Voltar sem exportar",
+                                       "Exportar segmentos", MessageBoxButton.YesNoCancel, MessageBoxImage.Question)
+            If resp = MessageBoxResult.Cancel Then Return
+            exportarUnico = (resp = MessageBoxResult.No)
+        End If
+
         Dim destino As String = ""
 
         If rbSalvarPastaEscolhida.IsChecked = True Then
@@ -1320,6 +1584,7 @@ Partial Class MainWindow
             End Using
         End If
 
+        segmentoTravado = Nothing
         estaProcessando = True
         cts = New CancellationTokenSource()
 
@@ -1359,65 +1624,122 @@ Partial Class MainWindow
 
                 Dim info = FFProbe.Analyse(tarefa.Caminho)
 
-                Dim pastaSaida
+                Dim pastaSaida As String = destino
                 If rbSalvarPastaOriginal.IsChecked = True Then
                     pastaSaida = Path.GetDirectoryName(tarefa.Caminho)
-                End If
-
-                Dim saida = Path.Combine(pastaSaida, Path.GetFileNameWithoutExtension(tarefa.Caminho) & "_editado.mp4")
-
-                If File.Exists(saida) Then
-                    saida = Path.Combine(pastaSaida, Path.GetFileNameWithoutExtension(tarefa.Caminho) & $"_editado_{Date.Now.ToString("HHmmss")}.mp4")
                 End If
 
                 Dim bitrateOriginal = info.Format.BitRate / 1000
                 Dim bitrateAlvo As Double = If(bitrateOriginal > 6000, 6000, 0)
 
-                Dim duracao As TimeSpan = If(tarefa.Fim > tarefa.Inicio,
-                    TimeSpan.FromSeconds(tarefa.Fim - tarefa.Inicio),
-                    info.Duration - TimeSpan.FromSeconds(tarefa.Inicio))
+                ' Partes a exportar: um vídeo por segmento; sem segmentos, o vídeo inteiro
+                Dim temSegmentos As Boolean = tarefa.Segmentos.Count > 0
+                Dim separados As Boolean = temSegmentos AndAlso Not exportarUnico   ' um vídeo por segmento
+                Dim unico As Boolean = temSegmentos AndAlso exportarUnico           ' um vídeo só com os segmentos juntos
+                Dim partes As List(Of SegmentoCorte)
+                If temSegmentos Then
+                    partes = New List(Of SegmentoCorte)(tarefa.Segmentos)
+                Else
+                    partes = New List(Of SegmentoCorte) From {New SegmentoCorte() With {.Inicio = 0, .Fim = 0}}
+                End If
 
-                Dim ultimaPorcentagem As Integer = -1
+                Dim nomeBase = Path.GetFileNameWithoutExtension(tarefa.Caminho)
+                Dim saida As String = ""
+                Dim temporarios As New List(Of String)()
 
-                Dim engine = FFMpegArguments.FromFileInput(tarefa.Caminho).
-                    OutputToFile(saida, True, Sub(opt)
-                                                  If bitrateAlvo > 0 Then opt.WithVideoBitrate(bitrateAlvo)
-                                                  If tarefa.Inicio > 0 Then opt.Seek(TimeSpan.FromSeconds(tarefa.Inicio))
-                                                  If tarefa.Fim > tarefa.Inicio Then opt.WithDuration(TimeSpan.FromSeconds(tarefa.Fim - tarefa.Inicio))
+                If Not separados Then
+                    saida = Path.Combine(pastaSaida, nomeBase & "_editado.mp4")
+                    If File.Exists(saida) Then
+                        saida = Path.Combine(pastaSaida, nomeBase & $"_editado_{Date.Now.ToString("HHmmss")}.mp4")
+                    End If
+                End If
 
-                                                  Dim argsFinais As String = tarefa.FiltroFFmpeg
-                                                  If Not String.IsNullOrEmpty(argumentosDesempenho) Then
-                                                      argsFinais = If(String.IsNullOrEmpty(argsFinais), argumentosDesempenho, argsFinais & " " & argumentosDesempenho)
-                                                  End If
+                Try
+                For k = 0 To partes.Count - 1
+                    If cts.Token.IsCancellationRequested Then Exit For
 
-                                                  If Not String.IsNullOrEmpty(argsFinais) Then opt.WithCustomArgument(argsFinais)
-                                              End Sub).
-                    NotifyOnProgress(Sub(perc)
-                                         Dim porcentagemAtual As Integer = CInt(Math.Round(perc, 0))
-                                         If porcentagemAtual <> ultimaPorcentagem Then
-                                             ultimaPorcentagem = porcentagemAtual
-                                             Dispatcher.BeginInvoke(Sub()
-                                                                        pbProgresso.Value = perc
-                                                                        lblPorcentagem.Text = porcentagemAtual.ToString() & "%"
-                                                                        lblStatusLote.Text = $"A converter {indiceAtual + 1}/{lstGaleria.Items.Count} - {Path.GetFileName(tarefa.Caminho)}"
-                                                                    End Sub)
-                                         End If
-                                     End Sub, duracao)
+                    Dim indiceParte As Integer = k
+                    Dim parteInicio As Double = partes(k).Inicio
+                    Dim parteFim As Double = partes(k).Fim
 
-                Await engine.CancellableThrough(cts.Token).ProcessAsynchronously()
+                    Dim destinoParte As String
+                    If unico Then
+                        destinoParte = Path.Combine(Path.GetTempPath(), $"editor_{Guid.NewGuid():N}_parte{k + 1}.mp4")
+                        temporarios.Add(destinoParte)
+                    ElseIf separados Then
+                        saida = Path.Combine(pastaSaida, nomeBase & $"_editado_parte{k + 1}.mp4")
+                        If File.Exists(saida) Then
+                            saida = Path.Combine(pastaSaida, nomeBase & $"_editado_parte{k + 1}_{Date.Now.ToString("HHmmss")}.mp4")
+                        End If
+                        destinoParte = saida
+                    Else
+                        destinoParte = saida
+                    End If
+
+                    Dim duracao As TimeSpan = If(parteFim > parteInicio,
+                        TimeSpan.FromSeconds(parteFim - parteInicio),
+                        info.Duration - TimeSpan.FromSeconds(parteInicio))
+
+                    Dim ultimaPorcentagem As Integer = -1
+
+                    Dim engine = FFMpegArguments.FromFileInput(tarefa.Caminho).
+                        OutputToFile(destinoParte, True, Sub(opt)
+                                                      If bitrateAlvo > 0 Then opt.WithVideoBitrate(bitrateAlvo)
+                                                      If parteInicio > 0 Then opt.Seek(TimeSpan.FromSeconds(parteInicio))
+                                                      If parteFim > parteInicio Then opt.WithDuration(TimeSpan.FromSeconds(parteFim - parteInicio))
+
+                                                      Dim argsFinais As String = tarefa.FiltroFFmpeg
+                                                      If Not String.IsNullOrEmpty(argumentosDesempenho) Then
+                                                          argsFinais = If(String.IsNullOrEmpty(argsFinais), argumentosDesempenho, argsFinais & " " & argumentosDesempenho)
+                                                      End If
+
+                                                      If Not String.IsNullOrEmpty(argsFinais) Then opt.WithCustomArgument(argsFinais)
+                                                  End Sub).
+                        NotifyOnProgress(Sub(perc)
+                                             Dim porcentagemAtual As Integer = CInt(Math.Round(perc, 0))
+                                             If porcentagemAtual <> ultimaPorcentagem Then
+                                                 ultimaPorcentagem = porcentagemAtual
+                                                 Dispatcher.BeginInvoke(Sub()
+                                                                            pbProgresso.Value = perc
+                                                                            lblPorcentagem.Text = porcentagemAtual.ToString() & "%"
+                                                                            Dim textoParte As String = If(temSegmentos, $" (parte {indiceParte + 1}/{partes.Count})", "")
+                                                                            lblStatusLote.Text = $"A converter {indiceAtual + 1}/{lstGaleria.Items.Count} - {Path.GetFileName(tarefa.Caminho)}{textoParte}"
+                                                                        End Sub)
+                                             End If
+                                         End Sub, duracao)
+
+                    Await engine.CancellableThrough(cts.Token).ProcessAsynchronously()
+                Next
+
+                ' Um único vídeo: junta as partes (só os segmentos), descartando o restante
+                If unico AndAlso Not cts.Token.IsCancellationRequested Then
+                    lblStatusLote.Text = $"A juntar partes {indiceAtual + 1}/{lstGaleria.Items.Count} - {Path.GetFileName(tarefa.Caminho)}"
+                    Dim arquivosJuntar As String() = temporarios.ToArray()
+                    Dim destinoFinal As String = saida
+                    Await Task.Run(Sub() FFMpeg.Join(destinoFinal, arquivosJuntar))
+                End If
+                Finally
+                    For Each tmp In temporarios
+                        Try
+                            If File.Exists(tmp) Then File.Delete(tmp)
+                        Catch
+                        End Try
+                    Next
+                End Try
 
                 If chkDeletarOriginal.IsChecked = True AndAlso Not cts.Token.IsCancellationRequested Then
                     Try
                         File.Delete(tarefa.Caminho)
 
                         ' Após deletar o original, renomear o ficheiro de saída removendo "_editado"
-                        ' para que o nome fique igual ao original, mas mantendo a extensão nova (.mp4)
+                        ' para que o nome fique igual ao original, mas mantendo a extensão nova (.mp4).
+                        ' No corte múltiplo as partes mantêm o sufixo "_parteN".
                         Dim nomeOriginalSemExt = Path.GetFileNameWithoutExtension(tarefa.Caminho)
                         Dim novoNome = nomeOriginalSemExt & ".mp4"
                         Dim caminhoRenomeado = Path.Combine(Path.GetDirectoryName(saida), novoNome)
 
                         ' Só renomear se o ficheiro de saída realmente contém "_editado" e o nome de destino é diferente
-                        If saida <> caminhoRenomeado AndAlso File.Exists(saida) AndAlso Not File.Exists(caminhoRenomeado) Then
+                        If Not separados AndAlso saida <> caminhoRenomeado AndAlso File.Exists(saida) AndAlso Not File.Exists(caminhoRenomeado) Then
                             File.Move(saida, caminhoRenomeado)
                             saida = caminhoRenomeado
                         End If
