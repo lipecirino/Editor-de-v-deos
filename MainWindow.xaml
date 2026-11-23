@@ -739,6 +739,44 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
+
+                                <!-- Visualizar: trava a reprodução nos trechos da linha -->
+                                <DataGridTemplateColumn Header="Visualizar" Width="80" IsReadOnly="True" CanUserResize="False" CanUserReorder="False">
+                                    <DataGridTemplateColumn.CellStyle>
+                                        <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+                                            <Setter Property="Focusable" Value="False"/>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter Property="Background" Value="Transparent"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGridTemplateColumn.CellStyle>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button x:Name="btnVis" Content="&#xE768;" FontFamily="{StaticResource FonteIcones}" Width="28" Height="24" FontSize="12"
+                                                    Foreground="#FF007AFF" Background="#FFE5F1FF" BorderThickness="0" Cursor="Hand"
+                                                    HorizontalAlignment="Center"
+                                                    ToolTip="Visualizar: reproduz só os trechos desta linha (clique de novo para desligar)"
+                                                    Click="BtnVisualizarCrono_Click">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="6">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding Visualizando}" Value="True">
+                                                    <Setter TargetName="btnVis" Property="Background" Value="#FF007AFF"/>
+                                                    <Setter TargetName="btnVis" Property="Foreground" Value="White"/>
+                                                    <Setter TargetName="btnVis" Property="Content" Value="&#xE71A;"/>
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
                     </ScrollViewer>

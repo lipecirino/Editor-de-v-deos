@@ -214,6 +214,20 @@ Public Class CronoAnaliseEntry
         End Set
     End Property
 
+    ' Indica que a reprodução está travada nos trechos desta linha (botão "visualizar")
+    Private _visualizando As Boolean = False
+
+    Public Property Visualizando As Boolean
+        Get
+            Return _visualizando
+        End Get
+        Set(value As Boolean)
+            If _visualizando = value Then Return
+            _visualizando = value
+            RaisePropertyChanged(NameOf(Visualizando))
+        End Set
+    End Property
+
     ' Índices dos campos
     Public Const IDX_INICIO1 As Integer = 0
     Public Const IDX_FIM1 As Integer = 1
@@ -641,6 +655,106 @@ Partial Class MainWindow
     Private indiceCronoSelecionado As Integer = -1
     Private editandoCelulaCrono As Boolean = False
 
+    ' --- PRÉ-VISUALIZAÇÃO DOS TRECHOS DE UMA LINHA DA CRONOANÁLISE ---
+    ' previewEntry: linha selecionada, cujos trechos aparecem na timeline como cortes (não altera os cortes reais)
+    ' previewTrava: reprodução restrita a esses trechos (botão "visualizar" da linha)
+    Private previewEntry As CronoAnaliseEntry = Nothing
+    Private previewTrava As Boolean = False
+    Private segmentosPreview As New List(Of SegmentoCorte)()
+    Private ultimoSaltoPreviewTick As Integer = 0
+
+    ' Cortes mostrados na timeline: os trechos da linha selecionada ou, sem seleção, os cortes reais do vídeo
+    Private Function SegmentosExibidos() As List(Of SegmentoCorte)
+        If previewEntry IsNot Nothing Then Return segmentosPreview
+        Return If(videoAtual IsNot Nothing, videoAtual.Segmentos, New List(Of SegmentoCorte)())
+    End Function
+
+    Private Sub RecalcularSegmentosPreview()
+        segmentosPreview = New List(Of SegmentoCorte)()
+        If previewEntry Is Nothing Then Return
+        Dim ini = {previewEntry.Inicio1, previewEntry.Inicio2, previewEntry.Inicio3, previewEntry.Inicio4}
+        Dim fim = {previewEntry.Fim1, previewEntry.Fim2, previewEntry.Fim3, previewEntry.Fim4}
+        For i = 0 To 3
+            If fim(i) > ini(i) AndAlso fim(i) > 0 Then
+                segmentosPreview.Add(New SegmentoCorte() With {.Inicio = ini(i), .Fim = fim(i)})
+            End If
+        Next
+        segmentosPreview.Sort(Function(x, y) x.Inicio.CompareTo(y.Inicio))
+    End Sub
+
+    Private Sub PreviewEntry_PropertyChanged(sender As Object, e As PropertyChangedEventArgs)
+        If e.PropertyName Is Nothing OrElse Not (e.PropertyName.StartsWith("Inicio") OrElse e.PropertyName.StartsWith("Fim")) Then Return
+        If e.PropertyName.EndsWith("Display") Then Return
+        RecalcularSegmentosPreview()
+        segmentoTravado = Nothing
+        AtualizarSegmentosVisuais()
+    End Sub
+
+    ' Mostra na timeline os trechos da linha (mantém o estado de trava ao trocar de linha)
+    Private Sub MostrarPreviewCrono(entry As CronoAnaliseEntry)
+        If Object.ReferenceEquals(entry, previewEntry) Then Return
+        If previewEntry IsNot Nothing Then
+            RemoveHandler previewEntry.PropertyChanged, AddressOf PreviewEntry_PropertyChanged
+            previewEntry.Visualizando = False
+        End If
+        previewEntry = entry
+        segmentoTravado = Nothing
+        If entry IsNot Nothing Then
+            AddHandler entry.PropertyChanged, AddressOf PreviewEntry_PropertyChanged
+            entry.Visualizando = previewTrava
+        Else
+            previewTrava = False
+        End If
+        RecalcularSegmentosPreview()
+        AplicarModoPreview()
+        AtualizarSegmentosVisuais()
+    End Sub
+
+    Private Sub LimparPreviewCrono()
+        previewTrava = False
+        MostrarPreviewCrono(Nothing)
+    End Sub
+
+    Private Sub AplicarModoPreview()
+        cronometroVideo.Interval = TimeSpan.FromMilliseconds(If(previewTrava AndAlso previewEntry IsNot Nothing, 40, 200))
+    End Sub
+
+    Private Sub BtnVisualizarCrono_Click(sender As Object, e As RoutedEventArgs)
+        Dim btn = TryCast(sender, Button)
+        Dim entry = If(btn IsNot Nothing, TryCast(btn.DataContext, CronoAnaliseEntry), Nothing)
+        If entry Is Nothing Then Return
+        e.Handled = True
+
+        If Object.ReferenceEquals(entry, previewEntry) AndAlso previewTrava Then
+            ' Desliga a trava (os trechos continuam visíveis na timeline)
+            previewTrava = False
+            entry.Visualizando = False
+            AplicarModoPreview()
+            Return
+        End If
+
+        previewTrava = True
+        MostrarPreviewCrono(entry)
+        entry.Visualizando = True
+        AplicarModoPreview()
+
+        If segmentosPreview.Count = 0 OrElse mediaClock Is Nothing Then Return
+        IrParaTempo(segmentosPreview(0).Inicio)
+        ultimoSaltoPreviewTick = Environment.TickCount
+        If Not estaReproduzindo Then BtnPlayPause_Click(Nothing, Nothing)
+    End Sub
+
+    ' Com a trava ativa: se a posição está fora dos trechos, devolve o início do próximo trecho (ou do primeiro, em loop); senão -1
+    Private Function SaltoPreview(pos As Double) As Double
+        For Each seg In segmentosPreview
+            If pos >= seg.Inicio - 0.05 AndAlso pos < seg.Fim - 0.03 Then Return -1
+        Next
+        For Each seg In segmentosPreview
+            If seg.Inicio > pos Then Return seg.Inicio
+        Next
+        Return segmentosPreview(0).Inicio
+    End Function
+
     ' --- ANÁLISE ESTATÍSTICA ---
     Private Sub AtualizarAnaliseEstatistica()
         ' Agrupar por operação e calcular média e desvio padrão
@@ -745,6 +859,10 @@ Partial Class MainWindow
 
         ' Inicializar modo cronoanálise
         gridCrono.ItemsSource = cronoEntries
+        AddHandler cronoEntries.CollectionChanged, Sub(s, ev)
+                                                       ' Linha removida (ou lista limpa) que estava em pré-visualização
+                                                       If previewEntry IsNot Nothing AndAlso Not cronoEntries.Contains(previewEntry) Then LimparPreviewCrono()
+                                                   End Sub
 
         ' Carregar cache de cronoanálise
         CarregarCache()
@@ -947,6 +1065,7 @@ Partial Class MainWindow
 
     Private Sub LstGaleria_SelectionChanged(sender As Object, e As SelectionChangedEventArgs)
         SalvarConfiguracoesAtuais()
+        LimparPreviewCrono()
 
         ' Salvar cronoanálise do vídeo anterior
         If videoAtual IsNot Nothing Then
@@ -1188,6 +1307,17 @@ Partial Class MainWindow
         If Not isDraggingSlider Then
             Dim pos = mediaClock.CurrentTime.Value.TotalSeconds
 
+            ' Trava da cronoanálise: reproduz só os trechos da linha, pulando as partes cortadas
+            If previewTrava AndAlso estaReproduzindo AndAlso previewEntry IsNot Nothing AndAlso segmentosPreview.Count > 0 _
+               AndAlso Environment.TickCount - ultimoSaltoPreviewTick > 250 Then
+                Dim alvo = SaltoPreview(pos)
+                If alvo >= 0 Then
+                    ultimoSaltoPreviewTick = Environment.TickCount
+                    IrParaTempo(alvo)
+                    Return
+                End If
+            End If
+
             ' Reprodução travada num segmento: volta ao início ao chegar no fim (ou ao sair do intervalo)
             If segmentoTravado IsNot Nothing AndAlso (pos >= segmentoTravado.Fim - 0.03 OrElse pos < segmentoTravado.Inicio - 0.5) Then
                 IrParaTempo(segmentoTravado.Inicio)
@@ -1406,40 +1536,46 @@ Partial Class MainWindow
         wrapSegmentos.Children.Clear()
 
         Dim ativo As Boolean = videoAtual IsNot Nothing
-        Dim nSeg As Integer = If(ativo, videoAtual.Segmentos.Count, 0)
+        Dim emPreview As Boolean = ativo AndAlso previewEntry IsNot Nothing
+        Dim segs As List(Of SegmentoCorte) = SegmentosExibidos()
+        Dim nSeg As Integer = If(ativo, segs.Count, 0)
         If Not ativo Then
             lblProximaParte.Text = "Selecione um vídeo na galeria."
             txtDicaSegmentos.Text = ""
+        ElseIf emPreview Then
+            Dim nome = If(String.IsNullOrWhiteSpace(previewEntry.Operacao), "linha selecionada", previewEntry.Operacao)
+            lblProximaParte.Text = If(nSeg = 0, $"Cronoanálise ""{nome}"": sem trechos registrados",
+                $"Cronoanálise ""{nome}"": {nSeg} trecho(s){If(previewTrava, " · reprodução travada nos trechos", "")}")
         ElseIf videoAtual.TempoPendente >= 0 Then
             lblProximaParte.Text = $"Parte {nSeg + 1}: 1º tempo em {FormatarTempo(videoAtual.TempoPendente)}. Vá ao ponto final e clique em ✂ Registrar tempo."
         Else
             lblProximaParte.Text = If(nSeg = 0, "Nenhum segmento", $"{nSeg} segmento(s)")
         End If
-        txtDicaSegmentos.Text = If(ativo AndAlso nSeg = 0 AndAlso videoAtual.TempoPendente < 0,
+        txtDicaSegmentos.Text = If(ativo AndAlso Not emPreview AndAlso nSeg = 0 AndAlso videoAtual.TempoPendente < 0,
             "Sem segmentos, o vídeo é exportado inteiro. Para cortar, clique em ✂ Registrar tempo no início do trecho e de novo no fim; repita para criar mais partes.", "")
         txtDicaSegmentos.Visibility = If(txtDicaSegmentos.Text = "", Visibility.Collapsed, Visibility.Visible)
         ' Destrava se o segmento travado deixou de existir (removido, outro vídeo, modo desligado)
-        If segmentoTravado IsNot Nothing AndAlso (Not ativo OrElse Not videoAtual.Segmentos.Contains(segmentoTravado)) Then
+        If segmentoTravado IsNot Nothing AndAlso (Not ativo OrElse Not segs.Contains(segmentoTravado)) Then
             segmentoTravado = Nothing
         End If
 
         ' Abre espaço acima da linha do tempo para as pistas empilhadas
-        Dim pistas As Integer() = If(ativo, CalcularPistas(videoAtual.Segmentos), New Integer() {})
+        Dim pistas As Integer() = If(ativo, CalcularPistas(segs), New Integer() {})
         Dim nPistas As Integer = If(pistas.Length > 0, pistas.Max() + 1, 0)
         Dim extraTopo As Double = If(nPistas > 0, Math.Max(0, 13 + (nPistas - 1) * 7 - 24), 0)
         gridControles.Margin = New Thickness(0, 15 + extraTopo, 0, 12)
 
-        btnLimparSegmentos.Visibility = If(ativo AndAlso videoAtual.Segmentos.Count > 0, Visibility.Visible, Visibility.Collapsed)
-        svSegmentos.Visibility = If(ativo AndAlso videoAtual.Segmentos.Count > 0, Visibility.Visible, Visibility.Collapsed)
+        btnLimparSegmentos.Visibility = If(ativo AndAlso Not emPreview AndAlso segs.Count > 0, Visibility.Visible, Visibility.Collapsed)
+        svSegmentos.Visibility = If(ativo AndAlso segs.Count > 0, Visibility.Visible, Visibility.Collapsed)
 
-        If Not ativo OrElse videoAtual.Segmentos.Count = 0 Then
+        If Not ativo OrElse segs.Count = 0 Then
             canvasSegmentos.Visibility = Visibility.Collapsed
             Return
         End If
 
         ' Chips de edição (um por segmento, com botão de remover)
-        For i = 0 To videoAtual.Segmentos.Count - 1
-            Dim seg = videoAtual.Segmentos(i)
+        For i = 0 To segs.Count - 1
+            Dim seg = segs(i)
             Dim cor = CorSegmento(i)
 
             Dim txt As New TextBlock() With {
@@ -1452,7 +1588,7 @@ Partial Class MainWindow
             AddHandler btnX.Click, AddressOf BtnRemoverSegmento_Click
             Dim painel As New StackPanel() With {.Orientation = Orientation.Horizontal}
             painel.Children.Add(txt)
-            painel.Children.Add(btnX)
+            If Not emPreview Then painel.Children.Add(btnX) ' trechos da cronoanálise não são removidos por aqui
             Dim chip As New Border() With {
                 .Background = New SolidColorBrush(cor), .CornerRadius = New CornerRadius(10), .Cursor = Cursors.Hand, .Tag = seg,
                 .BorderBrush = Brushes.Black, .BorderThickness = New Thickness(If(Object.ReferenceEquals(seg, segmentoTravado), 2, 0)),
@@ -1470,8 +1606,8 @@ Partial Class MainWindow
         End If
         canvasSegmentos.Visibility = Visibility.Visible
 
-        For i = 0 To videoAtual.Segmentos.Count - 1
-            Dim seg = videoAtual.Segmentos(i)
+        For i = 0 To segs.Count - 1
+            Dim seg = segs(i)
             Dim cor = CorSegmento(i)
             Dim fim = Math.Min(seg.Fim, maximo)
             Dim inicio = Math.Min(seg.Inicio, fim)
@@ -2268,15 +2404,21 @@ Partial Class MainWindow
 
     Private Sub GridCrono_SelectedCellsChanged(sender As Object, e As SelectedCellsChangedEventArgs)
         ' Colunas não selecionáveis (0 = botão excluir, 13 = análise): remove da seleção qualquer célula adicionada
-        If Not removendoSelecaoInvalida AndAlso e.AddedCells.Any(Function(c) c.Column IsNot Nothing AndAlso (c.Column.DisplayIndex = 0 OrElse c.Column.DisplayIndex = 13)) Then
+        If Not removendoSelecaoInvalida AndAlso e.AddedCells.Any(Function(c) c.Column IsNot Nothing AndAlso (c.Column.DisplayIndex = 0 OrElse c.Column.DisplayIndex >= 13)) Then
             removendoSelecaoInvalida = True
             Try
-                For Each c In e.AddedCells.Where(Function(x) x.Column IsNot Nothing AndAlso (x.Column.DisplayIndex = 0 OrElse x.Column.DisplayIndex = 13)).ToList()
+                For Each c In e.AddedCells.Where(Function(x) x.Column IsNot Nothing AndAlso (x.Column.DisplayIndex = 0 OrElse x.Column.DisplayIndex >= 13)).ToList()
                     gridCrono.SelectedCells.Remove(c)
                 Next
             Finally
                 removendoSelecaoInvalida = False
             End Try
+        End If
+
+        ' Clique num registro: mostra os trechos dele na timeline como cortes
+        If Not removendoSelecaoInvalida AndAlso gridCrono.SelectedCells.Count > 0 Then
+            Dim ultima = TryCast(gridCrono.SelectedCells(gridCrono.SelectedCells.Count - 1).Item, CronoAnaliseEntry)
+            If ultima IsNot Nothing Then MostrarPreviewCrono(ultima)
         End If
 
         Dim valores As New List(Of Double)
