@@ -4,7 +4,8 @@
         Title="Editor de Vídeo (Padronização)" 
         Height="750" Width="1050" MinHeight="650" MinWidth="980"
         WindowStartupLocation="CenterScreen"
-        Background="#FFF5F5F7" FontFamily="Segoe UI Variable Text, Segoe UI" TextElement.Foreground="#FF1D1D1F">
+        Background="#FFF5F5F7" FontFamily="Segoe UI Variable Text, Segoe UI" TextElement.Foreground="#FF1D1D1F"
+        KeyboardNavigation.DirectionalNavigation="None">
 
     <Window.Resources>
         <Style x:Key="SliderYoutube" TargetType="Slider">
@@ -16,7 +17,7 @@
                             <Border Height="4" Background="#FFD1D1D6" VerticalAlignment="Center" CornerRadius="2"/>
                             <Track x:Name="PART_Track">
                                 <Track.DecreaseRepeatButton>
-                                    <RepeatButton>
+                                    <RepeatButton Focusable="False">
                                         <RepeatButton.Template>
                                             <ControlTemplate TargetType="RepeatButton">
                                                 <Border Height="4" Background="#FF007AFF" CornerRadius="2"/>
@@ -25,7 +26,7 @@
                                     </RepeatButton>
                                 </Track.DecreaseRepeatButton>
                                 <Track.Thumb>
-                                    <Thumb x:Name="Thumb" Cursor="Hand">
+                                    <Thumb x:Name="Thumb" Cursor="Hand" Focusable="False">
                                         <Thumb.Template>
                                             <ControlTemplate TargetType="Thumb">
                                                 <Ellipse x:Name="bolinha" Width="16" Height="16" Fill="White" Stroke="#FFC7C7CC" StrokeThickness="1" Margin="-1,0"/>
@@ -178,7 +179,7 @@
                 <TextBlock Name="lblTempoAtual" Text="00:00:00" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0" Foreground="#FF86868B" FontFamily="Consolas"/>
 
                 <Grid Grid.Row="0" Grid.Column="1" Name="gridSliderCorte" Height="35" SizeChanged="GridSliderCorte_SizeChanged">
-                    <Slider Name="slLinhaTempo" Style="{StaticResource SliderYoutube}"
+                    <Slider Name="slLinhaTempo" Focusable="False" Style="{StaticResource SliderYoutube}"
                             Thumb.DragStarted="SlLinhaTempo_DragStarted"
                             Thumb.DragCompleted="SlLinhaTempo_DragCompleted"
                             ValueChanged="SlLinhaTempo_ValueChanged"
@@ -258,7 +259,7 @@
             </Grid>  <!-- fecha wrapper topo (video + controlos) -->
 
             <!-- ===== SEPARADOR ===== -->
-            <GridSplitter Name="gridSplitterCrono" Grid.Row="1" Height="8" HorizontalAlignment="Stretch"
+            <GridSplitter Name="gridSplitterCrono" Focusable="False" IsTabStop="False" Grid.Row="1" Height="8" HorizontalAlignment="Stretch"
                           VerticalAlignment="Center" Background="Transparent" ShowsPreview="True"
                           ResizeDirection="Rows" ResizeBehavior="PreviousAndNext"
                           ToolTip="Arraste para ajustar a altura da área inferior"/>
