@@ -1375,8 +1375,8 @@ Partial Class MainWindow
 
     Private Sub VisualizadorVideo_MediaOpened(sender As Object, e As RoutedEventArgs)
         If VisualizadorVideo.NaturalDuration.HasTimeSpan Then
-            slLinhaTempo.Maximum = VisualizadorVideo.NaturalDuration.TimeSpan.TotalSeconds
-            lblTempoTotal.Text = FormatarTempo(VisualizadorVideo.NaturalDuration.TimeSpan.TotalSeconds)
+            duracaoTotalVideo = VisualizadorVideo.NaturalDuration.TimeSpan.TotalSeconds
+            AplicarEscalaTimeline()
             cronometroVideo.Start()
 
             Try
@@ -1517,14 +1517,15 @@ Partial Class MainWindow
 
     ' Marcador do 1º tempo registrado (aguardando o 2º)
     Private Sub AtualizarIndicadorDeCorte()
-        If videoAtual Is Nothing OrElse slLinhaTempo.Maximum <= 0 OrElse videoAtual.TempoPendente < 0 Then
+        If videoAtual Is Nothing OrElse slLinhaTempo.Maximum <= slLinhaTempo.Minimum OrElse videoAtual.TempoPendente < 0 Then
             bdrCorte.Visibility = Visibility.Hidden
             Return
         End If
 
         Dim larguraTotal As Double = gridSliderCorte.ActualWidth - 12
         If larguraTotal > 0 Then
-            Dim px = (Math.Min(videoAtual.TempoPendente, slLinhaTempo.Maximum) / slLinhaTempo.Maximum) * larguraTotal
+            Dim rmin = slLinhaTempo.Minimum, rmax = slLinhaTempo.Maximum
+            Dim px = ((Math.Max(rmin, Math.Min(videoAtual.TempoPendente, rmax)) - rmin) / (rmax - rmin)) * larguraTotal
             bdrCorte.Width = 8
             Canvas.SetLeft(bdrCorte, px - 4)
             bdrCorte.Visibility = Visibility.Visible
@@ -1576,6 +1577,7 @@ Partial Class MainWindow
             segmentoTravado = Nothing
         Else
             segmentoTravado = seg
+            AplicarEscalaTimeline() ' ajusta os limites antes de posicionar no início do bloco
             IrParaTempo(seg.Inicio)
         End If
         AtualizarSegmentosVisuais()
@@ -1616,6 +1618,29 @@ Partial Class MainWindow
         End If
         ultimaPosicaoBuffer = segundos
         CarregarBufferFrames(segundos)
+    End Sub
+
+    Private duracaoTotalVideo As Double = 0
+
+    ' A timeline usa como referência de início/fim o bloco travado; sem bloco travado, o vídeo inteiro
+    Private Sub AplicarEscalaTimeline()
+        Dim novoMin As Double = 0
+        Dim novoMax As Double = duracaoTotalVideo
+        If segmentoTravado IsNot Nothing Then
+            novoMin = Math.Max(0, segmentoTravado.Inicio)
+            novoMax = If(duracaoTotalVideo > 0, Math.Min(segmentoTravado.Fim, duracaoTotalVideo), segmentoTravado.Fim)
+        End If
+        If novoMax <= novoMin Then Return
+        If slLinhaTempo.Minimum = novoMin AndAlso slLinhaTempo.Maximum = novoMax Then Return
+        ' Ordem que evita coerção indevida do Slider ao mudar os limites
+        If novoMin > slLinhaTempo.Maximum Then
+            slLinhaTempo.Maximum = novoMax
+            slLinhaTempo.Minimum = novoMin
+        Else
+            slLinhaTempo.Minimum = novoMin
+            slLinhaTempo.Maximum = novoMax
+        End If
+        lblTempoTotal.Text = FormatarTempo(novoMax)
     End Sub
 
     Private Sub AtualizarSegmentosVisuais()
@@ -1659,6 +1684,7 @@ Partial Class MainWindow
         If segmentoTravado IsNot Nothing AndAlso (Not ativo OrElse Not segs.Contains(segmentoTravado)) Then
             segmentoTravado = Nothing
         End If
+        AplicarEscalaTimeline()
 
         ' Abre espaço acima da linha do tempo para as pistas empilhadas
         Dim pistas As Integer() = If(ativo, CalcularPistas(segs), New Integer() {})
@@ -1698,23 +1724,25 @@ Partial Class MainWindow
             wrapSegmentos.Children.Add(chip)
         Next
 
-        Dim maximo = slLinhaTempo.Maximum
+        Dim rmin = slLinhaTempo.Minimum, rmax = slLinhaTempo.Maximum
+        Dim span = rmax - rmin
         Dim larguraCanvas = canvasCorte.ActualWidth
-        If maximo <= 0 OrElse larguraCanvas <= 0 Then
+        If span <= 0 OrElse larguraCanvas <= 0 Then
             Return
         End If
 
         For i = 0 To segs.Count - 1
             Dim seg = segs(i)
-            Dim cor = CorSegmento(i)
-            Dim fim = Math.Min(seg.Fim, maximo)
-            Dim inicio = Math.Min(seg.Inicio, fim)
-            Dim pxInicio = (inicio / maximo) * larguraCanvas
-            Dim pxFim = (fim / maximo) * larguraCanvas
+            Dim travado As Boolean = Object.ReferenceEquals(seg, segmentoTravado)
+            ' Com um bloco travado, só ele fica na cor padrão; os demais ficam em cinza escuro (desabilitados)
+            Dim cor = If(segmentoTravado IsNot Nothing AndAlso Not travado, Color.FromRgb(&H6E, &H6E, &H73), CorSegmento(i))
+            Dim fim = Math.Min(seg.Fim, rmax)
+            Dim inicio = Math.Max(seg.Inicio, rmin)
+            If fim <= inicio Then Continue For ' fora da faixa visível da timeline
+            Dim pxInicio = ((inicio - rmin) / span) * larguraCanvas
+            Dim pxFim = ((fim - rmin) / span) * larguraCanvas
             Dim largura = Math.Max(2, pxFim - pxInicio)
             Dim dica = $"Parte {i + 1}: {FormatarTempo(seg.Inicio)} → {FormatarTempo(seg.Fim)} (duração {FormatarTempo(seg.Duracao)})"
-
-            Dim travado As Boolean = Object.ReferenceEquals(seg, segmentoTravado)
 
             ' Linha fina com a largura do segmento; cada segmento ocupa uma "pista" empilhada acima da linha do tempo
             Dim centroPista As Double = -4 - (pistas(i) * 7)
