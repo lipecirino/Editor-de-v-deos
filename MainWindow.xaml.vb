@@ -817,6 +817,7 @@ Partial Class MainWindow
             previewTrava = False
             entry.Visualizando = False
             AplicarModoPreview()
+            AtualizarSegmentosVisuais() ' timeline volta ao vídeo inteiro
             Return
         End If
 
@@ -824,6 +825,7 @@ Partial Class MainWindow
         MostrarPreviewCrono(entry)
         entry.Visualizando = True
         AplicarModoPreview()
+        AtualizarSegmentosVisuais() ' timeline passa a cobrir só os trechos da linha
 
         If segmentosPreview.Count = 0 OrElse mediaClock Is Nothing Then Return
         IrParaTempo(segmentosPreview(0).Inicio)
@@ -1629,6 +1631,11 @@ Partial Class MainWindow
         If segmentoTravado IsNot Nothing Then
             novoMin = Math.Max(0, segmentoTravado.Inicio)
             novoMax = If(duracaoTotalVideo > 0, Math.Min(segmentoTravado.Fim, duracaoTotalVideo), segmentoTravado.Fim)
+        ElseIf previewTrava AndAlso previewEntry IsNot Nothing AndAlso segmentosPreview.Count > 0 Then
+            ' Visualização da cronoanálise: a timeline cobre do início do 1º trecho ao fim do último
+            novoMin = Math.Max(0, segmentosPreview.Min(Function(x) x.Inicio))
+            novoMax = segmentosPreview.Max(Function(x) x.Fim)
+            If duracaoTotalVideo > 0 Then novoMax = Math.Min(novoMax, duracaoTotalVideo)
         End If
         If novoMax <= novoMin Then Return
         If slLinhaTempo.Minimum = novoMin AndAlso slLinhaTempo.Maximum = novoMax Then Return
@@ -1773,6 +1780,28 @@ Partial Class MainWindow
                                                     End Sub
             canvasCorte.Children.Add(circulo)
         Next
+
+        ' Visualização da cronoanálise: os intervalos entre os trechos (partes cortadas) ficam em cinza escuro sobre a timeline
+        If emPreview AndAlso previewTrava AndAlso segmentoTravado Is Nothing Then
+            Dim cursor As Double = rmin
+            Dim lacunas As New List(Of Double())()
+            For Each seg In segs.OrderBy(Function(x) x.Inicio)
+                If seg.Inicio > cursor Then lacunas.Add({cursor, Math.Min(seg.Inicio, rmax)})
+                cursor = Math.Max(cursor, seg.Fim)
+            Next
+            If cursor < rmax Then lacunas.Add({cursor, rmax})
+            For Each lac In lacunas
+                If lac(1) <= lac(0) Then Continue For
+                Dim x0 = ((lac(0) - rmin) / span) * larguraCanvas
+                Dim x1 = ((lac(1) - rmin) / span) * larguraCanvas
+                Dim lacuna As New Border() With {
+                    .Width = Math.Max(1, x1 - x0), .Height = 6, .CornerRadius = New CornerRadius(3), .Tag = "seg", .IsHitTestVisible = False,
+                    .Background = New SolidColorBrush(Color.FromRgb(&H6E, &H6E, &H73)), .Opacity = 0.9}
+                Canvas.SetLeft(lacuna, x0)
+                Canvas.SetTop(lacuna, 5)
+                canvasCorte.Children.Add(lacuna)
+            Next
+        End If
     End Sub
 
     ' --- PROCESSAMENTO EM LOTE (CANCELAMENTO, PREVENÇÃO E UX OTIMIZADOS) ---
