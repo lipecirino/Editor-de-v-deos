@@ -2238,7 +2238,119 @@ Partial Class MainWindow
         End If
     End Sub
 
+    ' --- SUGESTÕES DE OPERAÇÃO (lista suspensa ao digitar) ---
+    ' Por enquanto as opções vêm das operações já preenchidas neste vídeo; no futuro virão de um banco de dados.
+    Private Function ObterOpcoesOperacao(entryEmEdicao As CronoAnaliseEntry) As List(Of String)
+        Dim opcoes As New List(Of String)()
+        For Each x In cronoEntries
+            If x Is entryEmEdicao Then Continue For
+            Dim op = If(x.Operacao, "").Trim()
+            If op <> "" AndAlso Not opcoes.Contains(op, StringComparer.CurrentCultureIgnoreCase) Then
+                opcoes.Add(op)
+            End If
+        Next
+        Return opcoes
+    End Function
+
+    Private Sub MostrarSugestoesOperacao(tb As TextBox, mostrarTodas As Boolean)
+        If tb Is Nothing OrElse Not tb.IsKeyboardFocused Then
+            popupOperacoes.IsOpen = False
+            Return
+        End If
+
+        Dim entry = TryCast(tb.DataContext, CronoAnaliseEntry)
+        Dim texto = tb.Text.Trim()
+        Dim lista As List(Of String) = ObterOpcoesOperacao(entry)
+
+        If Not mostrarTodas Then
+            lista = lista.
+                Where(Function(o) o.IndexOf(texto, StringComparison.CurrentCultureIgnoreCase) >= 0 AndAlso
+                                  Not o.Equals(texto, StringComparison.CurrentCultureIgnoreCase)).
+                OrderByDescending(Function(o) o.StartsWith(texto, StringComparison.CurrentCultureIgnoreCase)).
+                ToList()
+        End If
+
+        If lista.Count = 0 Then
+            popupOperacoes.IsOpen = False
+            Return
+        End If
+
+        lstOperacoes.ItemsSource = lista
+        lstOperacoes.SelectedIndex = -1
+        popupOperacoes.PlacementTarget = tb
+        lstOperacoes.MinWidth = Math.Max(160, tb.ActualWidth)
+        popupOperacoes.IsOpen = True
+    End Sub
+
+    Private Sub AplicarSugestaoOperacao(texto As String)
+        Dim tb = TryCast(popupOperacoes.PlacementTarget, TextBox)
+        popupOperacoes.IsOpen = False
+        If tb Is Nothing Then Return
+        tb.Text = texto
+        tb.CaretIndex = tb.Text.Length
+        ' Confirma a edição da célula com a opção escolhida
+        Dispatcher.BeginInvoke(DispatcherPriority.Background, Sub()
+                                                                  gridCrono.CommitEdit(DataGridEditingUnit.Cell, True)
+                                                              End Sub)
+    End Sub
+
+    Private Sub TxtOperacaoEdicao_TextChanged(sender As Object, e As TextChangedEventArgs)
+        MostrarSugestoesOperacao(TryCast(sender, TextBox), False)
+    End Sub
+
+    Private Sub TxtOperacaoEdicao_PreviewKeyDown(sender As Object, e As KeyEventArgs)
+        Dim tb = TryCast(sender, TextBox)
+
+        If Not popupOperacoes.IsOpen Then
+            ' Alt+Seta para baixo abre a lista com todas as opções
+            If e.Key = Key.Down AndAlso (Keyboard.Modifiers And ModifierKeys.Alt) = ModifierKeys.Alt Then
+                MostrarSugestoesOperacao(tb, True)
+                e.Handled = True
+            End If
+            Return
+        End If
+
+        Select Case e.Key
+            Case Key.Down
+                If lstOperacoes.SelectedIndex < lstOperacoes.Items.Count - 1 Then lstOperacoes.SelectedIndex += 1
+                lstOperacoes.ScrollIntoView(lstOperacoes.SelectedItem)
+                e.Handled = True
+            Case Key.Up
+                If lstOperacoes.SelectedIndex >= 0 Then lstOperacoes.SelectedIndex -= 1
+                If lstOperacoes.SelectedItem IsNot Nothing Then lstOperacoes.ScrollIntoView(lstOperacoes.SelectedItem)
+                e.Handled = True
+            Case Key.Enter, Key.Tab
+                If lstOperacoes.SelectedItem IsNot Nothing Then
+                    AplicarSugestaoOperacao(CStr(lstOperacoes.SelectedItem))
+                    e.Handled = True
+                Else
+                    popupOperacoes.IsOpen = False
+                End If
+            Case Key.Escape
+                popupOperacoes.IsOpen = False
+                e.Handled = True
+        End Select
+    End Sub
+
+    Private Sub TxtOperacaoEdicao_LostKeyboardFocus(sender As Object, e As KeyboardFocusChangedEventArgs)
+        popupOperacoes.IsOpen = False
+    End Sub
+
+    Private Sub TxtOperacaoEdicao_Unloaded(sender As Object, e As RoutedEventArgs)
+        popupOperacoes.IsOpen = False
+    End Sub
+
+    Private Sub LstOperacoes_PreviewMouseLeftButtonDown(sender As Object, e As MouseButtonEventArgs)
+        Dim item = GetParent(Of ListBoxItem)(TryCast(e.OriginalSource, DependencyObject))
+        If item IsNot Nothing AndAlso item.Content IsNot Nothing Then
+            AplicarSugestaoOperacao(CStr(item.Content))
+            e.Handled = True
+        End If
+    End Sub
+
     Private Sub GridCrono_CellEditEnding(sender As Object, e As DataGridCellEditEndingEventArgs)
+        editandoCelulaCrono = False
+        popupOperacoes.IsOpen = False
         gridCrono.Focus()
 
         ' Atualizar análise estatística após edição
