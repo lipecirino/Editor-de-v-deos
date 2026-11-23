@@ -95,6 +95,21 @@ Public Class VideoTarefa
         End Set
     End Property
 
+    ' Tem cortes definidos (ou 1º tempo pendente) a serem feitos: usado no indicador da galeria
+    Private _temCortes As Boolean = False
+
+    Public Property TemCortes As Boolean
+        Get
+            Return _temCortes
+        End Get
+        Set(value As Boolean)
+            If value <> _temCortes Then
+                _temCortes = value
+                RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(NameOf(TemCortes)))
+            End If
+        End Set
+    End Property
+
     Public ReadOnly Property NomeComFlag As String
         Get
             Return Path.GetFileName(Caminho)
@@ -1568,6 +1583,16 @@ Partial Class MainWindow
     End Sub
 
     Private Sub AtualizarSegmentosVisuais()
+        ' Indicador de cortes na galeria e bloqueio da cronoanálise (só vale em vídeo já cortado)
+        If videoAtual IsNot Nothing Then videoAtual.TemCortes = TemCortesNoVideo()
+        If TemCortesNoVideo() Then
+            If btnModoCrono.IsChecked = True Then btnModoCrono.IsChecked = False
+            btnModoCrono.IsEnabled = False
+            btnModoCrono.ToolTip = "Indisponível: este vídeo tem cortes a fazer. A cronoanálise só pode ser feita em vídeo já cortado."
+        Else
+            btnModoCrono.IsEnabled = True
+            btnModoCrono.ToolTip = "Ativar/Desativar modo cronoanálise"
+        End If
         ' Com cortes reais no vídeo, desabilita a visualização da cronoanálise (e desliga a que estiver ativa)
         AtualizarPodeVisualizar()
         If TemCortesNoVideo() AndAlso previewEntry IsNot Nothing Then

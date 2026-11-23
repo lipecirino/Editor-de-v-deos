@@ -91,7 +91,10 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Name="icoCrono" Grid.Column="0" Style="{StaticResource Icone}" Text="&#xE916;" FontSize="12" Foreground="#FF007AFF" VerticalAlignment="Center" Margin="0,0,6,0" Visibility="Collapsed"/>
+                                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Name="icoCortes" Style="{StaticResource Icone}" Text="&#xE8C6;" FontSize="12" Foreground="#FFFF9500" VerticalAlignment="Center" Margin="0,0,6,0" Visibility="Collapsed" ToolTip="Tem cortes a fazer"/>
+                                        <TextBlock Name="icoCrono" Style="{StaticResource Icone}" Text="&#xE916;" FontSize="12" Foreground="#FF007AFF" VerticalAlignment="Center" Margin="0,0,6,0" Visibility="Collapsed" ToolTip="Tem cronoanálise"/>
+                                    </StackPanel>
                                     <TextBlock Grid.Column="1" Text="{Binding NomeComFlag}" VerticalAlignment="Center" TextWrapping="WrapWithOverflow" Margin="0,1,4,1"/>
                                     <Button Grid.Column="2" Content="&#xE711;" FontFamily="{StaticResource FonteIcones}" Width="20" Height="20" FontSize="10"
                                             Foreground="#FFAEAEB2" Background="Transparent" BorderThickness="0"
@@ -101,6 +104,12 @@
                             </Border>
                         </Grid>
                         <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding TemCortes}" Value="True">
+                                <Setter TargetName="bdrCard" Property="Background" Value="#FFFFF4E5"/>
+                                <Setter TargetName="bdrCard" Property="BorderBrush" Value="#FFFF9500"/>
+                                <Setter TargetName="bdrCard" Property="BorderThickness" Value="1"/>
+                                <Setter TargetName="icoCortes" Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
                             <DataTrigger Binding="{Binding TemCronoAnalise}" Value="True">
                                 <Setter TargetName="bdrCard" Property="Background" Value="#FFE5F1FF"/>
                                 <Setter TargetName="bdrCard" Property="BorderBrush" Value="#FF007AFF"/>
