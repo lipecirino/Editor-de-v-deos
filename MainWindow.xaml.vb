@@ -560,6 +560,8 @@ Public Class CronoAnaliseEntry
             _desvioPercentual = value
             RaisePropertyChanged(NameOf(DesvioPercentual))
             RaisePropertyChanged(NameOf(DesvioTexto))
+            RaisePropertyChanged(NameOf(BarraLarguraEsq))
+            RaisePropertyChanged(NameOf(BarraLarguraDir))
         End Set
     End Property
 
@@ -570,7 +572,22 @@ Public Class CronoAnaliseEntry
         Set(value As Double)
             _barraLargura = value
             RaisePropertyChanged(NameOf(BarraLargura))
+            RaisePropertyChanged(NameOf(BarraLarguraEsq))
+            RaisePropertyChanged(NameOf(BarraLarguraDir))
         End Set
+    End Property
+
+    ' Largura da barra para cada lado do eixo central (a trilha tem largura fixa)
+    Public ReadOnly Property BarraLarguraEsq As Double
+        Get
+            Return If(_desvioPercentual < 0, _barraLargura, 0)
+        End Get
+    End Property
+
+    Public ReadOnly Property BarraLarguraDir As Double
+        Get
+            Return If(_desvioPercentual >= 0, _barraLargura, 0)
+        End Get
     End Property
 
     Public Property BarraCorBrush As Brush
@@ -659,7 +676,7 @@ Partial Class MainWindow
 
                 ' Calcular largura da barra (baseado no desvio padrão)
                 ' Barra vai de -50% a +50% da largura disponível
-                Dim larguraMaxima As Double = 80 ' pixels
+                Dim larguraMaxima As Double = 120 ' pixels (igual à largura fixa da trilha no XAML)
                 Dim larguraBarra As Double = 0
 
                 If desvioPadrao > 0 Then
