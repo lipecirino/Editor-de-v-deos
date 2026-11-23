@@ -2519,11 +2519,14 @@ Partial Class MainWindow
 
     ' --- SUGESTÕES DE OPERAÇÃO (lista suspensa ao digitar) ---
     ' Por enquanto as opções vêm das operações já preenchidas neste vídeo; no futuro virão de um banco de dados.
+    ' True quando a lista suspensa aberta é a do campo Cliente (a mesma lista/popup serve aos dois campos)
+    Private sugestaoDeCliente As Boolean = False
+
     Private Function ObterOpcoesOperacao(entryEmEdicao As CronoAnaliseEntry) As List(Of String)
         Dim opcoes As New List(Of String)()
         For Each x In cronoEntries
             If x Is entryEmEdicao Then Continue For
-            Dim op = If(x.Operacao, "").Trim()
+            Dim op = If(If(sugestaoDeCliente, x.Cliente, x.Operacao), "").Trim()
             If op <> "" AndAlso Not opcoes.Contains(op, StringComparer.CurrentCultureIgnoreCase) Then
                 opcoes.Add(op)
             End If
@@ -2574,10 +2577,26 @@ Partial Class MainWindow
     End Sub
 
     Private Sub TxtOperacaoEdicao_TextChanged(sender As Object, e As TextChangedEventArgs)
+        sugestaoDeCliente = False
         MostrarSugestoesOperacao(TryCast(sender, TextBox), False)
     End Sub
 
+    Private Sub TxtClienteEdicao_TextChanged(sender As Object, e As TextChangedEventArgs)
+        sugestaoDeCliente = True
+        MostrarSugestoesOperacao(TryCast(sender, TextBox), False)
+    End Sub
+
+    Private Sub TxtClienteEdicao_PreviewKeyDown(sender As Object, e As KeyEventArgs)
+        sugestaoDeCliente = True
+        TratarTeclaSugestoes(sender, e)
+    End Sub
+
     Private Sub TxtOperacaoEdicao_PreviewKeyDown(sender As Object, e As KeyEventArgs)
+        sugestaoDeCliente = False
+        TratarTeclaSugestoes(sender, e)
+    End Sub
+
+    Private Sub TratarTeclaSugestoes(sender As Object, e As KeyEventArgs)
         Dim tb = TryCast(sender, TextBox)
 
         If Not popupOperacoes.IsOpen Then

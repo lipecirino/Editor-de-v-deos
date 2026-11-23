@@ -507,6 +507,10 @@
                                             <Setter Property="TextWrapping" Value="Wrap"/>
                                             <Setter Property="AcceptsReturn" Value="True"/>
                                             <Setter Property="Margin" Value="3,2"/>
+                                            <EventSetter Event="TextBoxBase.TextChanged" Handler="TxtClienteEdicao_TextChanged"/>
+                                            <EventSetter Event="UIElement.PreviewKeyDown" Handler="TxtClienteEdicao_PreviewKeyDown"/>
+                                            <EventSetter Event="Keyboard.LostKeyboardFocus" Handler="TxtOperacaoEdicao_LostKeyboardFocus"/>
+                                            <EventSetter Event="FrameworkElement.Unloaded" Handler="TxtOperacaoEdicao_Unloaded"/>
                                         </Style>
                                     </DataGridTextColumn.EditingElementStyle>
                                 </DataGridTextColumn>
