@@ -932,19 +932,11 @@ Partial Class MainWindow
 
                 entry.DesvioPercentual = desvioPerc
 
-                ' Calcular largura da barra (baseado no desvio padrão)
-                ' Barra vai de -50% a +50% da largura disponível
+                ' Largura da barra proporcional ao desvio percentual: eixo central = 0%, extremos = -100% e +100%.
+                ' Acima de 100% (em módulo) a barra fica no limite; o valor real continua no texto.
                 Dim larguraMaxima As Double = 80 ' pixels (igual à largura fixa da trilha no XAML)
-                Dim larguraBarra As Double = 0
-
-                If desvioPadrao > 0 Then
-                    ' Normalizar: 1 desvio padrão = 50% da largura
-                    Dim desvioNormalizado = (duracao - media) / desvioPadrao
-                    larguraBarra = Math.Min(Math.Abs(desvioNormalizado) * larguraMaxima / 2, larguraMaxima / 2)
-                Else
-                    ' Sem dispersão, barra pequena central
-                    larguraBarra = 2
-                End If
+                Dim larguraBarra As Double = Math.Min(Math.Abs(desvioPerc), 100.0) / 100.0 * (larguraMaxima / 2)
+                If larguraBarra < 2 Then larguraBarra = 2 ' mínimo visível (desvio ~0%)
 
                 entry.BarraLargura = larguraBarra
 
