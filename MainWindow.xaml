@@ -764,10 +764,10 @@
                                     </DataGridTemplateColumn.CellStyle>
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Button x:Name="btnVis" Content="&#xE768;" FontFamily="{StaticResource FonteIcones}" Width="28" Height="24" FontSize="12"
+                                            <Button x:Name="btnVis" Content="&#xE7B3;" FontFamily="{StaticResource FonteIcones}" Width="28" Height="24" FontSize="12"
                                                     Foreground="#FF007AFF" Background="#FFE5F1FF" BorderThickness="0" Cursor="Hand"
                                                     HorizontalAlignment="Center" IsEnabled="{Binding PodeVisualizar}"
-                                                    ToolTip="Visualizar: reproduz só os trechos desta linha (indisponível enquanto houver cortes no vídeo)"
+                                                    ToolTip="Visualizar as faixas desta linha na timeline (indisponível enquanto houver cortes no vídeo)"
                                                     Click="BtnVisualizarCrono_Click">
                                                 <Button.Template>
                                                     <ControlTemplate TargetType="Button">
@@ -786,7 +786,6 @@
                                                 <DataTrigger Binding="{Binding Visualizando}" Value="True">
                                                     <Setter TargetName="btnVis" Property="Background" Value="#FF007AFF"/>
                                                     <Setter TargetName="btnVis" Property="Foreground" Value="White"/>
-                                                    <Setter TargetName="btnVis" Property="Content" Value="&#xE71A;"/>
                                                 </DataTrigger>
                                             </DataTemplate.Triggers>
                                         </DataTemplate>

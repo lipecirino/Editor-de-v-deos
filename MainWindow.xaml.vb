@@ -830,7 +830,6 @@ Partial Class MainWindow
         If segmentosPreview.Count = 0 OrElse mediaClock Is Nothing Then Return
         IrParaTempo(segmentosPreview(0).Inicio)
         ultimoSaltoPreviewTick = Environment.TickCount
-        If Not estaReproduzindo Then BtnPlayPause_Click(Nothing, Nothing)
     End Sub
 
     ' Com a trava ativa: se a posição está fora dos trechos, devolve o início do próximo trecho (ou do primeiro, em loop); senão -1
@@ -1733,8 +1732,8 @@ Partial Class MainWindow
         For i = 0 To segs.Count - 1
             Dim seg = segs(i)
             Dim travado As Boolean = Object.ReferenceEquals(seg, segmentoTravado)
-            ' Com um bloco travado, só ele fica na cor padrão; os demais ficam em cinza escuro (desabilitados)
-            Dim cor = If(segmentoTravado IsNot Nothing AndAlso Not travado, Color.FromRgb(&H6E, &H6E, &H73), CorSegmento(i))
+            ' Com um bloco travado, só ele fica na cor padrão; os demais ficam quase da cor do fundo (discretos)
+            Dim cor = If(segmentoTravado IsNot Nothing AndAlso Not travado, Color.FromRgb(&HEE, &HEE, &HF1), CorSegmento(i))
             Dim fim = Math.Min(seg.Fim, rmax)
             Dim inicio = Math.Max(seg.Inicio, rmin)
             If fim <= inicio Then Continue For ' fora da faixa visível da timeline
@@ -1773,7 +1772,7 @@ Partial Class MainWindow
             canvasCorte.Children.Add(circulo)
         Next
 
-        ' Partes fora do(s) trecho(s) ativo(s) ficam em cinza escuro sobre a timeline (escala sempre em relação ao total):
+        ' Partes fora do(s) trecho(s) ativo(s) ficam quase da cor do fundo sobre a timeline (escala sempre em relação ao total):
         ' só o bloco travado ou, na visualização da cronoanálise, todos os trechos da linha
         Dim ativos As IEnumerable(Of SegmentoCorte) = Nothing
         If segmentoTravado IsNot Nothing Then
@@ -1795,7 +1794,7 @@ Partial Class MainWindow
                 Dim x1 = ((lac(1) - rmin) / span) * larguraCanvas
                 Dim lacuna As New Border() With {
                     .Width = Math.Max(1, x1 - x0), .Height = 6, .CornerRadius = New CornerRadius(3), .Tag = "seg", .IsHitTestVisible = False,
-                    .Background = New SolidColorBrush(Color.FromRgb(&H6E, &H6E, &H73)), .Opacity = 0.9}
+                    .Background = New SolidColorBrush(Color.FromRgb(&HF1, &HF1, &HF4)), .Opacity = 1}
                 Canvas.SetLeft(lacuna, x0)
                 Canvas.SetTop(lacuna, 5)
                 canvasCorte.Children.Add(lacuna)
