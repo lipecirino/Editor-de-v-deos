@@ -15,6 +15,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- Header -->
@@ -23,11 +24,12 @@
                    Margin="0,0,0,14"/>
 
         <!-- Lista de atalhos (cartão) -->
-        <Border Grid.Row="1" Background="White" BorderBrush="#FFE5E5EA" BorderThickness="1" CornerRadius="10" VerticalAlignment="Top">
+        <!-- Cartão ocupa a altura disponível; a lista rola quando não cabe -->
+        <Border Grid.Row="1" Background="White" BorderBrush="#FFE5E5EA" BorderThickness="1" CornerRadius="10">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
             <!-- Cabeçalho da lista -->
@@ -43,7 +45,8 @@
             </Border>
 
             <!-- Linhas de configuração -->
-            <ItemsControl Grid.Row="1" x:Name="listaAtalhos" BorderThickness="0">
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,6">
+            <ItemsControl x:Name="listaAtalhos" BorderThickness="0">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Border Padding="14,0" BorderBrush="#FFF2F2F7" BorderThickness="0,0,0,1" Background="White">
@@ -81,20 +84,27 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
+            </ScrollViewer>
         </Grid>
         </Border>
 
-        <!-- Botões inferiores -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
-            <Button Name="btnRestaurarPadroes" Content="Restaurar padrões" Style="{StaticResource BotaoArredondado}" Padding="14,7" FontSize="13"
-                    Click="BtnRestaurarPadroes_Click" Margin="0,0,8,0"/>
-            <Button Name="btnCancelar" Content="Cancelar" Style="{StaticResource BotaoArredondado}" Padding="14,7" FontSize="13"
-                    Click="BtnCancelar_Click" Margin="0,0,8,0"/>
-            <Button Name="btnSalvar" Content="Salvar" Style="{StaticResource BotaoPrimario}" Padding="18,7" FontSize="13" Click="BtnSalvar_Click"/>
-        </StackPanel>
-
-        <!-- Dica -->
+        <!-- Dica (linha própria, logo abaixo da lista: não disputa espaço com os botões) -->
         <TextBlock Grid.Row="2" Text="Clique no campo da tecla e pressione a tecla desejada."
-                   FontSize="11" Foreground="#FF86868B" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,16,0,0"/>
+                   FontSize="11" Foreground="#FF86868B" TextWrapping="Wrap" Margin="4,8,0,0"/>
+
+        <!-- Botões inferiores: Restaurar à esquerda, Cancelar/Salvar à direita -->
+        <Grid Grid.Row="3" Margin="0,14,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Button Name="btnRestaurarPadroes" Grid.Column="0" Content="Restaurar padrões" Style="{StaticResource BotaoArredondado}" Padding="14,7" FontSize="13"
+                    Click="BtnRestaurarPadroes_Click"/>
+            <Button Name="btnCancelar" Grid.Column="2" Content="Cancelar" Style="{StaticResource BotaoArredondado}" Padding="14,7" FontSize="13"
+                    Click="BtnCancelar_Click" Margin="0,0,8,0"/>
+            <Button Name="btnSalvar" Grid.Column="3" Content="Salvar" Style="{StaticResource BotaoPrimario}" Padding="18,7" FontSize="13" Click="BtnSalvar_Click"/>
+        </Grid>
     </Grid>
 </Window>
