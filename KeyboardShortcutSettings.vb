@@ -16,7 +16,9 @@ Public Class KeyboardShortcutSettings
         {"VisualizarLinha", "F3"},
         {"VelocidadeMenos", "F4"},
         {"VelocidadeMais", "F5"},
-        {"Mudo", "F6"}
+        {"Mudo", "F6"},
+        {"GirarEsquerda", "F7"},
+        {"GirarDireita", "F8"}
     }
 End Class
 
@@ -109,7 +111,9 @@ Public Class SettingsManager
             {"VisualizarLinha", "F3"},
             {"VelocidadeMenos", "F4"},
             {"VelocidadeMais", "F5"},
-            {"Mudo", "F6"}
+            {"Mudo", "F6"},
+        {"GirarEsquerda", "F7"},
+        {"GirarDireita", "F8"}
         }
 
         Dim modificado As Boolean = False

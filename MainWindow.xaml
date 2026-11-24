@@ -212,9 +212,36 @@
                 </Grid.RowDefinitions>
 
                 <Border Background="Black" CornerRadius="10" MouseLeftButtonDown="BorderVideo_MouseLeftButtonDown">
-                <Grid>
-                    <MediaElement Name="VisualizadorVideo" LoadedBehavior="Manual" UnloadedBehavior="Stop" Stretch="Uniform" MediaOpened="VisualizadorVideo_MediaOpened"/>
-                    <Image Name="imgFrameBuffer" Stretch="Uniform" Visibility="Collapsed"/>
+                <Grid ClipToBounds="True">
+                    <!-- Rotação só da visualização (não afeta a exportação) -->
+                    <Grid Name="gridVideoGirado">
+                        <Grid.LayoutTransform>
+                            <RotateTransform x:Name="rotVisualizacao" Angle="0"/>
+                        </Grid.LayoutTransform>
+                        <MediaElement Name="VisualizadorVideo" LoadedBehavior="Manual" UnloadedBehavior="Stop" Stretch="Uniform" MediaOpened="VisualizadorVideo_MediaOpened"/>
+                        <Image Name="imgFrameBuffer" Stretch="Uniform" Visibility="Collapsed"/>
+                    </Grid>
+
+                    <!-- Selo de visualização girada, com atalho para voltar ao normal -->
+                    <Border Name="bdrSeloRotacao" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="10"
+                            Background="#B31C1C1E" CornerRadius="8" Padding="10,4,4,4"
+                            ToolTip="Só a visualização está girada; a exportação não muda">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Icone}" Text="&#xE7AD;" FontSize="12" Foreground="White" Margin="0,0,6,0"/>
+                            <TextBlock Name="lblSeloRotacao" Text="Girado 90°" FontSize="12" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                            <Button Content="&#xE711;" FontFamily="{StaticResource FonteIcones}" FontSize="9" Width="20" Height="20" Margin="8,0,0,0"
+                                    Foreground="White" Background="#33FFFFFF" BorderThickness="0" Cursor="Hand"
+                                    ToolTip="Voltar à orientação original" Click="BtnRotacaoReset_Click">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="10">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </StackPanel>
+                    </Border>
                     <!-- Estado vazio: aparece enquanto nenhum vídeo está aberto -->
                     <StackPanel Name="pnlVideoVazio" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
                         <TextBlock Style="{StaticResource Icone}" Text="&#xE714;" FontSize="36" Foreground="#FF636366" HorizontalAlignment="Center"/>
@@ -292,6 +319,19 @@
                                 Style="{StaticResource BotaoArredondado}"
                                 Click="BtnVelocidadeMais_Click" FontSize="18" FontWeight="Bold"
                                 ToolTip="Aumentar velocidade"/>
+                        <!-- Girar só a visualização (o ícone da esquerda é o mesmo, espelhado) -->
+                        <Button Name="btnGirarEsquerda" IsEnabled="False" Padding="0" Width="40" Height="35" Margin="12,0,0,0"
+                                Style="{StaticResource BotaoArredondado}" Click="BtnGirarEsquerda_Click"
+                                ToolTip="Girar visualização para a esquerda">
+                            <TextBlock Style="{StaticResource Icone}" Text="&#xE7AD;" RenderTransformOrigin="0.5,0.5">
+                                <TextBlock.RenderTransform><ScaleTransform ScaleX="-1"/></TextBlock.RenderTransform>
+                            </TextBlock>
+                        </Button>
+                        <Button Name="btnGirarDireita" IsEnabled="False" Padding="0" Width="40" Height="35" Margin="4,0,0,0"
+                                Style="{StaticResource BotaoArredondado}" Click="BtnGirarDireita_Click"
+                                ToolTip="Girar visualização para a direita">
+                            <TextBlock Style="{StaticResource Icone}" Text="&#xE7AD;"/>
+                        </Button>
                     </StackPanel>
 
                     <!-- Corte: ação principal, destacada no centro -->

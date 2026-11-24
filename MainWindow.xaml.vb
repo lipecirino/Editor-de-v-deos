@@ -147,6 +147,9 @@ Public Class VideoTarefa
         End Get
     End Property
 
+    ' Rotação só da visualização deste vídeo, em graus acumulados (múltiplos de 90; não afeta a exportação)
+    Public Property RotacaoVisualizacao As Double = 0
+
     ' --- Miniatura e duração exibidas no card da galeria (carregadas em segundo plano) ---
     Private _miniatura As ImageSource
     Private _duracaoTexto As String = ""
@@ -1488,6 +1491,11 @@ Partial Class MainWindow
             VisualizadorVideo.Visibility = Visibility.Hidden
             imgFrameBuffer.Visibility = Visibility.Collapsed
         End If
+
+        ' Cada vídeo lembra a própria rotação de visualização
+        btnGirarEsquerda.IsEnabled = Not vazio
+        btnGirarDireita.IsEnabled = Not vazio
+        AplicarRotacaoVisualizacao(False)
     End Sub
 
     Private Sub BtnRemoverVideoGaleria_Click(sender As Object, e As RoutedEventArgs)
@@ -1560,6 +1568,51 @@ Partial Class MainWindow
 
     Private Sub BorderVideo_MouseLeftButtonDown(sender As Object, e As MouseButtonEventArgs)
         BtnPlayPause_Click(Nothing, Nothing)
+    End Sub
+
+    ' --- ROTAÇÃO DA VISUALIZAÇÃO (só na tela; a exportação usa as opções de Orientação) ---
+    Private Sub BtnGirarEsquerda_Click(sender As Object, e As RoutedEventArgs)
+        GirarVisualizacao(-90)
+    End Sub
+
+    Private Sub BtnGirarDireita_Click(sender As Object, e As RoutedEventArgs)
+        GirarVisualizacao(90)
+    End Sub
+
+    Private Sub BtnRotacaoReset_Click(sender As Object, e As RoutedEventArgs)
+        If videoAtual Is Nothing Then Return
+        ' Volta pelo caminho mais curto até um múltiplo de 360 (ex.: 270 → 360, 90 → 0)
+        Dim atual = videoAtual.RotacaoVisualizacao
+        videoAtual.RotacaoVisualizacao = Math.Round(atual / 360.0) * 360.0
+        AplicarRotacaoVisualizacao(True)
+    End Sub
+
+    Private Sub GirarVisualizacao(graus As Double)
+        If videoAtual Is Nothing Then Return
+        videoAtual.RotacaoVisualizacao += graus
+        AplicarRotacaoVisualizacao(True)
+    End Sub
+
+    ' Aplica o ângulo do vídeo atual: com animação ao girar, direto ao trocar de vídeo
+    Private Sub AplicarRotacaoVisualizacao(animar As Boolean)
+        Dim alvo As Double = If(videoAtual IsNot Nothing, videoAtual.RotacaoVisualizacao, 0)
+
+        If animar Then
+            Dim anim As New DoubleAnimation(alvo, New Duration(TimeSpan.FromMilliseconds(260))) With {
+                .EasingFunction = New CubicEase() With {.EasingMode = EasingMode.EaseOut}}
+            rotVisualizacao.BeginAnimation(RotateTransform.AngleProperty, anim)
+        Else
+            rotVisualizacao.BeginAnimation(RotateTransform.AngleProperty, Nothing)
+            rotVisualizacao.Angle = alvo
+        End If
+
+        ' Selo no canto do vídeo e destaque nos botões enquanto estiver girado
+        Dim normalizado = ((CInt(alvo) Mod 360) + 360) Mod 360
+        bdrSeloRotacao.Visibility = If(normalizado = 0, Visibility.Collapsed, Visibility.Visible)
+        lblSeloRotacao.Text = If(normalizado = 180, "Girado 180°", If(normalizado = 90, "Girado 90° à direita", "Girado 90° à esquerda"))
+        Dim corBotao = If(normalizado = 0, New SolidColorBrush(Color.FromRgb(&HE9, &HE9, &HEE)), New SolidColorBrush(Color.FromRgb(&HE5, &HF1, &HFF)))
+        btnGirarEsquerda.Background = corBotao
+        btnGirarDireita.Background = corBotao
     End Sub
 
     Private Sub BtnVelocidadeMenos_Click(sender As Object, e As RoutedEventArgs)
@@ -3330,6 +3383,16 @@ Partial Class MainWindow
                 btnMuteAudio.IsChecked = Not (btnMuteAudio.IsChecked = True)
                 Return True
             End If
+
+            If e.Key = TeclaDoAtalho(settings, "GirarEsquerda") Then
+                GirarVisualizacao(-90)
+                Return True
+            End If
+
+            If e.Key = TeclaDoAtalho(settings, "GirarDireita") Then
+                GirarVisualizacao(90)
+                Return True
+            End If
         End If
 
                 Return False
@@ -3387,6 +3450,8 @@ Partial Class MainWindow
         btnVelocidadeMenos.ToolTip = $"Diminuir velocidade ({FormatTeclaTooltip(settings.Atalhos("VelocidadeMenos"))})"
         btnVelocidadeMais.ToolTip = $"Aumentar velocidade ({FormatTeclaTooltip(settings.Atalhos("VelocidadeMais"))})"
         btnMuteAudio.ToolTip = $"Silenciar / ativar áudio ({FormatTeclaTooltip(settings.Atalhos("Mudo"))})"
+        btnGirarEsquerda.ToolTip = $"Girar visualização para a esquerda ({FormatTeclaTooltip(settings.Atalhos("GirarEsquerda"))}){vbCrLf}Só na tela; a exportação não muda"
+        btnGirarDireita.ToolTip = $"Girar visualização para a direita ({FormatTeclaTooltip(settings.Atalhos("GirarDireita"))}){vbCrLf}Só na tela; a exportação não muda"
         End Sub
 
     Private Shared Function FormatTeclaTooltip(tecla As String) As String

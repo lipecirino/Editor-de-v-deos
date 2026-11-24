@@ -114,6 +114,16 @@ Public Class SettingsWindow
                 .NomeExibicao = "Silenciar / ativar áudio",
                 .TeclaAtual = _settings.Atalhos("Mudo")
             })
+            _atalhos.Add(New AtalhoItem() With {
+                .NomeAcao = "GirarEsquerda",
+                .NomeExibicao = "Girar visualização para a esquerda",
+                .TeclaAtual = _settings.Atalhos("GirarEsquerda")
+            })
+            _atalhos.Add(New AtalhoItem() With {
+                .NomeAcao = "GirarDireita",
+                .NomeExibicao = "Girar visualização para a direita",
+                .TeclaAtual = _settings.Atalhos("GirarDireita")
+            })
 
             listaAtalhos.ItemsSource = _atalhos
 
