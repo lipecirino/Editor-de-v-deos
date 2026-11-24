@@ -260,7 +260,7 @@
                     </StackPanel>
 
                     <!-- Corte: ação principal, destacada no centro -->
-                    <Button Name="btnRegistrarTempo" Grid.Column="1" Content="Registrar tempo" Tag="&#xE8C6;" Click="BtnRegistrarTempo_Click"
+                    <Button Name="btnRegistrarTempo" Grid.Column="1" Content="Marcar corte" Tag="&#xE8C6;" Click="BtnRegistrarTempo_Click"
                             HorizontalAlignment="Center" MinWidth="160" Height="35" Padding="14,0"
                             Style="{StaticResource BotaoPrimario}" FontSize="13" FontWeight="SemiBold"
                             ToolTip="Clique no início e depois no fim do trecho. O menor tempo vira o início e o maior o fim do segmento."/>
@@ -325,14 +325,22 @@
                             </GroupBox>
 
                             <GroupBox Header="2 · Orientação" Padding="12,8" Margin="0,0,0,8">
-                                <WrapPanel>
-                                    <RadioButton Name="rbNormal" Content="Normal" IsChecked="True" Margin="0,0,15,0"/>
-                                    <RadioButton Name="rbRotDireita" Content="Girar 90° D" Margin="0,0,15,0"/>
-                                    <RadioButton Name="rbRotEsquerda" Content="Girar 90° E" Margin="0,0,15,0"/>
-                                    <RadioButton Name="rbRot180" Content="180°" Margin="0,0,15,0"/>
-                                    <RadioButton Name="rbEspelharH" Content="Espelhar H" Margin="0,0,15,0"/>
-                                    <RadioButton Name="rbEspelharV" Content="Espelhar V"/>
-                                </WrapPanel>
+                                <StackPanel>
+                                    <!-- Rotação: uma opção por vez -->
+                                    <WrapPanel Margin="0,0,0,6">
+                                        <TextBlock Text="Girar" Width="60" Foreground="#FF86868B" VerticalAlignment="Center"/>
+                                        <RadioButton Name="rbNormal" GroupName="Rotacao" Content="Não girar" IsChecked="True" Margin="0,0,15,0"/>
+                                        <RadioButton Name="rbRotDireita" GroupName="Rotacao" Content="90° direita" Margin="0,0,15,0"/>
+                                        <RadioButton Name="rbRotEsquerda" GroupName="Rotacao" Content="90° esquerda" Margin="0,0,15,0"/>
+                                        <RadioButton Name="rbRot180" GroupName="Rotacao" Content="180°"/>
+                                    </WrapPanel>
+                                    <!-- Espelhamento: pode combinar com a rotação -->
+                                    <WrapPanel>
+                                        <TextBlock Text="Espelhar" Width="60" Foreground="#FF86868B" VerticalAlignment="Center"/>
+                                        <CheckBox Name="rbEspelharH" Content="Horizontal" Margin="0,0,15,0"/>
+                                        <CheckBox Name="rbEspelharV" Content="Vertical"/>
+                                    </WrapPanel>
+                                </StackPanel>
                             </GroupBox>
 
                             <Expander Name="expExportacaoDesempenho" Header="3 · Opções de exportação e desempenho" Margin="0,0,0,8" IsExpanded="False" Padding="12,10">
@@ -343,7 +351,13 @@
                                         <RadioButton Name="rbSalvarPastaOriginal" Content="Guardar na mesma pasta do original (adiciona '_editado')" Checked="RbSalvarPasta_Checked"/>
                                     </StackPanel>
 
-                                    <CheckBox Name="chkDeletarOriginal" Content="Eliminar vídeo original após a conversão com sucesso" Margin="0,0,0,15" Checked="ChkDeletarOriginal_Checked" Unchecked="ChkDeletarOriginal_Checked"/>
+                                    <CheckBox Name="chkDeletarOriginal" Margin="0,0,0,15" Checked="ChkDeletarOriginal_Checked" Unchecked="ChkDeletarOriginal_Checked"
+                                              ToolTip="Os arquivos originais são apagados depois que a conversão termina com sucesso. Não dá para desfazer.">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{StaticResource Icone}" Text="&#xE7BA;" FontSize="12" Foreground="#FFFF3B30" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                            <TextBlock Text="Excluir o vídeo original após a conversão com sucesso" Foreground="#FFFF3B30" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </CheckBox>
 
                                     <TextBlock Text="Uso de Processador (CPU):" FontWeight="Bold" Margin="0,0,0,5" Foreground="#333"/>
                                     <StackPanel Orientation="Horizontal">
@@ -364,6 +378,13 @@
                                 <TextBlock Name="lblPorcentagem" Text="0%" HorizontalAlignment="Right" Margin="0,-20,0,0" FontWeight="Bold" Foreground="#FF033150"/>
                             </Grid>
                         </StackPanel>
+                        <!-- Aviso sempre visível quando a exclusão dos originais está ligada -->
+                        <Border Name="bdrAvisoExcluir" Visibility="Collapsed" Background="#FFFFEBEA" CornerRadius="8" Padding="10,6" Margin="0,0,0,8">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icone}" Text="&#xE7BA;" FontSize="12" Foreground="#FFFF3B30" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="Os vídeos originais serão excluídos após a conversão." Foreground="#FFC4281C" FontSize="12" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
                         <Button Name="btnProcessar" Content="CONVERTER TUDO PARA MP4" Height="46" Style="{StaticResource BotaoPrimario}" Click="BtnProcessar_Click" FontSize="14" FontWeight="Bold"/>
                     </StackPanel>
                 </Grid>  <!-- fecha painelConfigCompleto -->
@@ -396,8 +417,19 @@
                             <Button Name="btnExportarCrono" Content="Exportar CSV" Tag="&#xE896;" Margin="6,0,0,0" Style="{StaticResource BotaoArredondado}" Click="BtnExportarCrono_Click"/>
                             <Button Name="btnLimparCrono" Content="Limpar" Tag="&#xE894;" Margin="6,0,0,0" Style="{StaticResource BotaoPerigo}" Click="BtnLimparCrono_Click"
                                     ToolTip="Remove todas as operações deste vídeo"/>
-                            <Button Name="btnLimparCache" Tag="&#xE74D;" Margin="6,0,0,0" Padding="9,5" Style="{StaticResource BotaoPerigo}" Click="BtnLimparCache_Click"
-                                    ToolTip="Limpar todos os dados de cache da cronoanálise"/>
+                            <!-- Ações raras ficam num menu "Mais", longe do Limpar -->
+                            <Button Name="btnMaisCrono" Tag="&#xE712;" Margin="6,0,0,0" Padding="9,5" Style="{StaticResource BotaoArredondado}" Click="BtnMaisCrono_Click"
+                                    ToolTip="Mais opções">
+                                <Button.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Name="btnLimparCache" Header="Limpar cache de todas as cronoanálises…" Foreground="#FFFF3B30" Click="BtnLimparCache_Click">
+                                            <MenuItem.Icon>
+                                                <TextBlock Style="{StaticResource Icone}" Text="&#xE74D;" Foreground="#FFFF3B30"/>
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                    </ContextMenu>
+                                </Button.ContextMenu>
+                            </Button>
                         </StackPanel>
                     </Grid>
 

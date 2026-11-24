@@ -1191,19 +1191,18 @@ Partial Class MainWindow
     ' --- GRAVAÇÃO AUTOMÁTICA DE SETTINGS ---
     Private Sub SalvarConfiguracoesAtuais()
         If videoAtual IsNot Nothing Then
+            ' Rotação (uma só) + espelhamentos (combináveis), na ordem: girar e depois espelhar
+            Dim filtros As New List(Of String)
             If rbRotDireita.IsChecked = True Then
-                videoAtual.FiltroFFmpeg = "-vf transpose=1"
+                filtros.Add("transpose=1")
             ElseIf rbRotEsquerda.IsChecked = True Then
-                videoAtual.FiltroFFmpeg = "-vf transpose=2"
+                filtros.Add("transpose=2")
             ElseIf rbRot180.IsChecked = True Then
-                videoAtual.FiltroFFmpeg = "-vf transpose=2,transpose=2"
-            ElseIf rbEspelharH.IsChecked = True Then
-                videoAtual.FiltroFFmpeg = "-vf hflip"
-            ElseIf rbEspelharV.IsChecked = True Then
-                videoAtual.FiltroFFmpeg = "-vf vflip"
-            Else
-                videoAtual.FiltroFFmpeg = ""
+                filtros.Add("transpose=2,transpose=2")
             End If
+            If rbEspelharH.IsChecked = True Then filtros.Add("hflip")
+            If rbEspelharV.IsChecked = True Then filtros.Add("vflip")
+            videoAtual.FiltroFFmpeg = If(filtros.Count = 0, "", "-vf " & String.Join(",", filtros))
         End If
     End Sub
 
@@ -1293,12 +1292,15 @@ Partial Class MainWindow
 
             AtualizarEstadoPlayPause(True)
 
-            rbNormal.IsChecked = (videoAtual.FiltroFFmpeg = "")
-            rbRotDireita.IsChecked = (videoAtual.FiltroFFmpeg = "-vf transpose=1")
-            rbRotEsquerda.IsChecked = (videoAtual.FiltroFFmpeg = "-vf transpose=2")
-            rbRot180.IsChecked = (videoAtual.FiltroFFmpeg = "-vf transpose=2,transpose=2")
-            rbEspelharH.IsChecked = (videoAtual.FiltroFFmpeg = "-vf hflip")
-            rbEspelharV.IsChecked = (videoAtual.FiltroFFmpeg = "-vf vflip")
+            ' Ler de volta rotação e espelhamentos do filtro salvo (ex.: "-vf transpose=1,hflip")
+            Dim partes = If(videoAtual.FiltroFFmpeg, "").Replace("-vf", "").Trim().Split(","c).Select(Function(p) p.Trim()).ToList()
+            Dim qtdT2 = partes.Where(Function(p) p = "transpose=2").Count()
+            rbRotDireita.IsChecked = partes.Contains("transpose=1")
+            rbRotEsquerda.IsChecked = (qtdT2 = 1)
+            rbRot180.IsChecked = (qtdT2 >= 2)
+            rbNormal.IsChecked = Not (rbRotDireita.IsChecked = True OrElse rbRotEsquerda.IsChecked = True OrElse rbRot180.IsChecked = True)
+            rbEspelharH.IsChecked = partes.Contains("hflip")
+            rbEspelharV.IsChecked = partes.Contains("vflip")
 
             AtualizarIndicadorDeCorte()
             AtualizarSegmentosVisuais()
@@ -1802,12 +1804,12 @@ Partial Class MainWindow
             lblProximaParte.Text = If(nSeg = 0, $"Cronoanálise ""{nome}"": sem trechos registrados",
                 $"Cronoanálise ""{nome}"": {nSeg} trecho(s){If(previewTrava, " · reprodução travada nos trechos", "")}")
         ElseIf videoAtual.TempoPendente >= 0 Then
-            lblProximaParte.Text = $"Parte {nSeg + 1}: 1º tempo em {FormatarTempo(videoAtual.TempoPendente)}. Vá ao ponto final e clique em ✂ Registrar tempo."
+            lblProximaParte.Text = $"Parte {nSeg + 1}: 1º tempo em {FormatarTempo(videoAtual.TempoPendente)}. Vá ao ponto final e clique em ✂ Marcar corte."
         Else
             lblProximaParte.Text = If(nSeg = 0, "Nenhum segmento", $"{nSeg} segmento(s)")
         End If
         txtDicaSegmentos.Text = If(ativo AndAlso Not emPreview AndAlso nSeg = 0 AndAlso videoAtual.TempoPendente < 0,
-            "Sem segmentos, o vídeo é exportado inteiro. Para cortar, clique em ✂ Registrar tempo no início do trecho e de novo no fim; repita para criar mais partes.", "")
+            "Sem segmentos, o vídeo é exportado inteiro. Para cortar, clique em ✂ Marcar corte no início do trecho e de novo no fim; repita para criar mais partes.", "")
         txtDicaSegmentos.Visibility = If(txtDicaSegmentos.Text = "", Visibility.Collapsed, Visibility.Visible)
         ' Destrava se o segmento travado deixou de existir (removido, outro vídeo, modo desligado)
         If segmentoTravado IsNot Nothing AndAlso (Not ativo OrElse Not segs.Contains(segmentoTravado)) Then
@@ -2016,6 +2018,14 @@ Partial Class MainWindow
         If fila.Count = 0 Then
             MessageBox.Show("Todos os vídeos da lista têm cronoanálise e não são exportados.", "Nada para exportar", MessageBoxButton.OK, MessageBoxImage.Information)
             Return
+        End If
+
+        ' Confirmação extra quando os originais serão apagados
+        If chkDeletarOriginal.IsEnabled AndAlso chkDeletarOriginal.IsChecked = True Then
+            Dim confirmar = MessageBox.Show($"Os {fila.Count} vídeo(s) originais serão excluídos depois da conversão." & vbCrLf &
+                                            "Não é possível desfazer. Continuar?",
+                                            "Excluir originais", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No)
+            If confirmar <> MessageBoxResult.Yes Then Return
         End If
 
         ' Se algum vídeo tem segmentos, perguntar como exportar
@@ -2749,6 +2759,15 @@ Partial Class MainWindow
         End If
     End Sub
 
+    ' Abre o menu "Mais opções" logo abaixo do botão
+    Private Sub BtnMaisCrono_Click(sender As Object, e As RoutedEventArgs)
+        Dim btn = TryCast(sender, Button)
+        If btn?.ContextMenu Is Nothing Then Return
+        btn.ContextMenu.PlacementTarget = btn
+        btn.ContextMenu.Placement = Primitives.PlacementMode.Bottom
+        btn.ContextMenu.IsOpen = True
+    End Sub
+
     Private Sub BtnLimparCache_Click(sender As Object, e As RoutedEventArgs)
         Dim resultado = MessageBox.Show(
             "Limpar todo o cache de cronoanálise?" & vbCrLf &
@@ -3409,6 +3428,14 @@ Partial Class MainWindow
         If Not chkDeletarOriginal.IsEnabled Then
             chkDeletarOriginal.IsChecked = False
         End If
+        AtualizarAvisoExcluirOriginal()
+    End Sub
+
+    ' Mostra o aviso vermelho acima do botão de converter enquanto a exclusão dos originais estiver ligada
+    Private Sub AtualizarAvisoExcluirOriginal()
+        If bdrAvisoExcluir Is Nothing Then Return
+        Dim excluir = chkDeletarOriginal.IsEnabled AndAlso chkDeletarOriginal.IsChecked = True
+        bdrAvisoExcluir.Visibility = If(excluir, Visibility.Visible, Visibility.Collapsed)
     End Sub
 
     Private Sub RbSalvarPasta_Checked(sender As Object, e As RoutedEventArgs)
@@ -3418,6 +3445,7 @@ Partial Class MainWindow
     End Sub
 
     Private Sub ChkDeletarOriginal_Checked(sender As Object, e As RoutedEventArgs)
+        AtualizarAvisoExcluirOriginal()
         If _isLoading Then Return
         SalvarExportSettings()
     End Sub
