@@ -147,6 +147,30 @@ Public Class VideoTarefa
         End Get
     End Property
 
+    ' --- Miniatura e duração exibidas no card da galeria (carregadas em segundo plano) ---
+    Private _miniatura As ImageSource
+    Private _duracaoTexto As String = ""
+
+    Public Property Miniatura As ImageSource
+        Get
+            Return _miniatura
+        End Get
+        Set(value As ImageSource)
+            _miniatura = value
+            RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(NameOf(Miniatura)))
+        End Set
+    End Property
+
+    Public Property DuracaoTexto As String
+        Get
+            Return _duracaoTexto
+        End Get
+        Set(value As String)
+            _duracaoTexto = value
+            RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(NameOf(DuracaoTexto)))
+        End Set
+    End Property
+
     Public Overrides Function ToString() As String
         Return NomeComFlag
     End Function
@@ -1207,6 +1231,75 @@ Partial Class MainWindow
     End Sub
 
     ' --- EVENTOS DA GALERIA (BOTÕES + DRAG & DROP) ---
+
+    ' Limita a 2 extrações simultâneas para não sobrecarregar o PC ao importar uma pasta inteira
+    Private Shared ReadOnly semaforoMiniaturas As New SemaphoreSlim(2)
+
+    Private Sub AdicionarVideoGaleria(caminho As String)
+        Dim tarefa As New VideoTarefa() With {.Caminho = caminho}
+        lstGaleria.Items.Add(tarefa)
+        CarregarMiniaturaAsync(tarefa)
+    End Sub
+
+    ' Lê a duração (FFProbe) e extrai um quadro pequeno do vídeo (ffmpeg) para o card da galeria
+    Private Async Sub CarregarMiniaturaAsync(tarefa As VideoTarefa)
+        Await semaforoMiniaturas.WaitAsync()
+        Try
+            Dim duracao As Double = 0
+            Dim arquivoMini As String = Path.Combine(Path.GetTempPath(), $"mini_{Guid.NewGuid()}.jpg")
+            Await Task.Run(Sub()
+                               Try
+                                   duracao = FFProbe.Analyse(tarefa.Caminho).Duration.TotalSeconds
+                               Catch
+                               End Try
+                               Try
+                                   ' Quadro a 10% do vídeo (no máximo 2 s), para evitar telas pretas do início
+                                   Dim instante = If(duracao > 0, Math.Min(2.0, duracao * 0.1), 0)
+                                   Dim psi As New ProcessStartInfo() With {
+                                       .FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg", "ffmpeg.exe"),
+                                       .Arguments = $"-ss {instante.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)} -i ""{tarefa.Caminho}"" -frames:v 1 -vf ""scale=112:-2"" -q:v 4 -y ""{arquivoMini}""",
+                                       .UseShellExecute = False, .CreateNoWindow = True,
+                                       .RedirectStandardError = True, .RedirectStandardOutput = True}
+                                   Using p = Process.Start(psi)
+                                       ' Descartar a saída para o processo não travar com o buffer cheio
+                                       p.BeginErrorReadLine()
+                                       p.BeginOutputReadLine()
+                                       p.WaitForExit(10000)
+                                   End Using
+                               Catch
+                               End Try
+                           End Sub)
+
+            If duracao > 0 Then tarefa.DuracaoTexto = FormatarDuracaoCurta(duracao)
+
+            If File.Exists(arquivoMini) Then
+                Try
+                    Dim bmp As New BitmapImage()
+                    bmp.BeginInit()
+                    bmp.CacheOption = BitmapCacheOption.OnLoad   ' lê tudo agora para poder apagar o arquivo
+                    bmp.UriSource = New Uri(arquivoMini)
+                    bmp.EndInit()
+                    bmp.Freeze()
+                    tarefa.Miniatura = bmp
+                Catch
+                End Try
+                Try
+                    File.Delete(arquivoMini)
+                Catch
+                End Try
+            End If
+        Finally
+            semaforoMiniaturas.Release()
+        End Try
+    End Sub
+
+    ' Duração no formato curto da galeria: 1:05 ou 1:02:05
+    Private Shared Function FormatarDuracaoCurta(segundos As Double) As String
+        Dim ts = TimeSpan.FromSeconds(Math.Round(segundos))
+        If ts.TotalHours >= 1 Then Return $"{Int(ts.TotalHours)}:{ts.Minutes:00}:{ts.Seconds:00}"
+        Return $"{ts.Minutes}:{ts.Seconds:00}"
+    End Function
+
     Private Function VideoJaExiste(caminho As String) As Boolean
         For Each item In lstGaleria.Items
             Dim v = TryCast(item, VideoTarefa)
@@ -1222,7 +1315,7 @@ Partial Class MainWindow
         If abrir.ShowDialog() = True Then
             For Each arq In abrir.FileNames
                 If Not VideoJaExiste(arq) Then
-                    lstGaleria.Items.Add(New VideoTarefa() With {.Caminho = arq})
+                    AdicionarVideoGaleria(arq)
                 End If
             Next
         End If
@@ -1234,7 +1327,7 @@ Partial Class MainWindow
                 Dim ext = {".mp4", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".mpeg", ".3gp", ".webm", ".m4v", ".mpg", ".xvid", ".divx", ".mxf", ".gxf", ".r3d", ".ari", ".imf", ".braw", ".dng", ".dpx", ".cin", ".yuv", ".ts", ".mts", ".m2ts", ".vob", ".evo", ".ogv", ".rm", ".rmvb"}
                 For Each arq In Directory.GetFiles(sel.SelectedPath, "*.*", SearchOption.AllDirectories)
                     If ext.Contains(Path.GetExtension(arq).ToLower()) AndAlso Not VideoJaExiste(arq) Then
-                        lstGaleria.Items.Add(New VideoTarefa() With {.Caminho = arq})
+                        AdicionarVideoGaleria(arq)
                     End If
                 Next
             End If
@@ -1247,7 +1340,7 @@ Partial Class MainWindow
             Dim extensoesValidas = {".mp4", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".mpeg", ".3gp", ".webm", ".m4v", ".mpg", ".xvid", ".divx", ".mxf", ".gxf", ".r3d", ".ari", ".imf", ".braw", ".dng", ".dpx", ".cin", ".yuv", ".ts", ".mts", ".m2ts", ".vob", ".evo", ".ogv", ".rm", ".rmvb"}
             For Each arq In arquivos
                 If extensoesValidas.Contains(Path.GetExtension(arq).ToLower()) AndAlso Not VideoJaExiste(arq) Then
-                    lstGaleria.Items.Add(New VideoTarefa() With {.Caminho = arq})
+                    AdicionarVideoGaleria(arq)
                 End If
             Next
         End If
@@ -1312,6 +1405,18 @@ Partial Class MainWindow
             cronoEntries.Clear()
             AtualizarSegmentosVisuais()
         End If
+        AtualizarEstadoVazioVideo()
+    End Sub
+
+    ' Sem vídeo aberto: esconde o player (evita mostrar o último quadro) e exibe a orientação no lugar
+    Private Sub AtualizarEstadoVazioVideo()
+        If pnlVideoVazio Is Nothing Then Return
+        Dim vazio = (videoAtual Is Nothing)
+        pnlVideoVazio.Visibility = If(vazio, Visibility.Visible, Visibility.Collapsed)
+        If vazio Then
+            VisualizadorVideo.Visibility = Visibility.Hidden
+            imgFrameBuffer.Visibility = Visibility.Collapsed
+        End If
     End Sub
 
     Private Sub BtnRemoverVideoGaleria_Click(sender As Object, e As RoutedEventArgs)
@@ -1327,6 +1432,7 @@ Partial Class MainWindow
                     videoAtual = Nothing
                 End If
                 lstGaleria.Items.Remove(video)
+                AtualizarEstadoVazioVideo()
             End If
         End If
     End Sub
@@ -1348,6 +1454,7 @@ Partial Class MainWindow
         videoAtual = Nothing
         AtualizarEstadoPlayPause(False)
         AtualizarIndicadorDeCorte()
+        AtualizarEstadoVazioVideo()
     End Sub
 
     ' --- CONTROLOS DE REPRODUÇÃO E LINHA DO TEMPO ---

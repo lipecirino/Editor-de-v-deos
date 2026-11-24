@@ -102,11 +102,30 @@
                                             </LinearGradientBrush>
                                         </Border.Background>
                                     </Border>
-                                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Name="icoCortes" Style="{StaticResource Icone}" Text="&#xE8C6;" FontSize="12" Foreground="#FFFF9500" VerticalAlignment="Center" Margin="0,0,6,0" Visibility="Collapsed" ToolTip="Tem cortes a fazer"/>
-                                        <TextBlock Name="icoCrono" Style="{StaticResource Icone}" Text="&#xE916;" FontSize="12" Foreground="#FF007AFF" VerticalAlignment="Center" Margin="0,0,6,0" Visibility="Collapsed" ToolTip="Tem cronoanálise"/>
+                                    <!-- Miniatura com a duração no canto, como na Fototeca -->
+                                    <Border Grid.Column="0" Width="56" Height="32" CornerRadius="4" Background="#FFE5E5EA" Margin="0,0,8,0" VerticalAlignment="Center" ClipToBounds="True">
+                                        <Grid>
+                                            <TextBlock Style="{StaticResource Icone}" Text="&#xE714;" FontSize="12" Foreground="#FFAEAEB2" HorizontalAlignment="Center"/>
+                                            <Border CornerRadius="4">
+                                                <Border.Background>
+                                                    <ImageBrush ImageSource="{Binding Miniatura}" Stretch="UniformToFill"/>
+                                                </Border.Background>
+                                            </Border>
+                                            <Border Name="bdrDuracao" Background="#99000000" CornerRadius="3" Padding="3,0" Margin="2"
+                                                    HorizontalAlignment="Right" VerticalAlignment="Bottom">
+                                                <TextBlock Text="{Binding DuracaoTexto}" Foreground="White" FontSize="9" FontWeight="SemiBold"/>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,1,4,1">
+                                        <TextBlock Text="{Binding NomeComFlag}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Caminho}"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
+                                            <TextBlock Name="icoCortes" Style="{StaticResource Icone}" Text="&#xE8C6;" FontSize="11" Foreground="#FFFF9500" Margin="0,0,4,0" Visibility="Collapsed" ToolTip="Tem cortes a fazer"/>
+                                            <TextBlock Name="txtCortes" Text="Cortes" FontSize="10.5" Foreground="#FFFF9500" Margin="0,0,8,0" Visibility="Collapsed"/>
+                                            <TextBlock Name="icoCrono" Style="{StaticResource Icone}" Text="&#xE916;" FontSize="11" Foreground="#FF007AFF" Margin="0,0,4,0" Visibility="Collapsed" ToolTip="Tem cronoanálise"/>
+                                            <TextBlock Name="txtCrono" Text="Cronoanálise" FontSize="10.5" Foreground="#FF007AFF" Visibility="Collapsed"/>
+                                        </StackPanel>
                                     </StackPanel>
-                                    <TextBlock Grid.Column="1" Text="{Binding NomeComFlag}" VerticalAlignment="Center" TextWrapping="WrapWithOverflow" Margin="0,1,4,1"/>
                                     <Button Grid.Column="2" Content="&#xE711;" FontFamily="{StaticResource FonteIcones}" Width="20" Height="20" FontSize="10"
                                             Foreground="#FFAEAEB2" Background="Transparent" BorderThickness="0"
                                             Cursor="Hand" ToolTip="Remover este vídeo"
@@ -120,12 +139,17 @@
                                 <Setter TargetName="bdrCard" Property="BorderBrush" Value="#FFFF9500"/>
                                 <Setter TargetName="bdrCard" Property="BorderThickness" Value="1"/>
                                 <Setter TargetName="icoCortes" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="txtCortes" Property="Visibility" Value="Visible"/>
                             </DataTrigger>
                             <DataTrigger Binding="{Binding TemCronoAnalise}" Value="True">
                                 <Setter TargetName="bdrCard" Property="Background" Value="#FFE5F1FF"/>
                                 <Setter TargetName="bdrCard" Property="BorderBrush" Value="#FF007AFF"/>
                                 <Setter TargetName="bdrCard" Property="BorderThickness" Value="1"/>
                                 <Setter TargetName="icoCrono" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="txtCrono" Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding DuracaoTexto}" Value="">
+                                <Setter TargetName="bdrDuracao" Property="Visibility" Value="Collapsed"/>
                             </DataTrigger>
                             <DataTrigger Binding="{Binding Exportando}" Value="True">
                                 <Setter TargetName="bdrCard" Property="Background" Value="White"/>
@@ -190,6 +214,12 @@
                 <Grid>
                     <MediaElement Name="VisualizadorVideo" LoadedBehavior="Manual" UnloadedBehavior="Stop" Stretch="Uniform" MediaOpened="VisualizadorVideo_MediaOpened"/>
                     <Image Name="imgFrameBuffer" Stretch="Uniform" Visibility="Collapsed"/>
+                    <!-- Estado vazio: aparece enquanto nenhum vídeo está aberto -->
+                    <StackPanel Name="pnlVideoVazio" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
+                        <TextBlock Style="{StaticResource Icone}" Text="&#xE714;" FontSize="36" Foreground="#FF636366" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Nenhum vídeo aberto" FontSize="15" FontWeight="SemiBold" Foreground="#FFAEAEB2" HorizontalAlignment="Center" Margin="0,12,0,0"/>
+                        <TextBlock Text="Selecione um vídeo na galeria ou arraste arquivos para lá" FontSize="12" Foreground="#FF8E8E93" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    </StackPanel>
                 </Grid>
             </Border>
 
@@ -206,7 +236,7 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- ===== LINHA 1: Linha do tempo em largura total ===== -->
-                <TextBlock Name="lblTempoAtual" Text="00:00:00" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0" Foreground="#FF86868B" FontFamily="Consolas"/>
+                <TextBlock Name="lblTempoAtual" Text="00:00,00" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0" Foreground="#FF86868B" FontFamily="Consolas"/>
 
                 <Grid Grid.Row="0" Grid.Column="1" Name="gridSliderCorte" Height="35" SizeChanged="GridSliderCorte_SizeChanged">
                     <Slider Name="slLinhaTempo" Focusable="False" Style="{StaticResource SliderYoutube}"
@@ -230,7 +260,7 @@
                     </Popup>
                 </Grid>
 
-                <TextBlock Name="lblTempoTotal" Text="00:00:00" Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="#FF86868B" FontFamily="Consolas"/>
+                <TextBlock Name="lblTempoTotal" Text="00:00,00" Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="#FF86868B" FontFamily="Consolas"/>
 
 
                 <!-- ===== LINHA 3: Barra de ferramentas (reprodução | cortar | ferramentas) ===== -->
