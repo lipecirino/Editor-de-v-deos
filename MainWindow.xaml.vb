@@ -2332,6 +2332,8 @@ Partial Class MainWindow
                 Dim tarefa As VideoTarefa = fila(indiceAtual)
                 tarefa.Progresso = 0
                 tarefa.Exportando = True
+                ' Rola a galeria até o vídeo em exportação (os concluídos saem da lista, então ele fica no topo)
+                lstGaleria.ScrollIntoView(tarefa)
 
                 If Not File.Exists(tarefa.Caminho) Then
                     Throw New FileNotFoundException("Arquivo de entrada não encontrado: " & tarefa.Caminho)
