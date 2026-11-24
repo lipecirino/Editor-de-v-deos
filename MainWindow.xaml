@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Editor de Vídeo (Padronização)" 
-        Height="750" Width="1150" MinHeight="650" MinWidth="1100"
+        Height="750" Width="1250" MinHeight="650" MinWidth="1200"
         WindowStartupLocation="CenterScreen"
         Background="#FFF5F5F7" FontFamily="Segoe UI Variable Text, Segoe UI" TextElement.Foreground="#FF1D1D1F"
         KeyboardNavigation.DirectionalNavigation="None">
@@ -560,7 +560,7 @@
                                 </DataGridTextColumn>
 
                                 <!-- Par 1 -->
-                                <DataGridTextColumn Header="Início 1" Binding="{Binding Inicio1Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="60">
+                                <DataGridTextColumn Header="Início 1" Binding="{Binding Inicio1Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="72" MinWidth="72">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style>
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
@@ -577,7 +577,7 @@
                                         </Style>
                                     </DataGridTextColumn.EditingElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="Fim 1" Binding="{Binding Fim1Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="60">
+                                <DataGridTextColumn Header="Fim 1" Binding="{Binding Fim1Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="72" MinWidth="72">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style>
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
@@ -596,7 +596,7 @@
                                 </DataGridTextColumn>
 
                                 <!-- Par 2 -->
-                                <DataGridTextColumn Header="Início 2" Binding="{Binding Inicio2Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="60">
+                                <DataGridTextColumn Header="Início 2" Binding="{Binding Inicio2Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="72" MinWidth="72">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style>
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
@@ -613,7 +613,7 @@
                                         </Style>
                                     </DataGridTextColumn.EditingElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="Fim 2" Binding="{Binding Fim2Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="60">
+                                <DataGridTextColumn Header="Fim 2" Binding="{Binding Fim2Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="72" MinWidth="72">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style>
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
@@ -632,7 +632,7 @@
                                 </DataGridTextColumn>
 
                                 <!-- Par 3 -->
-                                <DataGridTextColumn Header="Início 3" Binding="{Binding Inicio3Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="60">
+                                <DataGridTextColumn Header="Início 3" Binding="{Binding Inicio3Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="72" MinWidth="72">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style>
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
@@ -649,7 +649,7 @@
                                         </Style>
                                     </DataGridTextColumn.EditingElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="Fim 3" Binding="{Binding Fim3Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="60">
+                                <DataGridTextColumn Header="Fim 3" Binding="{Binding Fim3Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="72" MinWidth="72">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style>
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
@@ -668,7 +668,7 @@
                                 </DataGridTextColumn>
 
                                 <!-- Par 4 -->
-                                <DataGridTextColumn Header="Início 4" Binding="{Binding Inicio4Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="60">
+                                <DataGridTextColumn Header="Início 4" Binding="{Binding Inicio4Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="72" MinWidth="72">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style>
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
@@ -685,7 +685,7 @@
                                         </Style>
                                     </DataGridTextColumn.EditingElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="Fim 4" Binding="{Binding Fim4Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="60">
+                                <DataGridTextColumn Header="Fim 4" Binding="{Binding Fim4Display, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=300}" Width="72" MinWidth="72">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style>
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>

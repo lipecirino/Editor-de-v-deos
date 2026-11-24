@@ -165,7 +165,7 @@ Public Class CronoPanelWindow
 
         ' Configurar a janela flutuante
         Me.Title = "Cronoanálise"
-        Me.Width = 1150
+        Me.Width = 1250
         Me.Height = 350
         Me.WindowStartupLocation = WindowStartupLocation.CenterOwner
         Me.Owner = mainWindow
