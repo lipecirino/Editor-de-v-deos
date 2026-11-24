@@ -21,6 +21,10 @@ Class Application
         Dim mainWindow = TryCast(Current.MainWindow, MainWindow)
         If mainWindow Is Nothing Then Return
 
+        ' Atalhos do player só valem na janela principal e na cronoanálise flutuante;
+        ' em diálogos (exportar, atalhos, confirmações) as teclas ficam com o próprio diálogo
+        If Not (TypeOf sender Is MainWindow OrElse TypeOf sender Is CronoPanelWindow) Then Return
+
         If mainWindow.HandleGlobalPreviewKeyDown(e) Then
             e.Handled = True
         End If

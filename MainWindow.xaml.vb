@@ -1105,7 +1105,7 @@ Partial Class MainWindow
                 cacheGlobal = New CacheGlobal()
             End If
         Catch ex As Exception
-            MessageBox.Show("Erro ao carregar cache: " & ex.Message)
+            ConfirmacaoWindow.Avisar(Me, "Não foi possível carregar a cronoanálise salva", ex.Message, TipoAviso.Erro)
             cacheGlobal = New CacheGlobal()
         End Try
     End Sub
@@ -1116,7 +1116,7 @@ Partial Class MainWindow
             Dim json = JsonSerializer.Serialize(cacheGlobal, options)
             File.WriteAllText(caminhoCache, json, Text.Encoding.UTF8)
         Catch ex As Exception
-            MessageBox.Show("Erro ao salvar cache: " & ex.Message)
+            ConfirmacaoWindow.Avisar(Me, "Não foi possível salvar a cronoanálise", ex.Message, TipoAviso.Erro)
         End Try
     End Sub
 
@@ -2262,7 +2262,7 @@ Partial Class MainWindow
         Dim fila As List(Of VideoTarefa) = lstGaleria.Items.Cast(Of VideoTarefa)().Where(Function(v) Not TemCronoAnalisePersistida(v)).ToList()
         Dim ignoradosCrono As Integer = lstGaleria.Items.Count - fila.Count
         If fila.Count = 0 Then
-            MessageBox.Show("Todos os vídeos da lista têm cronoanálise e não são exportados.", "Nada para exportar", MessageBoxButton.OK, MessageBoxImage.Information)
+            ConfirmacaoWindow.Avisar(Me, "Nada para exportar", "Todos os vídeos da lista têm cronoanálise, e vídeos com cronoanálise não são exportados.", TipoAviso.Informacao)
             Return
         End If
 
@@ -2476,16 +2476,16 @@ Partial Class MainWindow
             If Not cts.Token.IsCancellationRequested Then
                 Dim msgFim As String = "Lote concluído com sucesso!"
                 If ignoradosCrono > 0 Then msgFim &= vbCrLf & vbCrLf & $"{ignoradosCrono} vídeo(s) com cronoanálise não foram exportados."
-                MessageBox.Show(msgFim, "Finalizado", MessageBoxButton.OK, MessageBoxImage.Information)
+                ConfirmacaoWindow.Avisar(Me, "Exportação concluída", msgFim, TipoAviso.Sucesso)
             End If
 
         Catch ex As OperationCanceledException
             If Not fecharAposCancelar Then
-                MessageBox.Show("A conversão foi cancelada.", "Cancelado", MessageBoxButton.OK, MessageBoxImage.Warning)
+                ConfirmacaoWindow.Avisar(Me, "Exportação cancelada", "Os vídeos que já tinham terminado continuam salvos; o que estava em conversão foi descartado.", TipoAviso.Atencao)
             End If
         Catch ex As Exception
             If Not fecharAposCancelar Then
-                MessageBox.Show("Erro: " & ex.ToString(), "Falha", MessageBoxButton.OK, MessageBoxImage.Error)
+                ConfirmacaoWindow.Avisar(Me, "A exportação falhou", ex.Message, TipoAviso.Erro)
             End If
         Finally
             ' Conversão interrompida no meio: o arquivo parcial não serve, então é apagado
@@ -2789,7 +2789,7 @@ Partial Class MainWindow
 
     Private Sub RegistrarTempoAtual()
         If Not TemVideoAtivo() Then
-            MessageBox.Show("Abra um vídeo antes de registrar a cronoanálise.", "Cronoanálise", MessageBoxButton.OK, MessageBoxImage.Warning)
+            ConfirmacaoWindow.Avisar(Me, "Nenhum vídeo aberto", "Abra um vídeo antes de registrar a cronoanálise.", TipoAviso.Atencao)
             Return
         End If
 
@@ -2894,7 +2894,7 @@ Partial Class MainWindow
 
     Private Sub AdicionarNovaOperacao(Optional iniciarEdicaoOperacao As Boolean = True)
         If Not TemVideoAtivo() Then
-            MessageBox.Show("Abra um vídeo antes de adicionar registros de cronoanálise.", "Cronoanálise", MessageBoxButton.OK, MessageBoxImage.Warning)
+            ConfirmacaoWindow.Avisar(Me, "Nenhum vídeo aberto", "Abra um vídeo antes de adicionar registros de cronoanálise.", TipoAviso.Atencao)
             Return
         End If
 
@@ -2953,7 +2953,7 @@ Partial Class MainWindow
         End If
 
         If cronoEntries.Count = 0 Then
-            MessageBox.Show("Não há registros para exportar.", "Cronoanálise", MessageBoxButton.OK, MessageBoxImage.Information)
+            ConfirmacaoWindow.Avisar(Me, "Nada para exportar", "Não há registros de cronoanálise neste vídeo.", TipoAviso.Informacao)
             Return
         End If
 
@@ -2995,16 +2995,16 @@ Partial Class MainWindow
                         sw.WriteLine(linha)
                     Next
                 End Using
-                MessageBox.Show("Exportado com sucesso!", "Cronoanálise", MessageBoxButton.OK, MessageBoxImage.Information)
+                ConfirmacaoWindow.Avisar(Me, "CSV exportado", save.FileName, TipoAviso.Sucesso)
             Catch ex As Exception
-                MessageBox.Show("Erro ao exportar: " & ex.Message, "Erro", MessageBoxButton.OK, MessageBoxImage.Error)
+                ConfirmacaoWindow.Avisar(Me, "Não foi possível exportar o CSV", ex.Message, TipoAviso.Erro)
             End Try
         End If
     End Sub
 
     Private Sub BtnLimparCrono_Click(sender As Object, e As RoutedEventArgs)
         If cronoEntries.Count > 0 Then
-            If MessageBox.Show("Limpar todos os registros da cronoanálise?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Question) = MessageBoxResult.Yes Then
+            If ConfirmacaoWindow.Perguntar(Me, "Limpar a cronoanálise deste vídeo?", "Todas as operações e tempos registrados serão removidos.", "Limpar", "Cancelar") Then
                 cronoEntries.Clear()
             End If
         End If
@@ -3020,15 +3020,12 @@ Partial Class MainWindow
     End Sub
 
     Private Sub BtnLimparCache_Click(sender As Object, e As RoutedEventArgs)
-        Dim resultado = MessageBox.Show(
-            "Limpar todo o cache de cronoanálise?" & vbCrLf &
-            "Isso irá apagar todos os dados salvos de todos os vídeos." & vbCrLf &
-            "Os registros atuais da tabela também serão limpos.",
-            "Limpar Cache",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Warning)
+        Dim confirmou = ConfirmacaoWindow.Perguntar(Me,
+            "Limpar o cache de todas as cronoanálises?",
+            "Os dados salvos de todos os vídeos serão apagados, inclusive os registros da tabela atual. Não dá para desfazer.",
+            "Limpar cache", "Cancelar")
 
-        If resultado = MessageBoxResult.Yes Then
+        If confirmou Then
             ' Limpar dados em memória
             cronoEntries.Clear()
             cacheGlobal = New CacheGlobal()
@@ -3039,7 +3036,7 @@ Partial Class MainWindow
                     File.Delete(caminhoCache)
                 End If
             Catch ex As Exception
-                MessageBox.Show("Erro ao apagar o arquivo de cache: " & ex.Message)
+                ConfirmacaoWindow.Avisar(Me, "Não foi possível apagar o cache", ex.Message, TipoAviso.Erro)
             End Try
 
             ' Limpar flag de cronoanálise dos vídeos
@@ -3050,7 +3047,7 @@ Partial Class MainWindow
                 End If
             Next
 
-            MessageBox.Show("Cache limpo com sucesso!", "Concluído", MessageBoxButton.OK, MessageBoxImage.Information)
+            ConfirmacaoWindow.Avisar(Me, "Cache limpo", "Os dados de cronoanálise de todos os vídeos foram apagados.", TipoAviso.Sucesso)
         End If
     End Sub
 
@@ -3460,7 +3457,7 @@ Partial Class MainWindow
 
     Private Sub BtnPropriedades_Click(sender As Object, e As RoutedEventArgs)
         If videoAtual Is Nothing OrElse String.IsNullOrEmpty(videoAtual.Caminho) Then
-            MessageBox.Show("Nenhum vídeo em reprodução.", "Propriedades", MessageBoxButton.OK, MessageBoxImage.Information)
+            ConfirmacaoWindow.Avisar(Me, "Nenhum vídeo aberto", "Selecione um vídeo na galeria para ver as propriedades.", TipoAviso.Informacao)
             Return
         End If
         Dim propWin As New VideoPropertiesWindow(videoAtual.Caminho, Me)
@@ -3632,7 +3629,7 @@ Partial Class MainWindow
             Dim video = DirectCast(lstGaleria.SelectedItem, VideoTarefa)
             If video.TemCronoAnalise Then
                 ' Desmarcar
-                If MessageBox.Show($"Remover marcação de cronoanálise para {Path.GetFileName(video.Caminho)}?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Question) = MessageBoxResult.Yes Then
+                If ConfirmacaoWindow.Perguntar(Me, "Remover a cronoanálise?", $"Os registros de cronoanálise de {Path.GetFileName(video.Caminho)} serão apagados.", "Remover", "Cancelar") Then
                     Dim cache = ObterCacheVideo(video.Caminho)
                     cache.CronoAnalises.Clear()
                     cache.TemCronoAnalise = False

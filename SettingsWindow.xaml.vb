@@ -204,13 +204,12 @@ Public Class SettingsWindow
         ' Validar se a tecla já está em uso por outro atalho
         Dim conflito = _atalhos.FirstOrDefault(Function(a) a IsNot _itemEmEdicao AndAlso a.TeclaAtual = tecla.ToString())
         If conflito IsNot Nothing Then
-            Dim resultado = MessageBox.Show(
-                $"A tecla '{FormatTecla(tecla.ToString())}' já está atribuída a '{conflito.NomeExibicao}'.{vbCrLf}Deseja substituí-la?",
-                "Conflito de Atalho",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Warning)
+            Dim substituir = ConfirmacaoWindow.Perguntar(Me,
+                "Tecla já em uso",
+                $"'{FormatTecla(tecla.ToString())}' já é o atalho de '{conflito.NomeExibicao}'. Ao substituir, essa ação fica sem atalho.",
+                "Substituir", "Manter como está", destrutivo:=False)
 
-            If resultado = MessageBoxResult.No Then
+            If Not substituir Then
                 FinalizarEdicaoSemAlteracao()
                 Return
             End If
@@ -268,13 +267,12 @@ Public Class SettingsWindow
     End Sub
 
     Private Sub BtnRestaurarPadroes_Click(sender As Object, e As RoutedEventArgs)
-        Dim resultado = MessageBox.Show(
-            "Restaurar todos os atalhos para os valores padrão?",
-            "Restaurar Padrões",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Question)
+        Dim restaurar = ConfirmacaoWindow.Perguntar(Me,
+            "Restaurar os atalhos padrão?",
+            "Todas as teclas voltam aos valores originais. As mudanças só são gravadas ao clicar em Salvar.",
+            "Restaurar", "Cancelar", destrutivo:=False)
 
-        If resultado = MessageBoxResult.Yes Then
+        If restaurar Then
             _settings = New KeyboardShortcutSettings()
             For Each item In _atalhos
                 If _settings.Atalhos.ContainsKey(item.NomeAcao) Then

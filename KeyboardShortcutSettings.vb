@@ -75,8 +75,7 @@ Public Class SettingsManager
             File.WriteAllText(_caminhoArquivo, json, Text.Encoding.UTF8)
             _cache = settings
         Catch ex As Exception
-            MessageBox.Show($"Erro ao salvar configurações de atalhos: {ex.Message}",
-                            "Erro", MessageBoxButton.OK, MessageBoxImage.Error)
+            ConfirmacaoWindow.Avisar(Nothing, "Não foi possível salvar os atalhos", ex.Message, TipoAviso.Erro)
         End Try
     End Sub
 

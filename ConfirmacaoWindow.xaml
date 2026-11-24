@@ -27,7 +27,9 @@
             </Border>
             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                 <TextBlock Name="lblTitulo" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"/>
-                <TextBlock Name="lblMensagem" FontSize="12.5" Foreground="#FF6E6E73" TextWrapping="Wrap" Margin="0,6,0,0" LineHeight="18"/>
+                <ScrollViewer MaxHeight="260" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,6,0,0">
+                    <TextBlock Name="lblMensagem" FontSize="12.5" Foreground="#FF6E6E73" TextWrapping="Wrap" LineHeight="18"/>
+                </ScrollViewer>
             </StackPanel>
         </Grid>
 
