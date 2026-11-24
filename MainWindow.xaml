@@ -5,7 +5,8 @@
         Height="750" Width="1250" MinHeight="650" MinWidth="1200"
         WindowStartupLocation="CenterScreen"
         Background="#FFF5F5F7" FontFamily="Segoe UI Variable Text, Segoe UI" TextElement.Foreground="#FF1D1D1F"
-        KeyboardNavigation.DirectionalNavigation="None">
+        KeyboardNavigation.DirectionalNavigation="None"
+        AllowDrop="True" PreviewDragEnter="Janela_PreviewDragEnter">
 
     <Window.Resources>
         <Style x:Key="SliderYoutube" TargetType="Slider">
@@ -74,7 +75,7 @@
                 <TextBlock Text="Arraste vídeos para cá" FontSize="11" Foreground="#FF86868B" Margin="0,2,0,0"/>
             </StackPanel>
             <Border Grid.Row="1" Background="White" BorderBrush="#FFE5E5EA" BorderThickness="1" CornerRadius="10" ClipToBounds="True">
-            <ListBox Name="lstGaleria" SelectionChanged="LstGaleria_SelectionChanged" BorderThickness="0" Background="Transparent" Padding="4" AllowDrop="True" Drop="LstGaleria_Drop" MouseRightButtonUp="LstGaleria_MouseRightButtonUp"
+            <ListBox Name="lstGaleria" SelectionChanged="LstGaleria_SelectionChanged" BorderThickness="0" Background="Transparent" Padding="4" MouseRightButtonUp="LstGaleria_MouseRightButtonUp"
                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                  HorizontalContentAlignment="Stretch">
                 <ListBox.ItemTemplate>
@@ -895,5 +896,41 @@
             </Border>  <!-- fecha pnlCrono -->
         </Grid>  <!-- fecha gridInferior -->
     </Grid>  <!-- fecha gridConteudo -->
+
+        <!-- ===== ARRASTAR E SOLTAR: cobre a janela toda enquanto arquivos são arrastados por cima ===== -->
+        <Grid Name="pnlArrastar" Grid.ColumnSpan="2" Margin="-15" Visibility="Collapsed" Panel.ZIndex="100"
+              AllowDrop="True" Background="#B3F5F5F7"
+              DragOver="Arrastar_DragOver" DragLeave="Arrastar_DragLeave" Drop="Arrastar_Drop"
+              MouseMove="Arrastar_MouseMove" MouseDown="Arrastar_MouseMove">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="295"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Barra lateral: área de destino destacada -->
+            <Border Name="bdrAlvoArrastar" Grid.Column="0" Margin="15,15,15,15" CornerRadius="14"
+                    Background="#F2E5F1FF" IsHitTestVisible="False">
+                <Grid>
+                    <!-- Borda tracejada -->
+                    <Rectangle Name="retAlvoArrastar" RadiusX="14" RadiusY="14" Stroke="#FF007AFF" StrokeThickness="2"
+                               StrokeDashArray="5 4" SnapsToDevicePixels="True"/>
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20">
+                        <Border Name="bdrIconeArrastar" Width="64" Height="64" CornerRadius="32" Background="#FF007AFF" HorizontalAlignment="Center">
+                            <TextBlock Name="icoArrastar" Style="{StaticResource Icone}" Text="&#xE896;" FontSize="28" Foreground="White" HorizontalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Name="lblArrastarTitulo" Text="Solte para adicionar" FontSize="16" FontWeight="SemiBold" Foreground="#FF1D1D1F"
+                                   HorizontalAlignment="Center" Margin="0,14,0,0"/>
+                        <TextBlock Name="lblArrastarDetalhe" FontSize="12" Foreground="#FF86868B" HorizontalAlignment="Center"
+                                   TextAlignment="Center" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Resto da janela: só uma dica discreta, a área toda aceita o soltar -->
+            <Border Grid.Column="1" Margin="0,15,15,15" CornerRadius="14" BorderBrush="#4D007AFF" BorderThickness="1.5" IsHitTestVisible="False">
+                <TextBlock Name="lblArrastarDica" Text="Pode soltar em qualquer lugar da janela" FontSize="13" Foreground="#FF86868B"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+        </Grid>
 </Grid>  <!-- fecha grid coluna direita -->
 </Window>

@@ -1331,16 +1331,90 @@ Partial Class MainWindow
         End Using
     End Sub
 
-    Private Sub LstGaleria_Drop(sender As Object, e As DragEventArgs)
-        If e.Data.GetDataPresent(DataFormats.FileDrop) Then
-            Dim arquivos As String() = CType(e.Data.GetData(DataFormats.FileDrop), String())
-            Dim extensoesValidas = {".mp4", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".mpeg", ".3gp", ".webm", ".m4v", ".mpg", ".xvid", ".divx", ".mxf", ".gxf", ".r3d", ".ari", ".imf", ".braw", ".dng", ".dpx", ".cin", ".yuv", ".ts", ".mts", ".m2ts", ".vob", ".evo", ".ogv", ".rm", ".rmvb"}
-            For Each arq In arquivos
-                If extensoesValidas.Contains(Path.GetExtension(arq).ToLower()) AndAlso Not VideoJaExiste(arq) Then
-                    AdicionarVideoGaleria(arq)
-                End If
-            Next
+    ' --- ARRASTAR E SOLTAR NA JANELA TODA ---
+    Private Shared ReadOnly ExtensoesVideo As String() = {".mp4", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".mpeg", ".3gp", ".webm", ".m4v", ".mpg", ".xvid", ".divx", ".mxf", ".gxf", ".r3d", ".ari", ".imf", ".braw", ".dng", ".dpx", ".cin", ".yuv", ".ts", ".mts", ".m2ts", ".vob", ".evo", ".ogv", ".rm", ".rmvb"}
+    Private arrasteAceito As Boolean = False
+
+    Private Shared Function EhVideo(caminho As String) As Boolean
+        Return ExtensoesVideo.Contains(Path.GetExtension(caminho).ToLower())
+    End Function
+
+    Private Shared Function ItensArrastados(e As DragEventArgs) As String()
+        If Not e.Data.GetDataPresent(DataFormats.FileDrop) Then Return New String() {}
+        Return If(TryCast(e.Data.GetData(DataFormats.FileDrop), String()), New String() {})
+    End Function
+
+    ' Arquivos entrando na janela: mostra a camada de soltar por cima de tudo
+    Private Sub Janela_PreviewDragEnter(sender As Object, e As DragEventArgs)
+        Dim itens = ItensArrastados(e)
+        If itens.Length = 0 OrElse pnlArrastar.Visibility = Visibility.Visible Then Return
+
+        Dim videos = itens.Where(Function(f) File.Exists(f) AndAlso EhVideo(f)).Count()
+        Dim pastas = itens.Where(Function(f) Directory.Exists(f)).Count()
+        arrasteAceito = Not estaProcessando AndAlso (videos > 0 OrElse pastas > 0)
+
+        Dim azul = Color.FromRgb(&H0, &H7A, &HFF), cinza = Color.FromRgb(&H8E, &H8E, &H93)
+        Dim cor = If(arrasteAceito, azul, cinza)
+        retAlvoArrastar.Stroke = New SolidColorBrush(cor)
+        bdrIconeArrastar.Background = New SolidColorBrush(cor)
+        bdrAlvoArrastar.Background = New SolidColorBrush(If(arrasteAceito, Color.FromArgb(&HF2, &HE5, &HF1, &HFF), Color.FromArgb(&HF2, &HF2, &HF2, &HF7)))
+        icoArrastar.Text = If(arrasteAceito, ChrW(&HE896).ToString(), ChrW(&HE711).ToString())
+        lblArrastarDica.Visibility = If(arrasteAceito, Visibility.Visible, Visibility.Collapsed)
+
+        If estaProcessando Then
+            lblArrastarTitulo.Text = "Aguarde a exportação"
+            lblArrastarDetalhe.Text = "Não é possível adicionar vídeos durante a conversão."
+        ElseIf Not arrasteAceito Then
+            lblArrastarTitulo.Text = "Nenhum vídeo compatível"
+            lblArrastarDetalhe.Text = "Arraste arquivos de vídeo ou pastas."
+        Else
+            lblArrastarTitulo.Text = "Solte para adicionar"
+            Dim partes As New List(Of String)
+            If videos > 0 Then partes.Add(If(videos = 1, "1 vídeo", $"{videos} vídeos"))
+            If pastas > 0 Then partes.Add(If(pastas = 1, "1 pasta", $"{pastas} pastas"))
+            lblArrastarDetalhe.Text = String.Join(" e ", partes) & " na galeria"
         End If
+
+        pnlArrastar.Visibility = Visibility.Visible
+    End Sub
+
+    Private Sub Arrastar_DragOver(sender As Object, e As DragEventArgs)
+        e.Effects = If(arrasteAceito, DragDropEffects.Copy, DragDropEffects.None)
+        e.Handled = True
+    End Sub
+
+    Private Sub Arrastar_DragLeave(sender As Object, e As DragEventArgs)
+        ' Só esconde quando o cursor sai de fato da janela (DragLeave também dispara entre elementos)
+        Dim p = e.GetPosition(pnlArrastar)
+        If p.X <= 0 OrElse p.Y <= 0 OrElse p.X >= pnlArrastar.ActualWidth OrElse p.Y >= pnlArrastar.ActualHeight Then
+            pnlArrastar.Visibility = Visibility.Collapsed
+        End If
+    End Sub
+
+    ' Durante um arraste o Windows não gera MouseMove; se chegou aqui, o arraste acabou (ex.: cancelado com Esc)
+    Private Sub Arrastar_MouseMove(sender As Object, e As MouseEventArgs)
+        pnlArrastar.Visibility = Visibility.Collapsed
+    End Sub
+
+    Private Sub Arrastar_Drop(sender As Object, e As DragEventArgs)
+        pnlArrastar.Visibility = Visibility.Collapsed
+        e.Handled = True
+        If Not arrasteAceito Then Return
+
+        For Each item In ItensArrastados(e)
+            If Directory.Exists(item) Then
+                ' Pasta: adiciona os vídeos dela e das subpastas
+                Try
+                    For Each arq In Directory.GetFiles(item, "*.*", SearchOption.AllDirectories)
+                        If EhVideo(arq) AndAlso Not VideoJaExiste(arq) Then AdicionarVideoGaleria(arq)
+                    Next
+                Catch ex As Exception
+                    Debug.WriteLine($"Erro ao ler a pasta arrastada: {ex.Message}")
+                End Try
+            ElseIf File.Exists(item) AndAlso EhVideo(item) AndAlso Not VideoJaExiste(item) Then
+                AdicionarVideoGaleria(item)
+            End If
+        Next
     End Sub
 
     Private Sub LstGaleria_SelectionChanged(sender As Object, e As SelectionChangedEventArgs)
@@ -2058,7 +2132,6 @@ Partial Class MainWindow
         svConfigCompleto.Opacity = If(bloquear, 0.5, 1.0)
         painelBotoesGaleria.IsEnabled = Not bloquear
         lstGaleria.IsHitTestVisible = Not bloquear
-        lstGaleria.AllowDrop = Not bloquear
         AtualizarBloqueiosCronoCorte()
     End Sub
 
