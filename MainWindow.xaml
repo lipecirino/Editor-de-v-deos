@@ -155,7 +155,11 @@
                 </ListBox.ItemContainerStyle>
                 <ListBox.ContextMenu>
                     <ContextMenu>
-                        <MenuItem Header="✓ Marcar/Desmarcar Cronoanálise" Click="ToggleCronoAnaliseFlag_Click"/>
+                        <MenuItem Header="Marcar/desmarcar cronoanálise" Click="ToggleCronoAnaliseFlag_Click">
+                            <MenuItem.Icon>
+                                <TextBlock Style="{StaticResource Icone}" Text="&#xE916;" Foreground="#FF007AFF"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
                     </ContextMenu>
                 </ListBox.ContextMenu>
             </ListBox>
@@ -317,7 +321,7 @@
                                                 ToolTip="Remove todos os segmentos deste vídeo"
                                                 Click="BtnLimparSegmentos_Click"/>
                                     </Grid>
-                                    <TextBlock Name="txtDicaSegmentos" Foreground="#FF777777" FontSize="11" TextWrapping="Wrap"/>
+                                    <TextBlock Name="txtDicaSegmentos" Foreground="#FF86868B" FontSize="11" TextWrapping="Wrap"/>
                                     <ScrollViewer Name="svSegmentos" MaxHeight="70" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
                                         <WrapPanel Name="wrapSegmentos"/>
                                     </ScrollViewer>
@@ -345,10 +349,10 @@
 
                             <Expander Name="expExportacaoDesempenho" Header="3 · Opções de exportação e desempenho" Margin="0,0,0,8" IsExpanded="False" Padding="12,10">
                                 <StackPanel Margin="0,10,0,0">
-                                    <TextBlock Text="Local de Guardar:" FontWeight="Bold" Margin="0,0,0,5" Foreground="#333"/>
+                                    <TextBlock Text="Salvar em" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#FF1D1D1F"/>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                         <RadioButton Name="rbSalvarPastaEscolhida" Content="Escolher uma pasta" IsChecked="True" Margin="0,0,15,0" Checked="RbSalvarPasta_Checked"/>
-                                        <RadioButton Name="rbSalvarPastaOriginal" Content="Guardar na mesma pasta do original (adiciona '_editado')" Checked="RbSalvarPasta_Checked"/>
+                                        <RadioButton Name="rbSalvarPastaOriginal" Content="Mesma pasta do original (adiciona '_editado')" Checked="RbSalvarPasta_Checked"/>
                                     </StackPanel>
 
                                     <CheckBox Name="chkDeletarOriginal" Margin="0,0,0,15" Checked="ChkDeletarOriginal_Checked" Unchecked="ChkDeletarOriginal_Checked"
@@ -359,10 +363,10 @@
                                         </StackPanel>
                                     </CheckBox>
 
-                                    <TextBlock Text="Uso de Processador (CPU):" FontWeight="Bold" Margin="0,0,0,5" Foreground="#333"/>
+                                    <TextBlock Text="Uso do processador (CPU)" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#FF1D1D1F"/>
                                     <StackPanel Orientation="Horizontal">
-                                        <RadioButton Name="rbDesempenhoAlto" Content="Alto Desempenho (Sem limites)" IsChecked="True" Margin="0,0,15,0" Checked="RbDesempenho_Checked"/>
-                                        <RadioButton Name="rbDesempenhoEco" Content="Modo Económico (Limitar a 50% para não bloquear o PC)" Checked="RbDesempenho_Checked"/>
+                                        <RadioButton Name="rbDesempenhoAlto" Content="Alto desempenho (sem limite)" IsChecked="True" Margin="0,0,15,0" Checked="RbDesempenho_Checked"/>
+                                        <RadioButton Name="rbDesempenhoEco" Content="Modo econômico (limita a 50% para não travar o PC)" Checked="RbDesempenho_Checked"/>
                                     </StackPanel>
                                 </StackPanel>
                             </Expander>
@@ -375,7 +379,7 @@
                             <TextBlock Name="lblStatusLote" Text="Vídeo 1/1" FontSize="11" Margin="0,0,0,5"/>
                             <Grid>
                                 <ProgressBar Name="pbProgresso" Style="{StaticResource ProgressLote}"/>
-                                <TextBlock Name="lblPorcentagem" Text="0%" HorizontalAlignment="Right" Margin="0,-20,0,0" FontWeight="Bold" Foreground="#FF033150"/>
+                                <TextBlock Name="lblPorcentagem" Text="0%" HorizontalAlignment="Right" Margin="0,-20,0,0" FontWeight="SemiBold" Foreground="#FF1D1D1F"/>
                             </Grid>
                         </StackPanel>
                         <!-- Aviso sempre visível quando a exclusão dos originais está ligada -->
@@ -385,7 +389,7 @@
                                 <TextBlock Text="Os vídeos originais serão excluídos após a conversão." Foreground="#FFC4281C" FontSize="12" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
-                        <Button Name="btnProcessar" Content="CONVERTER TUDO PARA MP4" Height="46" Style="{StaticResource BotaoPrimario}" Click="BtnProcessar_Click" FontSize="14" FontWeight="Bold"/>
+                        <Button Name="btnProcessar" Content="Converter tudo" Tag="&#xE8AB;" Height="46" Style="{StaticResource BotaoPrimario}" Click="BtnProcessar_Click" FontSize="14" FontWeight="SemiBold"/>
                     </StackPanel>
                 </Grid>  <!-- fecha painelConfigCompleto -->
 
@@ -526,7 +530,7 @@
                                             <Button Content="&#xE74D;" FontFamily="{StaticResource FonteIcones}" Width="24" Height="24" FontSize="12"
                                                     Foreground="#FFAEAEB2" Background="Transparent"
                                                     BorderThickness="0" Cursor="Hand"
-                                                    ToolTip="Excluir este registo"
+                                                    ToolTip="Excluir este registro"
                                                     Click="BtnExcluirLinhaCrono_Click">
                                             </Button>
                                         </DataTemplate>
@@ -873,7 +877,7 @@
 
                     <!-- Lista suspensa de sugestões de operação (opções já usadas neste vídeo) -->
                     <Popup Name="popupOperacoes" Placement="Bottom" StaysOpen="True" AllowsTransparency="True" IsOpen="False">
-                        <Border Background="White" BorderBrush="#FF3399FF" BorderThickness="1" CornerRadius="4" Padding="2">
+                        <Border Background="White" BorderBrush="#FFD1D1D6" BorderThickness="1" CornerRadius="8" Padding="4">
                             <ListBox Name="lstOperacoes" Focusable="False" MaxHeight="160" BorderThickness="0" FontSize="11"
                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                      PreviewMouseLeftButtonDown="LstOperacoes_PreviewMouseLeftButtonDown">

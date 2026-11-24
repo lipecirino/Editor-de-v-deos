@@ -1448,16 +1448,11 @@ Partial Class MainWindow
     End Sub
 
     Private Sub AtualizarLabelVelocidade()
-        If _velocidadeReproducao = 1.0 Then
-            lblVelocidade.Text = "1.0×"
-            lblVelocidade.Foreground = New SolidColorBrush(Color.FromRgb(&HCC, &H66, &H0))
-        ElseIf _velocidadeReproducao > 1.0 Then
-            lblVelocidade.Text = $"{_velocidadeReproducao:F1}×"
-            lblVelocidade.Foreground = New SolidColorBrush(Color.FromRgb(&H0, &HCC, &H66))
-        Else
-            lblVelocidade.Text = $"{_velocidadeReproducao:F1}×"
-            lblVelocidade.Foreground = New SolidColorBrush(Color.FromRgb(&HCC, &H66, &H0))
-        End If
+        ' Velocidade normal em cinza; fora do normal em azul, para chamar atenção sem fugir da paleta
+        lblVelocidade.Text = $"{_velocidadeReproducao:F1}×"
+        lblVelocidade.Foreground = New SolidColorBrush(If(_velocidadeReproducao = 1.0,
+                                                           Color.FromRgb(&H86, &H86, &H8B),
+                                                           Color.FromRgb(&H0, &H7A, &HFF)))
     End Sub
 
     Private Sub BtnMuteAudio_Checked(sender As Object, e As RoutedEventArgs)
@@ -2002,7 +1997,7 @@ Partial Class MainWindow
         If estaProcessando Then
             If cts IsNot Nothing Then
                 cts.Cancel()
-                btnProcessar.Content = "A CANCELAR..."
+                btnProcessar.Content = "Cancelando…"
                 btnProcessar.IsEnabled = False
             End If
             Return
@@ -2064,8 +2059,9 @@ Partial Class MainWindow
         DefinirBloqueioExportacao(True)
         cts = New CancellationTokenSource()
 
-        btnProcessar.Content = "CANCELAR CONVERSÃO (✕)"
-        btnProcessar.Background = New SolidColorBrush(Color.FromRgb(200, 50, 50))
+        btnProcessar.Content = "Cancelar conversão"
+        btnProcessar.Tag = ChrW(&HE711).ToString()
+        btnProcessar.Background = New SolidColorBrush(Color.FromRgb(&HFF, &H3B, &H30))
         painelProgresso.Visibility = Visibility.Visible
 
         If mediaClock IsNot Nothing Then
@@ -2200,7 +2196,7 @@ Partial Class MainWindow
                                                                             tarefa.Progresso = (indiceParte + (perc / 100.0)) / partes.Count
                                                                             lblPorcentagem.Text = porcentagemAtual.ToString() & "%"
                                                                             Dim textoParte As String = If(temSegmentos, $" (parte {indiceParte + 1}/{partes.Count})", "")
-                                                                            lblStatusLote.Text = $"A converter {indiceAtual + 1}/{fila.Count} - {Path.GetFileName(tarefa.Caminho)}{textoParte}"
+                                                                            lblStatusLote.Text = $"Convertendo {indiceAtual + 1}/{fila.Count} - {Path.GetFileName(tarefa.Caminho)}{textoParte}"
                                                                         End Sub)
                                              End If
                                          End Sub, duracao)
@@ -2210,7 +2206,7 @@ Partial Class MainWindow
 
                 ' Um único vídeo: junta as partes (só os segmentos), descartando o restante
                 If unico AndAlso Not cts.Token.IsCancellationRequested Then
-                    lblStatusLote.Text = $"A juntar partes {indiceAtual + 1}/{fila.Count} - {Path.GetFileName(tarefa.Caminho)}"
+                    lblStatusLote.Text = $"Juntando partes {indiceAtual + 1}/{fila.Count} - {Path.GetFileName(tarefa.Caminho)}"
                     Dim arquivosJuntar As String() = temporarios.ToArray()
                     Dim destinoFinal As String = saida
                     Await Task.Run(Sub() FFMpeg.Join(destinoFinal, arquivosJuntar))
@@ -2260,7 +2256,7 @@ Partial Class MainWindow
             End If
 
         Catch ex As OperationCanceledException
-            MessageBox.Show("O processo de conversão foi abortado pelo utilizador.", "Cancelado", MessageBoxButton.OK, MessageBoxImage.Warning)
+            MessageBox.Show("A conversão foi cancelada.", "Cancelado", MessageBoxButton.OK, MessageBoxImage.Warning)
         Catch ex As Exception
             MessageBox.Show("Erro: " & ex.ToString(), "Falha", MessageBoxButton.OK, MessageBoxImage.Error)
         Finally
@@ -2276,7 +2272,8 @@ Partial Class MainWindow
             End If
 
             btnProcessar.IsEnabled = True
-            btnProcessar.Content = "CONVERTER TUDO PARA MP4"
+            btnProcessar.Content = "Converter tudo"
+            btnProcessar.Tag = ChrW(&HE8AB).ToString()
             btnProcessar.ClearValue(Button.BackgroundProperty)
             painelProgresso.Visibility = Visibility.Collapsed
             expExportacaoDesempenho.IsExpanded = False
@@ -2643,7 +2640,7 @@ Partial Class MainWindow
 
     Private Sub AdicionarNovaOperacao(Optional iniciarEdicaoOperacao As Boolean = True)
         If Not TemVideoAtivo() Then
-            MessageBox.Show("Abra um vídeo antes de adicionar registos de cronoanálise.", "Cronoanálise", MessageBoxButton.OK, MessageBoxImage.Warning)
+            MessageBox.Show("Abra um vídeo antes de adicionar registros de cronoanálise.", "Cronoanálise", MessageBoxButton.OK, MessageBoxImage.Warning)
             Return
         End If
 
@@ -2702,7 +2699,7 @@ Partial Class MainWindow
         End If
 
         If cronoEntries.Count = 0 Then
-            MessageBox.Show("Não há registos para exportar.", "Cronoanálise", MessageBoxButton.OK, MessageBoxImage.Information)
+            MessageBox.Show("Não há registros para exportar.", "Cronoanálise", MessageBoxButton.OK, MessageBoxImage.Information)
             Return
         End If
 
@@ -2753,7 +2750,7 @@ Partial Class MainWindow
 
     Private Sub BtnLimparCrono_Click(sender As Object, e As RoutedEventArgs)
         If cronoEntries.Count > 0 Then
-            If MessageBox.Show("Limpar todos os registos da cronoanálise?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Question) = MessageBoxResult.Yes Then
+            If MessageBox.Show("Limpar todos os registros da cronoanálise?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Question) = MessageBoxResult.Yes Then
                 cronoEntries.Clear()
             End If
         End If
@@ -2772,7 +2769,7 @@ Partial Class MainWindow
         Dim resultado = MessageBox.Show(
             "Limpar todo o cache de cronoanálise?" & vbCrLf &
             "Isso irá apagar todos os dados salvos de todos os vídeos." & vbCrLf &
-            "Os registos atuais na grelha também serão limpos.",
+            "Os registros atuais da tabela também serão limpos.",
             "Limpar Cache",
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning)
@@ -2788,7 +2785,7 @@ Partial Class MainWindow
                     File.Delete(caminhoCache)
                 End If
             Catch ex As Exception
-                MessageBox.Show("Erro ao apagar ficheiro de cache: " & ex.Message)
+                MessageBox.Show("Erro ao apagar o arquivo de cache: " & ex.Message)
             End Try
 
             ' Limpar flag de cronoanálise dos vídeos
