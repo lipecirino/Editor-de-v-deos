@@ -3006,6 +3006,39 @@ Partial Class MainWindow
         btnExportarCrono.ToolTip = If(ligado, "Exportar a cronoanálise de todos os vídeos em um CSV", Nothing)
     End Sub
 
+    ' Reabre no programa o vídeo do grupo (adiciona à galeria se preciso) e volta ao grid dele para continuar
+    Private Sub BtnAbrirVideoCronoGeral_Click(sender As Object, e As RoutedEventArgs)
+        Dim btn = TryCast(sender, Button)
+        Dim grupo = If(btn IsNot Nothing, TryCast(btn.DataContext, CollectionViewGroup), Nothing)
+        Dim caminho = If(grupo IsNot Nothing, TryCast(grupo.Name, String), Nothing)
+        If String.IsNullOrWhiteSpace(caminho) Then Return
+        e.Handled = True
+
+        If Not File.Exists(caminho) Then
+            ConfirmacaoWindow.Avisar(Me, "Vídeo não encontrado", "O arquivo não existe mais neste caminho:" & vbCrLf & caminho, TipoAviso.Atencao)
+            Return
+        End If
+
+        Dim alvo As VideoTarefa = Nothing
+        For Each item In lstGaleria.Items
+            Dim v = TryCast(item, VideoTarefa)
+            If v IsNot Nothing AndAlso v.Caminho.Equals(caminho, StringComparison.OrdinalIgnoreCase) Then
+                alvo = v
+                Exit For
+            End If
+        Next
+        If alvo Is Nothing Then
+            AdicionarVideoGaleria(caminho)
+            alvo = TryCast(lstGaleria.Items(lstGaleria.Items.Count - 1), VideoTarefa)
+        End If
+
+        DefinirVisaoTodosVideos(False)
+        If alvo IsNot Nothing Then
+            lstGaleria.SelectedItem = alvo
+            lstGaleria.ScrollIntoView(alvo)
+        End If
+    End Sub
+
     Private Sub RegistrarTempoAtual()
         If visaoTodosVideos Then Return
         If Not TemVideoAtivo() Then
