@@ -12,7 +12,7 @@
         TextElement.Foreground="#FF1D1D1F">
 
     <Window.Resources>
-        <!-- Cor de destaque da tela: muda com o desempenho (verde = alto, vermelho = econômico) -->
+        <!-- Cor de destaque da tela: muda com o desempenho (verde = econômico, vermelho = alto) -->
         <SolidColorBrush x:Key="CorDestaque" Color="#FF34C759"/>
         <SolidColorBrush x:Key="CorDestaqueTexto" Color="#FF248A3D"/>
         <SolidColorBrush x:Key="CorDestaqueFundo" Color="#FFF2FBF4"/>

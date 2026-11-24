@@ -51,10 +51,10 @@ Partial Public Class ExportarWindow
         If _pronto Then AtualizarEstado()
     End Sub
 
-    ' Cor de destaque de toda a tela conforme o desempenho: verde = alto, vermelho = econômico
+    ' Cor de destaque de toda a tela conforme o desempenho: verde = econômico, vermelho = alto
     Private Sub AplicarCorDestaque(economico As Boolean)
         Dim principal, texto, fundo, chip As Color
-        If economico Then
+        If Not economico Then
             principal = Color.FromRgb(&HFF, &H3B, &H30) : texto = Color.FromRgb(&HD7, &H0, &H15)
             fundo = Color.FromRgb(&HFF, &HF5, &HF4) : chip = Color.FromRgb(&HFF, &HE5, &HE3)
         Else
