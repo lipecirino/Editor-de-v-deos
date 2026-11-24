@@ -214,6 +214,9 @@
 
                     <Canvas Name="canvasCorte" VerticalAlignment="Center" Height="16" Margin="6,0,6,0" Panel.ZIndex="2">
                         <Border Name="bdrCorte" Height="16" BorderBrush="Black" BorderThickness="4,1,4,1" Background="Transparent" Visibility="Hidden" CornerRadius="2"/>
+                        <!-- Risquinho do tempo da célula selecionada na cronoanálise -->
+                        <Border Name="bdrMarcaTempo" Width="2" Height="26" Canvas.Top="-5" Background="#FF1D1D1F" CornerRadius="1"
+                                Visibility="Hidden" IsHitTestVisible="False"/>
                     </Canvas>
 
                     <Popup Name="popupTempoDrag" Placement="Mouse" AllowsTransparency="True" IsOpen="False" Panel.ZIndex="3">
@@ -563,7 +566,7 @@
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
                                             <Setter Property="TextBlock.FontFamily" Value="Consolas"/>
                                             <Setter Property="TextBlock.TextAlignment" Value="Center"/>
-                                            <Setter Property="TextBlock.Foreground" Value="#FF007AFF"/>
+                                            <Setter Property="TextBlock.Foreground" Value="#FF3A3A3C"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                     <DataGridTextColumn.EditingElementStyle>
@@ -580,7 +583,7 @@
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
                                             <Setter Property="TextBlock.FontFamily" Value="Consolas"/>
                                             <Setter Property="TextBlock.TextAlignment" Value="Center"/>
-                                            <Setter Property="TextBlock.Foreground" Value="#FFFF3B30"/>
+                                            <Setter Property="TextBlock.Foreground" Value="#FF3A3A3C"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                     <DataGridTextColumn.EditingElementStyle>
@@ -599,7 +602,7 @@
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
                                             <Setter Property="TextBlock.FontFamily" Value="Consolas"/>
                                             <Setter Property="TextBlock.TextAlignment" Value="Center"/>
-                                            <Setter Property="TextBlock.Foreground" Value="#FF007AFF"/>
+                                            <Setter Property="TextBlock.Foreground" Value="#FF3A3A3C"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                     <DataGridTextColumn.EditingElementStyle>
@@ -616,7 +619,7 @@
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
                                             <Setter Property="TextBlock.FontFamily" Value="Consolas"/>
                                             <Setter Property="TextBlock.TextAlignment" Value="Center"/>
-                                            <Setter Property="TextBlock.Foreground" Value="#FFFF3B30"/>
+                                            <Setter Property="TextBlock.Foreground" Value="#FF3A3A3C"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                     <DataGridTextColumn.EditingElementStyle>
@@ -635,7 +638,7 @@
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
                                             <Setter Property="TextBlock.FontFamily" Value="Consolas"/>
                                             <Setter Property="TextBlock.TextAlignment" Value="Center"/>
-                                            <Setter Property="TextBlock.Foreground" Value="#FF007AFF"/>
+                                            <Setter Property="TextBlock.Foreground" Value="#FF3A3A3C"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                     <DataGridTextColumn.EditingElementStyle>
@@ -652,7 +655,7 @@
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
                                             <Setter Property="TextBlock.FontFamily" Value="Consolas"/>
                                             <Setter Property="TextBlock.TextAlignment" Value="Center"/>
-                                            <Setter Property="TextBlock.Foreground" Value="#FFFF3B30"/>
+                                            <Setter Property="TextBlock.Foreground" Value="#FF3A3A3C"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                     <DataGridTextColumn.EditingElementStyle>
@@ -671,7 +674,7 @@
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
                                             <Setter Property="TextBlock.FontFamily" Value="Consolas"/>
                                             <Setter Property="TextBlock.TextAlignment" Value="Center"/>
-                                            <Setter Property="TextBlock.Foreground" Value="#FF007AFF"/>
+                                            <Setter Property="TextBlock.Foreground" Value="#FF3A3A3C"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                     <DataGridTextColumn.EditingElementStyle>
@@ -688,7 +691,7 @@
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
                                             <Setter Property="TextBlock.FontFamily" Value="Consolas"/>
                                             <Setter Property="TextBlock.TextAlignment" Value="Center"/>
-                                            <Setter Property="TextBlock.Foreground" Value="#FFFF3B30"/>
+                                            <Setter Property="TextBlock.Foreground" Value="#FF3A3A3C"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                     <DataGridTextColumn.EditingElementStyle>
@@ -704,9 +707,9 @@
                                 <DataGridTemplateColumn Header="Duração" Width="76" IsReadOnly="True" CanUserResize="False" CanUserReorder="False">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Border Background="#FFE5F1FF" CornerRadius="6" Padding="8,2" Margin="4,3" HorizontalAlignment="Center">
+                                            <Border Background="#FFF2F2F7" CornerRadius="6" Padding="8,2" Margin="4,3" HorizontalAlignment="Center">
                                                 <TextBlock Text="{Binding DuracaoDisplay}" FontFamily="Consolas" FontWeight="SemiBold"
-                                                           Foreground="#FF007AFF" TextAlignment="Center"/>
+                                                           Foreground="#FF1D1D1F" TextAlignment="Center"/>
                                             </Border>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>

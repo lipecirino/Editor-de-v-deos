@@ -890,6 +890,12 @@ Partial Class MainWindow
         Dim entry = If(btn IsNot Nothing, TryCast(btn.DataContext, CronoAnaliseEntry), Nothing)
         If entry Is Nothing Then Return
         e.Handled = True
+        AlternarVisualizacaoCrono(entry)
+    End Sub
+
+    ' Liga/desliga a visualização (trava) dos trechos da linha; usado pelo botão da linha e pelo atalho
+    Private Sub AlternarVisualizacaoCrono(entry As CronoAnaliseEntry)
+        If entry Is Nothing Then Return
         If TemCortesNoVideo() Then Return
         If verTodos Then DefinirVerTodos(False) ' a visão geral dá lugar à visualização da linha
 
@@ -1624,6 +1630,39 @@ Partial Class MainWindow
     Private Sub GridSliderCorte_SizeChanged(sender As Object, e As SizeChangedEventArgs)
         AtualizarIndicadorDeCorte()
         AtualizarSegmentosVisuais()
+        AtualizarMarcaTempoCrono()
+    End Sub
+
+    ' Risquinho na timeline no tempo da célula de tempo (Início/Fim) selecionada na cronoanálise
+    Private Sub AtualizarMarcaTempoCrono()
+        Dim t As Double = -1
+        If gridCrono IsNot Nothing AndAlso gridCrono.SelectedCells.Count > 0 Then
+            Dim cel = gridCrono.SelectedCells(gridCrono.SelectedCells.Count - 1)
+            Dim entry = TryCast(cel.Item, CronoAnaliseEntry)
+            If entry IsNot Nothing AndAlso cel.Column IsNot Nothing Then
+                Select Case cel.Column.DisplayIndex
+                    Case 4 : t = entry.Inicio1
+                    Case 5 : t = entry.Fim1
+                    Case 6 : t = entry.Inicio2
+                    Case 7 : t = entry.Fim2
+                    Case 8 : t = entry.Inicio3
+                    Case 9 : t = entry.Fim3
+                    Case 10 : t = entry.Inicio4
+                    Case 11 : t = entry.Fim4
+                End Select
+            End If
+        End If
+
+        Dim rmin = slLinhaTempo.Minimum, rmax = slLinhaTempo.Maximum
+        Dim span = rmax - rmin
+        Dim larguraCanvas = canvasCorte.ActualWidth
+        If videoAtual Is Nothing OrElse t <= 0 OrElse span <= 0 OrElse larguraCanvas <= 0 OrElse t < rmin OrElse t > rmax Then
+            bdrMarcaTempo.Visibility = Visibility.Hidden
+            Return
+        End If
+
+        Canvas.SetLeft(bdrMarcaTempo, ((t - rmin) / span) * larguraCanvas - bdrMarcaTempo.Width / 2)
+        bdrMarcaTempo.Visibility = Visibility.Visible
     End Sub
 
     ' --- CORTE MÚLTIPLO ---
@@ -1727,6 +1766,7 @@ Partial Class MainWindow
             slLinhaTempo.Maximum = novoMax
         End If
         lblTempoTotal.Text = FormatarTempo(novoMax)
+        AtualizarMarcaTempoCrono()
     End Sub
 
     Private Sub AtualizarSegmentosVisuais()
@@ -2768,6 +2808,8 @@ Partial Class MainWindow
         ' Na visão geral, as operações selecionadas ficam na cor original e as demais em cinza
         If verTodos AndAlso Not removendoSelecaoInvalida Then AtualizarSegmentosVisuais()
 
+        If Not removendoSelecaoInvalida Then AtualizarMarcaTempoCrono()
+
         Dim valores As New List(Of Double)
 
         For Each cellInfo In gridCrono.SelectedCells
@@ -2953,6 +2995,7 @@ Partial Class MainWindow
         ' Atualizar análise estatística após edição
         Dispatcher.BeginInvoke(DispatcherPriority.Background, Sub()
                                                                   AtualizarAnaliseEstatistica()
+                                                                  AtualizarMarcaTempoCrono()
                                                               End Sub)
     End Sub
 
@@ -3079,11 +3122,52 @@ Partial Class MainWindow
             If e.Key = teclaNovaOp Then
                 AdicionarNovaOperacao()
                 Return True
-                    End If
+            End If
+
+            ' Ver todas as operações na timeline
+            If e.Key = TeclaDoAtalho(settings, "VerTodas") Then
+                DefinirVerTodos(Not verTodos)
+                Return True
+            End If
+
+            ' Visualizar (travar) os trechos da linha selecionada
+            If e.Key = TeclaDoAtalho(settings, "VisualizarLinha") Then
+                Dim entrySel As CronoAnaliseEntry = previewEntry
+                If gridCrono.SelectedCells.Count > 0 Then
+                    entrySel = If(TryCast(gridCrono.SelectedCells(gridCrono.SelectedCells.Count - 1).Item, CronoAnaliseEntry), entrySel)
                 End If
+                AlternarVisualizacaoCrono(entrySel)
+                Return True
+            End If
+        End If
+
+        If Not editandoCelula Then
+            If e.Key = TeclaDoAtalho(settings, "VelocidadeMenos") Then
+                BtnVelocidadeMenos_Click(Nothing, Nothing)
+                Return True
+            End If
+
+            If e.Key = TeclaDoAtalho(settings, "VelocidadeMais") Then
+                BtnVelocidadeMais_Click(Nothing, Nothing)
+                Return True
+            End If
+
+            If e.Key = TeclaDoAtalho(settings, "Mudo") Then
+                btnMuteAudio.IsChecked = Not (btnMuteAudio.IsChecked = True)
+                Return True
+            End If
+        End If
 
                 Return False
             End Function
+
+    ' Tecla configurada para a ação; Key.None (nunca disparada) se não houver tecla válida
+    Private Shared Function TeclaDoAtalho(settings As KeyboardShortcutSettings, acao As String) As Key
+        Dim nome As String = Nothing
+        Dim resultado As Key
+        If settings.Atalhos.TryGetValue(acao, nome) AndAlso [Enum].TryParse(nome, resultado) Then Return resultado
+        Return Key.None
+    End Function
 
     Private Sub BtnConfigAtalhos_Click(sender As Object, e As RoutedEventArgs)
         Dim settingsWin As New SettingsWindow()
@@ -3123,6 +3207,12 @@ Partial Class MainWindow
             If btnNovaOperacao IsNot Nothing Then
                 btnNovaOperacao.ToolTip = $"Nova Operação ({FormatTeclaTooltip(settings.Atalhos("NovaOperacao"))})"
             End If
+        If btnVerTodasCrono IsNot Nothing Then
+            btnVerTodasCrono.ToolTip = $"Mostrar na timeline as barras de tempo de todas as operações ({FormatTeclaTooltip(settings.Atalhos("VerTodas"))})"
+        End If
+        btnVelocidadeMenos.ToolTip = $"Diminuir velocidade ({FormatTeclaTooltip(settings.Atalhos("VelocidadeMenos"))})"
+        btnVelocidadeMais.ToolTip = $"Aumentar velocidade ({FormatTeclaTooltip(settings.Atalhos("VelocidadeMais"))})"
+        btnMuteAudio.ToolTip = $"Silenciar / ativar áudio ({FormatTeclaTooltip(settings.Atalhos("Mudo"))})"
         End Sub
 
     Private Shared Function FormatTeclaTooltip(tecla As String) As String

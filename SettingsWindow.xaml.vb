@@ -89,6 +89,31 @@ Public Class SettingsWindow
                 .NomeExibicao = "Nova Operação (Crono)",
                 .TeclaAtual = _settings.Atalhos("NovaOperacao")
             })
+            _atalhos.Add(New AtalhoItem() With {
+                .NomeAcao = "VerTodas",
+                .NomeExibicao = "Ver todas as operações (Crono)",
+                .TeclaAtual = _settings.Atalhos("VerTodas")
+            })
+            _atalhos.Add(New AtalhoItem() With {
+                .NomeAcao = "VisualizarLinha",
+                .NomeExibicao = "Visualizar linha selecionada (Crono)",
+                .TeclaAtual = _settings.Atalhos("VisualizarLinha")
+            })
+            _atalhos.Add(New AtalhoItem() With {
+                .NomeAcao = "VelocidadeMenos",
+                .NomeExibicao = "Diminuir velocidade",
+                .TeclaAtual = _settings.Atalhos("VelocidadeMenos")
+            })
+            _atalhos.Add(New AtalhoItem() With {
+                .NomeAcao = "VelocidadeMais",
+                .NomeExibicao = "Aumentar velocidade",
+                .TeclaAtual = _settings.Atalhos("VelocidadeMais")
+            })
+            _atalhos.Add(New AtalhoItem() With {
+                .NomeAcao = "Mudo",
+                .NomeExibicao = "Silenciar / ativar áudio",
+                .TeclaAtual = _settings.Atalhos("Mudo")
+            })
 
             listaAtalhos.ItemsSource = _atalhos
 
