@@ -2301,6 +2301,11 @@ Partial Class MainWindow
             argumentosDesempenho = $"-threads {threadsEconomicas}"
         End If
 
+        ' Contadores para o resumo final
+        Dim qtdConvertidos As Integer = 0, qtdJaOtimizados As Integer = 0, qtdCopiados As Integer = 0
+        Dim qtdOriginaisExcluidos As Integer = 0
+        Dim falhasExcluir As New List(Of String)()
+
         Try
             For i = 0 To fila.Count - 1
                 If cts.Token.IsCancellationRequested Then Exit For
@@ -2342,6 +2347,16 @@ Partial Class MainWindow
                     String.Equals(codecVideo, "h264", StringComparison.OrdinalIgnoreCase)
                 If jaOtimizado Then
                     lblStatusLote.Text = $"{indiceAtual + 1}/{fila.Count} - {Path.GetFileName(tarefa.Caminho)}: já otimizado ({CInt(bitrateOriginal)} kbps), conversão ignorada"
+                    If salvarNaOriginal Then
+                        ' Mesma pasta: o original já é o resultado; nada a converter nem a excluir
+                        qtdJaOtimizados += 1
+                    Else
+                        ' Outra pasta: o usuário espera o arquivo no destino, então copia sem converter
+                        Dim copia = CaminhoLivre(pastaSaida, Path.GetFileNameWithoutExtension(tarefa.Caminho))
+                        Dim origem = tarefa.Caminho
+                        Await Task.Run(Sub() File.Copy(origem, copia))
+                        qtdCopiados += 1
+                    End If
                     tarefa.Progresso = 1
                     Await Task.Delay(500)
                     Await ColapsarEremover(tarefa)
@@ -2446,9 +2461,12 @@ Partial Class MainWindow
                     Next
                 End Try
 
+                If Not cts.Token.IsCancellationRequested Then qtdConvertidos += 1
+
                 If excluirOriginais AndAlso Not cts.Token.IsCancellationRequested Then
                     Try
                         File.Delete(tarefa.Caminho)
+                        qtdOriginaisExcluidos += 1
 
                         ' Sem o original, os arquivos novos perdem o "_editado" e ficam com o nome dele
                         ' (as partes mantêm o "_parteN"). Se o nome já estiver ocupado, mantém como está.
@@ -2461,7 +2479,8 @@ Partial Class MainWindow
                             End If
                         Next
                     Catch exDel As Exception
-                        Debug.WriteLine($"Não foi possível eliminar o original: {exDel.Message}")
+                        ' Não some em silêncio: entra no resumo final
+                        falhasExcluir.Add($"{Path.GetFileName(tarefa.Caminho)}: {exDel.Message}")
                     End Try
                 End If
 
@@ -2474,9 +2493,40 @@ Partial Class MainWindow
             Next
 
             If Not cts.Token.IsCancellationRequested Then
-                Dim msgFim As String = "Lote concluído com sucesso!"
-                If ignoradosCrono > 0 Then msgFim &= vbCrLf & vbCrLf & $"{ignoradosCrono} vídeo(s) com cronoanálise não foram exportados."
-                ConfirmacaoWindow.Avisar(Me, "Exportação concluída", msgFim, TipoAviso.Sucesso)
+                ' Resumo do que aconteceu com cada grupo de vídeos (nada de "sucesso" genérico)
+                Dim linhas As New List(Of String)
+                If qtdConvertidos > 0 Then
+                    Dim txt = If(qtdConvertidos = 1, "1 vídeo convertido", $"{qtdConvertidos} vídeos convertidos")
+                    If qtdOriginaisExcluidos > 0 AndAlso salvarNaOriginal Then
+                        txt &= If(qtdOriginaisExcluidos = 1, "; o original foi substituído pela versão convertida, com o mesmo nome.",
+                                                              $"; {qtdOriginaisExcluidos} originais foram substituídos pelas versões convertidas, com o mesmo nome.")
+                    ElseIf salvarNaOriginal Then
+                        txt &= ", salvos ao lado do original com o sufixo _editado."
+                    Else
+                        txt &= $", salvos em {destino}."
+                    End If
+                    linhas.Add(txt)
+                End If
+                If qtdCopiados > 0 Then
+                    linhas.Add(If(qtdCopiados = 1, "1 vídeo já estava otimizado e foi copiado para o destino sem converter.",
+                                                   $"{qtdCopiados} vídeos já estavam otimizados e foram copiados para o destino sem converter."))
+                End If
+                If qtdJaOtimizados > 0 Then
+                    linhas.Add(If(qtdJaOtimizados = 1, "1 vídeo já estava otimizado (MP4/H.264 até 7000 kbps, sem cortes nem rotação) e ficou como estava; o original não foi apagado.",
+                                                       $"{qtdJaOtimizados} vídeos já estavam otimizados (MP4/H.264 até 7000 kbps, sem cortes nem rotação) e ficaram como estavam; os originais não foram apagados."))
+                End If
+                If ignoradosCrono > 0 Then
+                    linhas.Add(If(ignoradosCrono = 1, "1 vídeo com cronoanálise não foi exportado.", $"{ignoradosCrono} vídeos com cronoanálise não foram exportados."))
+                End If
+
+                If falhasExcluir.Count > 0 Then
+                    linhas.Add("Não foi possível excluir estes originais:" & vbCrLf & String.Join(vbCrLf, falhasExcluir.Select(Function(f) "• " & f)))
+                    ConfirmacaoWindow.Avisar(Me, "Exportação concluída com avisos", String.Join(vbCrLf & vbCrLf, linhas), TipoAviso.Atencao)
+                ElseIf qtdConvertidos = 0 AndAlso qtdCopiados = 0 Then
+                    ConfirmacaoWindow.Avisar(Me, "Nada precisou ser convertido", String.Join(vbCrLf & vbCrLf, linhas), TipoAviso.Informacao)
+                Else
+                    ConfirmacaoWindow.Avisar(Me, "Exportação concluída", String.Join(vbCrLf & vbCrLf, linhas), TipoAviso.Sucesso)
+                End If
             End If
 
         Catch ex As OperationCanceledException
