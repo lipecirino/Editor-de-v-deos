@@ -2208,15 +2208,18 @@ Partial Class MainWindow
                     partes = New List(Of SegmentoCorte) From {New SegmentoCorte() With {.Inicio = 0, .Fim = 0}}
                 End If
 
+                ' Nome dos arquivos: em outra pasta fica igual ao original; na mesma pasta leva "_editado"
+                ' (o original ainda está lá) e o sufixo sai depois, se o original for excluído
                 Dim nomeBase = Path.GetFileNameWithoutExtension(tarefa.Caminho)
+                Dim sufixo As String = If(salvarNaOriginal, "_editado", "")
                 Dim saida As String = ""
                 Dim temporarios As New List(Of String)()
+                ' Arquivos gerados e o nome final que devem ter sem o "_editado"
+                Dim gerados As New List(Of Tuple(Of String, String))()
 
                 If Not separados Then
-                    saida = Path.Combine(pastaSaida, nomeBase & "_editado.mp4")
-                    If File.Exists(saida) Then
-                        saida = Path.Combine(pastaSaida, nomeBase & $"_editado_{Date.Now.ToString("HHmmss")}.mp4")
-                    End If
+                    saida = CaminhoLivre(pastaSaida, nomeBase & sufixo)
+                    gerados.Add(Tuple.Create(saida, nomeBase))
                 End If
 
                 Try
@@ -2232,10 +2235,8 @@ Partial Class MainWindow
                         destinoParte = Path.Combine(Path.GetTempPath(), $"editor_{Guid.NewGuid():N}_parte{k + 1}.mp4")
                         temporarios.Add(destinoParte)
                     ElseIf separados Then
-                        saida = Path.Combine(pastaSaida, nomeBase & $"_editado_parte{k + 1}.mp4")
-                        If File.Exists(saida) Then
-                            saida = Path.Combine(pastaSaida, nomeBase & $"_editado_parte{k + 1}_{Date.Now.ToString("HHmmss")}.mp4")
-                        End If
+                        saida = CaminhoLivre(pastaSaida, nomeBase & sufixo & $"_parte{k + 1}")
+                        gerados.Add(Tuple.Create(saida, nomeBase & $"_parte{k + 1}"))
                         destinoParte = saida
                     Else
                         destinoParte = saida
@@ -2299,18 +2300,16 @@ Partial Class MainWindow
                     Try
                         File.Delete(tarefa.Caminho)
 
-                        ' Após deletar o original, renomear o ficheiro de saída removendo "_editado"
-                        ' para que o nome fique igual ao original, mas mantendo a extensão nova (.mp4).
-                        ' No corte múltiplo as partes mantêm o sufixo "_parteN".
-                        Dim nomeOriginalSemExt = Path.GetFileNameWithoutExtension(tarefa.Caminho)
-                        Dim novoNome = nomeOriginalSemExt & ".mp4"
-                        Dim caminhoRenomeado = Path.Combine(Path.GetDirectoryName(saida), novoNome)
-
-                        ' Só renomear se o ficheiro de saída realmente contém "_editado" e o nome de destino é diferente
-                        If Not separados AndAlso saida <> caminhoRenomeado AndAlso File.Exists(saida) AndAlso Not File.Exists(caminhoRenomeado) Then
-                            File.Move(saida, caminhoRenomeado)
-                            saida = caminhoRenomeado
-                        End If
+                        ' Sem o original, os arquivos novos perdem o "_editado" e ficam com o nome dele
+                        ' (as partes mantêm o "_parteN"). Se o nome já estiver ocupado, mantém como está.
+                        For Each g In gerados
+                            Dim atual = g.Item1
+                            Dim final = Path.Combine(Path.GetDirectoryName(atual), g.Item2 & ".mp4")
+                            If Not String.Equals(atual, final, StringComparison.OrdinalIgnoreCase) AndAlso
+                               File.Exists(atual) AndAlso Not File.Exists(final) Then
+                                File.Move(atual, final)
+                            End If
+                        Next
                     Catch exDel As Exception
                         Debug.WriteLine($"Não foi possível eliminar o original: {exDel.Message}")
                     End Try
@@ -2492,6 +2491,18 @@ Partial Class MainWindow
             bufferTaskCts = Nothing
         End If
     End Sub
+
+    ' Caminho .mp4 que ainda não existe na pasta: "nome.mp4", senão "nome (2).mp4", "nome (3).mp4"...
+    ' Nunca sobrescreve um arquivo (nem o próprio original, se a pasta escolhida for a dele).
+    Private Shared Function CaminhoLivre(pasta As String, nome As String) As String
+        Dim caminho = Path.Combine(pasta, nome & ".mp4")
+        Dim n = 2
+        While File.Exists(caminho)
+            caminho = Path.Combine(pasta, $"{nome} ({n}).mp4")
+            n += 1
+        End While
+        Return caminho
+    End Function
 
     Private Function FormatarTempo(totalSegundos As Double) As String
         If totalSegundos < 0 Then totalSegundos = 0

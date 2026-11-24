@@ -187,7 +187,7 @@
             <RadioButton Name="rbPastaOriginal" GroupName="Destino" Style="{StaticResource OpcaoCartao}" Tag="&#xE8B7;" Checked="Opcao_Changed">
                 <StackPanel>
                     <TextBlock Text="Mesma pasta do original" Style="{StaticResource TituloOpcao}"/>
-                    <TextBlock Text="O arquivo novo recebe o sufixo _editado." Style="{StaticResource DescOpcao}"/>
+                    <TextBlock Text="Recebe o sufixo _editado, que sai se o original for excluído." Style="{StaticResource DescOpcao}"/>
                 </StackPanel>
             </RadioButton>
 
