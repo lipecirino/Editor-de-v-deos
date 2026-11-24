@@ -729,12 +729,18 @@ Partial Class MainWindow
     Private cts As CancellationTokenSource
 
     ' --- BUFFER DE FRAMES PARA NAVEGAÇÃO RÁPIDA ---
-    Private frameBuffer As New Dictionary(Of Integer, BitmapImage)()
+    ' Quadros em JPEG na memória (≈60 KB cada), indexados pelo número do quadro. O passo a passo mostra
+    ' o quadro daqui na hora, sem esperar o player decodificar.
+    Private frameBuffer As New Dictionary(Of Integer, Byte())()
     Private frameBufferLock As New Object()
     Private bufferTaskCts As CancellationTokenSource
     Private ultimaPosicaoBuffer As Double = -1
     Private segmentoTravado As SegmentoCorte = Nothing
     Private Const BUFFER_SEGUNDOS As Double = 3.0 ' 3 segundos para frente e para trás
+    Private Const BUFFER_LARGURA As Integer = 960  ' largura dos quadros do buffer (altura proporcional)
+    ' Janela de quadros que o buffer cobre (ou está carregando agora)
+    Private bufferJanelaInicio As Integer = -1
+    Private bufferJanelaFim As Integer = -1
 
     ' --- MODO CRONOANÁLISE ---
     Private modoCronoAtivo As Boolean = False
@@ -1578,6 +1584,12 @@ Partial Class MainWindow
             AtualizarEstadoPlayPause(False)
         Else
             ' Reproduzir
+            timerSincronizarPasso.Stop()
+            EsconderQuadroBuffer()
+            ' Se o player ainda não foi levado até o quadro mostrado pelo buffer, leva agora
+            If mediaClock.CurrentTime.HasValue AndAlso Math.Abs(mediaClock.CurrentTime.Value.TotalSeconds - slLinhaTempo.Value) > 0.5 / Math.Max(1, frameRate) Then
+                mediaClock.Controller.Seek(TimeSpan.FromSeconds(slLinhaTempo.Value), TimeSeekOrigin.BeginTime)
+            End If
             timerPausaPasso.Stop()
             timerRenderPasso.Stop()
             renderPassoEmAndamento = False
@@ -1762,6 +1774,8 @@ Partial Class MainWindow
 
     Private Sub SlLinhaTempo_DragStarted(sender As Object, e As DragStartedEventArgs)
         isDraggingSlider = True
+        timerSincronizarPasso.Stop()
+        EsconderQuadroBuffer()
         If mediaClock IsNot Nothing Then mediaClock.Controller.Pause()
         popupTempoDrag.IsOpen = True
     End Sub
@@ -1819,6 +1833,8 @@ Partial Class MainWindow
         Dim novoValor = slLinhaTempo.Minimum + (range * proporcao)
 
         ' Atualizar slider e seek no vídeo
+        timerSincronizarPasso.Stop()
+        EsconderQuadroBuffer()
         slLinhaTempo.Value = novoValor
         mediaClock.Controller.Seek(TimeSpan.FromSeconds(novoValor), TimeSeekOrigin.BeginTime)
         lblTempoAtual.Text = FormatarTempo(novoValor)
@@ -1842,7 +1858,7 @@ Partial Class MainWindow
         If TemCronoNoVideo() OrElse estaProcessando Then Return ' excludentes com cronoanálise; sem edição durante a exportação
         If videoAtual Is Nothing OrElse mediaClock Is Nothing OrElse Not mediaClock.CurrentTime.HasValue Then Return
 
-        Dim t = Math.Round(mediaClock.CurrentTime.Value.TotalSeconds, 2)
+        Dim t = Math.Round(PosicaoAtualVideo(), 2)
 
         If videoAtual.TempoPendente < 0 Then
             ' 1º tempo: marca onde o corte começa/termina
@@ -1986,6 +2002,8 @@ Partial Class MainWindow
 
     Private Sub IrParaTempo(segundos As Double)
         If mediaClock Is Nothing Then Return
+        timerSincronizarPasso.Stop()
+        EsconderQuadroBuffer()
         slLinhaTempo.Value = segundos
         mediaClock.Controller.Seek(TimeSpan.FromSeconds(segundos), TimeSeekOrigin.BeginTime)
         lblTempoAtual.Text = FormatarTempo(segundos)
@@ -2582,133 +2600,158 @@ Partial Class MainWindow
     End Sub
 
     ' --- BUFFER DE FRAMES PARA NAVEGAÇÃO RÁPIDA ---
-    Private Async Sub CarregarBufferFrames(posicaoAtual As Double)
-        If videoAtual Is Nothing OrElse String.IsNullOrWhiteSpace(videoAtual.Caminho) Then Return
+    ' Carrega na memória os quadros em volta da posição (BUFFER_SEGUNDOS para cada lado).
+    ' Dois ffmpeg em paralelo: um da posição para frente e outro para trás, para os dois sentidos do
+    ' passo a passo ficarem prontos logo. Os quadros chegam em JPEG pela saída padrão (sem arquivos em disco).
+    Private Sub CarregarBufferFrames(posicaoAtual As Double)
+        If videoAtual Is Nothing OrElse String.IsNullOrWhiteSpace(videoAtual.Caminho) OrElse frameRate <= 0 Then Return
 
-        ' Cancelar tarefa de buffer anterior se existir
-        If bufferTaskCts IsNot Nothing Then
-            bufferTaskCts.Cancel()
-        End If
-
+        ' Cancelar a carga anterior (mata os ffmpeg dela)
+        If bufferTaskCts IsNot Nothing Then bufferTaskCts.Cancel()
         bufferTaskCts = New CancellationTokenSource()
         Dim token = bufferTaskCts.Token
 
+        Dim fps = frameRate
+        Dim frameAtual As Integer = CInt(Math.Round(posicaoAtual * fps))
+        Dim framesBuffer As Integer = CInt(Math.Ceiling(BUFFER_SEGUNDOS * fps))
+        Dim frameInicio As Integer = Math.Max(0, frameAtual - framesBuffer)
+        Dim frameFim As Integer = frameAtual + framesBuffer
+        bufferJanelaInicio = frameInicio
+        bufferJanelaFim = frameFim
+
+        ' Descarta quadros longe da nova janela
+        SyncLock frameBufferLock
+            For Each chave In frameBuffer.Keys.Where(Function(k) k < frameInicio - framesBuffer OrElse k > frameFim + framesBuffer).ToList()
+                frameBuffer.Remove(chave)
+            Next
+        End SyncLock
+
+        ' Altura proporcional ao vídeo (par, exigência do encoder)
+        Dim largura = BUFFER_LARGURA
+        Dim altura = 540
+        If VisualizadorVideo.NaturalVideoWidth > 0 AndAlso VisualizadorVideo.NaturalVideoHeight > 0 Then
+            largura = Math.Min(BUFFER_LARGURA, VisualizadorVideo.NaturalVideoWidth)
+            altura = CInt(Math.Round(largura * VisualizadorVideo.NaturalVideoHeight / VisualizadorVideo.NaturalVideoWidth / 2.0)) * 2
+            largura = (largura \ 2) * 2
+        End If
+
+        Dim caminho = videoAtual.Caminho
+        ' Para frente (do quadro atual até o fim da janela) e para trás, em paralelo
+        ExtrairQuadrosAsync(caminho, fps, frameAtual, frameFim, largura, altura, token)
+        If frameAtual > frameInicio Then ExtrairQuadrosAsync(caminho, fps, frameInicio, frameAtual - 1, largura, altura, token)
+    End Sub
+
+    ' Extrai os quadros [primeiro..ultimo] com o ffmpeg e guarda cada JPEG no buffer assim que chega
+    Private Async Sub ExtrairQuadrosAsync(caminho As String, fps As Double, primeiro As Integer, ultimo As Integer,
+                                         largura As Integer, altura As Integer, token As CancellationToken)
+        Dim total = ultimo - primeiro + 1
+        If total <= 0 Then Return
+
+        ' Pula se todos já estão no buffer
+        SyncLock frameBufferLock
+            If Enumerable.Range(primeiro, total).All(Function(n) frameBuffer.ContainsKey(n)) Then Return
+        End SyncLock
+
         Try
             Await Task.Run(Sub()
-                               ' Calcular intervalo de frames para o buffer
-                               Dim frameAtual As Integer = CInt(Math.Floor(posicaoAtual * frameRate))
-                               Dim framesBuffer As Integer = CInt(Math.Ceiling(BUFFER_SEGUNDOS * frameRate))
+                               Dim inv = System.Globalization.CultureInfo.InvariantCulture
+                               Dim inicio = (primeiro / fps).ToString("F4", inv)
+                               Dim fpsTxt = fps.ToString("F4", inv)
+                               Dim psi As New ProcessStartInfo() With {
+                                   .FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg", "ffmpeg.exe"),
+                                   .Arguments = $"-nostdin -loglevel error -ss {inicio} -i ""{caminho}"" -frames:v {total} " &
+                                                $"-vf ""fps={fpsTxt},scale={largura}:{altura}"" -an -f image2pipe -c:v mjpeg -q:v 4 -",
+                                   .UseShellExecute = False,
+                                   .CreateNoWindow = True,
+                                   .RedirectStandardOutput = True
+                               }
 
-                               ' Frames para carregar (1 seg antes e 1 seg depois)
-                               Dim frameInicio As Integer = Math.Max(0, frameAtual - framesBuffer)
-                               Dim frameFim As Integer = frameAtual + framesBuffer
-                               Dim totalFrames As Integer = frameFim - frameInicio + 1
-
-                               ' Limpar frames antigos que estão fora do range
-                               SyncLock frameBufferLock
-                                   Dim chavesParaRemover = frameBuffer.Keys.Where(Function(k) k < frameInicio - framesBuffer OrElse k > frameFim + framesBuffer).ToList()
-                                   For Each chave In chavesParaRemover
-                                       frameBuffer.Remove(chave)
-                                   Next
-                               End SyncLock
-
-                               ' Verificar quantos frames já temos no buffer
-                               Dim framesAusentes As New List(Of Integer)()
-                               SyncLock frameBufferLock
-                                   For frameNum As Integer = frameInicio To frameFim
-                                       If Not frameBuffer.ContainsKey(frameNum) Then
-                                           framesAusentes.Add(frameNum)
-                                       End If
-                                   Next
-                               End SyncLock
-
-                               If framesAusentes.Count = 0 Then Return ' Todos os frames já estão em cache
-
-                               ' Extrair frames em lote usando FFmpeg
-                               Try
-                                   Dim timestampInicio As Double = frameInicio / frameRate
-                                   Dim duracao As Double = totalFrames / frameRate
-
-                                   ' Criar pasta temporária para os frames
-                                   Dim tempFolder = Path.Combine(Path.GetTempPath(), $"frames_{Guid.NewGuid()}")
-                                   Directory.CreateDirectory(tempFolder)
-
-                                   ' Extrair todos os frames de uma vez (muito mais rápido!)
-                                   Dim outputPattern = Path.Combine(tempFolder, "frame_%04d.png")
-                                   Dim processInfo As New ProcessStartInfo() With {
-                                       .FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg", "ffmpeg.exe"),
-                                       .Arguments = $"-ss {timestampInicio.ToString("F3", System.Globalization.CultureInfo.InvariantCulture)} -i ""{videoAtual.Caminho}"" -t {duracao.ToString("F3", System.Globalization.CultureInfo.InvariantCulture)} -vf ""fps={frameRate}"" ""{outputPattern}""",
-                                       .UseShellExecute = False,
-                                       .CreateNoWindow = True,
-                                       .RedirectStandardError = True,
-                                       .RedirectStandardOutput = True
-                                   }
-
-                                   Dim process As Process = Process.Start(processInfo)
-                                   If process IsNot Nothing Then
-                                       ' Aguardar com timeout de 10 segundos
-                                       process.WaitForExit(10000)
-                                       process.Dispose()
-
-                                       ' Carregar os frames extraídos
-                                       Dim arquivosFrames = Directory.GetFiles(tempFolder, "frame_*.png").OrderBy(Function(f) f).ToList()
-
-                                       For i As Integer = 0 To Math.Min(arquivosFrames.Count - 1, totalFrames - 1)
-                                           If token.IsCancellationRequested Then Exit For
-
-                                           Dim frameNum = frameInicio + i
-                                           Dim arquivoFrame = arquivosFrames(i)
-
-                                           If File.Exists(arquivoFrame) Then
-                                               ' Carregar imagem na thread UI
-                                               Dispatcher.Invoke(Sub()
-                                                                     Try
-                                                                         Dim bmp As New BitmapImage()
-                                                                         bmp.BeginInit()
-                                                                         bmp.CacheOption = BitmapCacheOption.OnLoad
-                                                                         bmp.DecodePixelWidth = 320 ' Reduzir tamanho para economizar memória
-                                                                         bmp.UriSource = New Uri(arquivoFrame)
-                                                                         bmp.EndInit()
-                                                                         bmp.Freeze() ' Permitir uso em outras threads
-
-                                                                         SyncLock frameBufferLock
-                                                                             If Not frameBuffer.ContainsKey(frameNum) Then
-                                                                                 frameBuffer(frameNum) = bmp
-                                                                             End If
-                                                                         End SyncLock
-                                                                     Catch ex As Exception
-                                                                         Debug.WriteLine($"Erro ao carregar frame {frameNum}: {ex.Message}")
-                                                                     End Try
-                                                                 End Sub)
-                                           End If
-                                       Next
-
-                                       ' Limpar pasta temporária
-                                       Try
-                                           Directory.Delete(tempFolder, True)
-                                       Catch
-                                       End Try
-                                   End If
-                               Catch ex As Exception
-                                   Debug.WriteLine($"Erro ao extrair frames em lote: {ex.Message}")
-                               End Try
-                           End Sub, token)
-        Catch ex As OperationCanceledException
-            ' Cancelamento normal
+                               Using p = Process.Start(psi)
+                                   If p Is Nothing Then Return
+                                   ' Cancelou (outra posição, outro vídeo): mata o ffmpeg na hora
+                                   Using token.Register(Sub()
+                                                            Try
+                                                                If Not p.HasExited Then p.Kill()
+                                                            Catch
+                                                            End Try
+                                                        End Sub)
+                                       Dim saida = p.StandardOutput.BaseStream
+                                       Dim atual As New MemoryStream()
+                                       Dim buf(65535) As Byte
+                                       Dim anterior As Integer = -1   ' último byte lido (para achar FF D9 entre leituras)
+                                       Dim indice As Integer = primeiro
+                                       Dim lidos As Integer
+                                       Do
+                                           lidos = saida.Read(buf, 0, buf.Length)
+                                           If lidos <= 0 OrElse token.IsCancellationRequested Then Exit Do
+                                           Dim inicioTrecho = 0
+                                           For i = 0 To lidos - 1
+                                               ' Fim de um JPEG (FF D9): o quadro está completo
+                                               If anterior = &HFF AndAlso buf(i) = &HD9 Then
+                                                   atual.Write(buf, inicioTrecho, i - inicioTrecho + 1)
+                                                   Dim jpeg = atual.ToArray()
+                                                   SyncLock frameBufferLock
+                                                       frameBuffer(indice) = jpeg
+                                                   End SyncLock
+                                                   indice += 1
+                                                   atual.SetLength(0)
+                                                   inicioTrecho = i + 1
+                                                   anterior = -1
+                                               Else
+                                                   anterior = buf(i)
+                                               End If
+                                           Next
+                                           If inicioTrecho < lidos Then atual.Write(buf, inicioTrecho, lidos - inicioTrecho)
+                                       Loop
+                                       If Not p.HasExited Then p.WaitForExit(2000)
+                                   End Using
+                               End Using
+                           End Sub)
         Catch ex As Exception
-            Debug.WriteLine($"Erro no buffer de frames: {ex.Message}")
+            Debug.WriteLine($"Erro ao extrair quadros: {ex.Message}")
         End Try
+    End Sub
+
+    ' Decodifica um quadro do buffer e mostra por cima do player
+    Private Function MostrarQuadroDoBuffer(numeroQuadro As Integer) As Boolean
+        Dim jpeg As Byte() = Nothing
+        SyncLock frameBufferLock
+            If Not frameBuffer.TryGetValue(numeroQuadro, jpeg) Then Return False
+        End SyncLock
+        Try
+            Dim bmp As New BitmapImage()
+            Using ms As New MemoryStream(jpeg)
+                bmp.BeginInit()
+                bmp.CacheOption = BitmapCacheOption.OnLoad
+                bmp.StreamSource = ms
+                bmp.EndInit()
+            End Using
+            bmp.Freeze()
+            imgFrameBuffer.Source = bmp
+            imgFrameBuffer.Visibility = Visibility.Visible
+            Return True
+        Catch
+            Return False
+        End Try
+    End Function
+
+    ' Volta a mostrar o player (ao reproduzir, clicar na timeline, pular para um tempo...)
+    Private Sub EsconderQuadroBuffer()
+        If imgFrameBuffer.Visibility <> Visibility.Collapsed Then imgFrameBuffer.Visibility = Visibility.Collapsed
     End Sub
 
     Private Sub LimparBufferFrames()
         SyncLock frameBufferLock
             frameBuffer.Clear()
         End SyncLock
+        bufferJanelaInicio = -1
+        bufferJanelaFim = -1
 
         If bufferTaskCts IsNot Nothing Then
             bufferTaskCts.Cancel()
             bufferTaskCts = Nothing
         End If
+        EsconderQuadroBuffer()
     End Sub
 
     ' Caminho .mp4 que ainda não existe na pasta: "nome.mp4", senão "nome (2).mp4", "nome (3).mp4"...
@@ -2736,7 +2779,9 @@ Partial Class MainWindow
     Private posicaoAlvoFrame As Double = 0
     Private ultimoPassoFrameTick As Integer = 0
     Private WithEvents timerPausaPasso As New DispatcherTimer() With {.Interval = TimeSpan.FromMilliseconds(150)}
-    Private WithEvents timerRenderPasso As New DispatcherTimer() With {.Interval = TimeSpan.FromMilliseconds(70)}
+    ' Intervalo mínimo entre saltos do player quando o quadro não está no buffer: saltos mais rápidos que o
+    ' player consegue decodificar se acumulam e ele mostraria todos em sequência depois
+    Private WithEvents timerRenderPasso As New DispatcherTimer() With {.Interval = TimeSpan.FromMilliseconds(220)}
     Private renderPassoEmAndamento As Boolean = False
     Private renderPassoPendente As Boolean = False
 
@@ -2761,7 +2806,8 @@ Partial Class MainWindow
             basePosicao = mediaClock.CurrentTime.Value.TotalSeconds
         End If
 
-        Dim novaPosicao As Double = basePosicao + (duracaoFrame * direcao)
+        ' Passo alinhado à grade de quadros (quadro N = N / fps), igual à numeração do buffer
+        Dim novaPosicao As Double = (Math.Round(basePosicao * frameRate) + direcao) * duracaoFrame
 
         If novaPosicao < 0 Then novaPosicao = 0
         If novaPosicao > slLinhaTempo.Maximum Then novaPosicao = slLinhaTempo.Maximum
@@ -2772,13 +2818,50 @@ Partial Class MainWindow
         slLinhaTempo.Value = novaPosicao
         lblTempoAtual.Text = FormatarTempo(novaPosicao)
 
-        ' Desenha o quadro de forma sincronizada: se ainda há um desenho em andamento, este pedido é ignorado
-        ' e apenas a posição final (onde você parou) será desenhada quando o anterior terminar
-        If renderPassoEmAndamento Then
-            renderPassoPendente = True
+        ' Quadro já está no buffer: aparece na hora, sem esperar o player. O player só é levado até
+        ' a posição quando os passos param (timerSincronizarPasso), então nada fica "na fila".
+        Dim numeroQuadro = CInt(Math.Round(novaPosicao * frameRate))
+        If MostrarQuadroDoBuffer(numeroQuadro) Then
+            timerSincronizarPasso.Stop()
+            timerSincronizarPasso.Start()
         Else
-            ExecutarRenderQuadro()
+            ' Sem o quadro no buffer: o player desenha, mas no máximo um salto por vez (sem acumular)
+            EsconderQuadroBuffer()
+            If renderPassoEmAndamento Then
+                renderPassoPendente = True
+            Else
+                ExecutarRenderQuadro()
+            End If
         End If
+
+        ' Perto da borda (ou fora) da janela carregada: recarrega centrado na posição nova
+        Dim margem = CInt(Math.Ceiling(frameRate))   ' 1 s de folga
+        Dim pertoDoInicio = bufferJanelaInicio > 0 AndAlso numeroQuadro < bufferJanelaInicio + margem   ' no começo do vídeo não há o que carregar antes
+        Dim pertoDoFim = numeroQuadro > bufferJanelaFim - margem
+        If bufferJanelaInicio < 0 OrElse pertoDoInicio OrElse pertoDoFim Then
+            CarregarBufferFrames(novaPosicao)
+        End If
+    End Sub
+
+    ' Posição exibida agora: logo após um passo de quadro o relógio do player ainda não chegou lá,
+    ' então vale a posição-alvo do passo (é o quadro que está na tela)
+    Private Function PosicaoAtualVideo() As Double
+        If mediaClock Is Nothing OrElse Not mediaClock.CurrentTime.HasValue Then Return 0
+        If Not estaReproduzindo AndAlso (timerSincronizarPasso.IsEnabled OrElse renderPassoPendente OrElse
+                                         Environment.TickCount - ultimoPassoFrameTick < 400) Then
+            Return posicaoAlvoFrame
+        End If
+        Return mediaClock.CurrentTime.Value.TotalSeconds
+    End Function
+
+    ' Fim de uma sequência de passos mostrados pelo buffer: leva o player (escondido atrás do quadro)
+    ' até a posição final, para o play continuar dali
+    Private WithEvents timerSincronizarPasso As New DispatcherTimer() With {.Interval = TimeSpan.FromMilliseconds(250)}
+
+    Private Sub TimerSincronizarPasso_Tick(sender As Object, e As EventArgs) Handles timerSincronizarPasso.Tick
+        timerSincronizarPasso.Stop()
+        If mediaClock Is Nothing OrElse estaReproduzindo Then Return
+        ExecutarRenderQuadro()
     End Sub
 
     Private Sub ExecutarRenderQuadro()
@@ -2849,7 +2932,7 @@ Partial Class MainWindow
             AdicionarNovaOperacao(False)
         End If
 
-        Dim tempoSeg = mediaClock.CurrentTime.Value.TotalSeconds
+        Dim tempoSeg = PosicaoAtualVideo()
 
         ' --- Determinar a entry (linha) e o campo alvo ---
         ' Prioridade 1: célula manualmente selecionada pelo utilizador (SelectedCells)
