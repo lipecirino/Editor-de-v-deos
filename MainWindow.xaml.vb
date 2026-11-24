@@ -1201,7 +1201,29 @@ Partial Class MainWindow
         SalvarCache()
     End Sub
 
+    ' Fechar durante uma exportação: cancela primeiro e só fecha quando a conversão parar
+    Private fecharAposCancelar As Boolean = False
+    ' Arquivo que o ffmpeg está gravando agora (apagado se a conversão for cancelada no meio)
+    Private arquivoEmEscrita As String = ""
+
     Private Sub MainWindow_Closing(sender As Object, e As ComponentModel.CancelEventArgs)
+        If estaProcessando Then
+            e.Cancel = True
+            If fecharAposCancelar Then Return   ' já está cancelando; fecha sozinho ao terminar
+
+            Dim confirmar = ConfirmacaoWindow.Perguntar(Me,
+                "Cancelar a exportação e fechar?",
+                "Há uma exportação em andamento. Se fechar agora, o vídeo que está sendo convertido fica incompleto e é descartado; os que já terminaram continuam salvos.",
+                "Cancelar e fechar", "Continuar exportando")
+            If Not confirmar Then Return
+
+            fecharAposCancelar = True
+            btnProcessar.Content = "Cancelando…"
+            btnProcessar.IsEnabled = False
+            If cts IsNot Nothing Then cts.Cancel()
+            Return
+        End If
+
         ' Salvar cronoanálise do vídeo atual antes de fechar
         If videoAtual IsNot Nothing Then
             SalvarCronoAnaliseDoVideo(videoAtual)
@@ -2403,7 +2425,9 @@ Partial Class MainWindow
                                              End If
                                          End Sub, duracao)
 
-                    Await engine.CancellableThrough(cts.Token).ProcessAsynchronously()
+                    arquivoEmEscrita = destinoParte
+                    Dim concluiu As Boolean = Await engine.CancellableThrough(cts.Token).ProcessAsynchronously()
+                    If concluiu Then arquivoEmEscrita = ""   ' arquivo completo: não apagar mesmo se cancelarem depois
                 Next
 
                 ' Um único vídeo: junta as partes (só os segmentos), descartando o restante
@@ -2456,10 +2480,24 @@ Partial Class MainWindow
             End If
 
         Catch ex As OperationCanceledException
-            MessageBox.Show("A conversão foi cancelada.", "Cancelado", MessageBoxButton.OK, MessageBoxImage.Warning)
+            If Not fecharAposCancelar Then
+                MessageBox.Show("A conversão foi cancelada.", "Cancelado", MessageBoxButton.OK, MessageBoxImage.Warning)
+            End If
         Catch ex As Exception
-            MessageBox.Show("Erro: " & ex.ToString(), "Falha", MessageBoxButton.OK, MessageBoxImage.Error)
+            If Not fecharAposCancelar Then
+                MessageBox.Show("Erro: " & ex.ToString(), "Falha", MessageBoxButton.OK, MessageBoxImage.Error)
+            End If
         Finally
+            ' Conversão interrompida no meio: o arquivo parcial não serve, então é apagado
+            If Not String.IsNullOrEmpty(arquivoEmEscrita) Then
+                Try
+                    If File.Exists(arquivoEmEscrita) Then File.Delete(arquivoEmEscrita)
+                Catch exApagar As Exception
+                    Debug.WriteLine($"Não foi possível apagar o arquivo incompleto: {exApagar.Message}")
+                End Try
+                arquivoEmEscrita = ""
+            End If
+
             estaProcessando = False
             DefinirBloqueioExportacao(False)
             For Each restante In fila
@@ -2476,6 +2514,11 @@ Partial Class MainWindow
             btnProcessar.Tag = ChrW(&HE8AB).ToString()
             btnProcessar.ClearValue(Button.BackgroundProperty)
             painelProgresso.Visibility = Visibility.Collapsed
+
+            ' O usuário pediu para fechar durante a exportação: agora que parou, fecha
+            If fecharAposCancelar Then
+                Dim fechar = Dispatcher.BeginInvoke(Sub() Close())
+            End If
         End Try
     End Sub
 

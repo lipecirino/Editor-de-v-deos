@@ -196,6 +196,14 @@
     <Compile Include="ProcessosFilhos.vb">
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="ConfirmacaoWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Compile Include="ConfirmacaoWindow.xaml.vb">
+      <DependentUpon>ConfirmacaoWindow.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
     <Page Include="ExportarWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
