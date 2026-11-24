@@ -1081,8 +1081,6 @@ Partial Class MainWindow
         ' Carregar cache de cronoanálise
         CarregarCache()
 
-        ' Carregar configurações de exportação e aplicar à UI
-        CarregarExportSettings()
 
         ' Atualizar tooltips dos botões com os atalhos configurados
         AtualizarTooltipsAtalhos()
@@ -1206,7 +1204,6 @@ Partial Class MainWindow
             SalvarCronoAnaliseDoVideo(videoAtual)
         End If
         SalvarCache()
-        SalvarExportSettings()
 
         ' Limpar buffer de frames
         LimparBufferFrames()
@@ -2111,7 +2108,6 @@ Partial Class MainWindow
         End If
 
         SalvarConfiguracoesAtuais()
-        SalvarExportSettings()
         If videoAtual IsNot Nothing Then SalvarCronoAnaliseDoVideo(videoAtual)
 
         ' Vídeos com cronoanálise não são exportados nem convertidos: ficam na lista, intactos
@@ -2122,44 +2118,16 @@ Partial Class MainWindow
             Return
         End If
 
-        ' Confirmação extra quando os originais serão apagados
-        If chkDeletarOriginal.IsEnabled AndAlso chkDeletarOriginal.IsChecked = True Then
-            Dim confirmar = MessageBox.Show($"Os {fila.Count} vídeo(s) originais serão excluídos depois da conversão." & vbCrLf &
-                                            "Não é possível desfazer. Continuar?",
-                                            "Excluir originais", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No)
-            If confirmar <> MessageBoxResult.Yes Then Return
-        End If
+        ' Tela de exportação: segmentos, destino, exclusão dos originais e desempenho
+        Dim algumTemSegmentos As Boolean = fila.Any(Function(t) t IsNot Nothing AndAlso t.Segmentos.Count > 0)
+        Dim cfg = ExportSettingsManager.Carregar()
+        Dim telaExportar As New ExportarWindow(cfg, fila.Count, ignoradosCrono, algumTemSegmentos) With {.Owner = Me}
+        If telaExportar.ShowDialog() <> True Then Return
 
-        ' Se algum vídeo tem segmentos, perguntar como exportar
-        Dim exportarUnico As Boolean = False
-        Dim algumTemSegmentos As Boolean = False
-        For Each t In fila
-            If t IsNot Nothing AndAlso t.Segmentos.Count > 0 Then
-                algumTemSegmentos = True
-                Exit For
-            End If
-        Next
-        If algumTemSegmentos Then
-            Dim resp = MessageBox.Show("Como deseja exportar os segmentos?" & vbCrLf & vbCrLf &
-                                       "SIM  =  Vários vídeos (um para cada segmento)" & vbCrLf &
-                                       "NÃO  =  Um único vídeo só com os segmentos (o restante é cortado)" & vbCrLf &
-                                       "CANCELAR  =  Voltar sem exportar",
-                                       "Exportar segmentos", MessageBoxButton.YesNoCancel, MessageBoxImage.Question)
-            If resp = MessageBoxResult.Cancel Then Return
-            exportarUnico = (resp = MessageBoxResult.No)
-        End If
-
-        Dim destino As String = ""
-
-        If rbSalvarPastaEscolhida.IsChecked = True Then
-            Using sel As New System.Windows.Forms.FolderBrowserDialog()
-                If sel.ShowDialog() = System.Windows.Forms.DialogResult.OK Then
-                    destino = sel.SelectedPath
-                Else
-                    Return
-                End If
-            End Using
-        End If
+        Dim exportarUnico As Boolean = algumTemSegmentos AndAlso telaExportar.ExportarUnico
+        Dim salvarNaOriginal As Boolean = cfg.SalvarNaPastaOriginal
+        Dim excluirOriginais As Boolean = cfg.DeletarOriginal
+        Dim destino As String = If(salvarNaOriginal, "", telaExportar.PastaDestino)
 
         segmentoTravado = Nothing
         estaProcessando = True
@@ -2179,7 +2147,7 @@ Partial Class MainWindow
         AtualizarEstadoPlayPause(False)
 
         Dim argumentosDesempenho As String = ""
-        If rbDesempenhoEco.IsChecked = True Then
+        If cfg.ModoEconomico Then
             Dim totalThreads = Environment.ProcessorCount
             Dim threadsEconomicas = Math.Max(1, totalThreads \ 2)
             argumentosDesempenho = $"-threads {threadsEconomicas}"
@@ -2206,7 +2174,7 @@ Partial Class MainWindow
                 Dim info = FFProbe.Analyse(tarefa.Caminho)
 
                 Dim pastaSaida As String = destino
-                If rbSalvarPastaOriginal.IsChecked = True Then
+                If salvarNaOriginal Then
                     pastaSaida = Path.GetDirectoryName(tarefa.Caminho)
                 End If
 
@@ -2327,7 +2295,7 @@ Partial Class MainWindow
                     Next
                 End Try
 
-                If chkDeletarOriginal.IsChecked = True AndAlso Not cts.Token.IsCancellationRequested Then
+                If excluirOriginais AndAlso Not cts.Token.IsCancellationRequested Then
                     Try
                         File.Delete(tarefa.Caminho)
 
@@ -2379,11 +2347,10 @@ Partial Class MainWindow
             End If
 
             btnProcessar.IsEnabled = True
-            btnProcessar.Content = "Converter tudo"
+            btnProcessar.Content = "Exportar…"
             btnProcessar.Tag = ChrW(&HE8AB).ToString()
             btnProcessar.ClearValue(Button.BackgroundProperty)
             painelProgresso.Visibility = Visibility.Collapsed
-            expExportacaoDesempenho.IsExpanded = False
         End Try
     End Sub
 
@@ -3492,70 +3459,4 @@ Partial Class MainWindow
         End If
     End Sub
 
-    ' --- CONFIGURAÇÕES DE EXPORTAÇÃO (SALVAS EM JSON NO APPDATA) ---
-
-    Private Sub CarregarExportSettings()
-        Dim settings = ExportSettingsManager.Carregar()
-
-        ' Aplicar configurações de local de guardar
-        rbSalvarPastaOriginal.IsChecked = settings.SalvarNaPastaOriginal
-        rbSalvarPastaEscolhida.IsChecked = Not settings.SalvarNaPastaOriginal
-
-        ' Aplicar configuração de deletar original
-        chkDeletarOriginal.IsChecked = settings.DeletarOriginal
-
-        ' Aplicar modo de desempenho
-        rbDesempenhoEco.IsChecked = settings.ModoEconomico
-        rbDesempenhoAlto.IsChecked = Not settings.ModoEconomico
-
-        ' Atualizar estado do checkbox conforme a opção de pasta selecionada
-        AtualizarEstadoCheckboxDeletar()
-    End Sub
-
-    Private Sub SalvarExportSettings()
-        Dim settings As New ExportSettings() With {
-            .SalvarNaPastaOriginal = rbSalvarPastaOriginal.IsChecked.HasValue AndAlso rbSalvarPastaOriginal.IsChecked.Value,
-            .DeletarOriginal = chkDeletarOriginal.IsChecked.HasValue AndAlso chkDeletarOriginal.IsChecked.Value,
-            .ModoEconomico = rbDesempenhoEco.IsChecked.HasValue AndAlso rbDesempenhoEco.IsChecked.Value
-        }
-        ExportSettingsManager.Salvar(settings)
-    End Sub
-
-    Private Sub AtualizarEstadoCheckboxDeletar()
-        ' Desabilitar o checkbox "Eliminar original" quando a opção "Escolher uma pasta" estiver ativa,
-        ' pois o utilizador está a guardar noutra pasta e não faz sentido eliminar o original.
-        ' Habilitar quando "Guardar na mesma pasta do original" estiver selecionado.
-        Dim salvarNaOriginal As Boolean = rbSalvarPastaOriginal.IsChecked.HasValue AndAlso rbSalvarPastaOriginal.IsChecked.Value
-        chkDeletarOriginal.IsEnabled = salvarNaOriginal
-
-        ' Se estiver desabilitado e estiver marcado, desmarcar automaticamente
-        If Not chkDeletarOriginal.IsEnabled Then
-            chkDeletarOriginal.IsChecked = False
-        End If
-        AtualizarAvisoExcluirOriginal()
-    End Sub
-
-    ' Mostra o aviso vermelho acima do botão de converter enquanto a exclusão dos originais estiver ligada
-    Private Sub AtualizarAvisoExcluirOriginal()
-        If bdrAvisoExcluir Is Nothing Then Return
-        Dim excluir = chkDeletarOriginal.IsEnabled AndAlso chkDeletarOriginal.IsChecked = True
-        bdrAvisoExcluir.Visibility = If(excluir, Visibility.Visible, Visibility.Collapsed)
-    End Sub
-
-    Private Sub RbSalvarPasta_Checked(sender As Object, e As RoutedEventArgs)
-        If _isLoading Then Return
-        AtualizarEstadoCheckboxDeletar()
-        SalvarExportSettings()
-    End Sub
-
-    Private Sub ChkDeletarOriginal_Checked(sender As Object, e As RoutedEventArgs)
-        AtualizarAvisoExcluirOriginal()
-        If _isLoading Then Return
-        SalvarExportSettings()
-    End Sub
-
-    Private Sub RbDesempenho_Checked(sender As Object, e As RoutedEventArgs)
-        If _isLoading Then Return
-        SalvarExportSettings()
-    End Sub
 End Class

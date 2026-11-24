@@ -193,6 +193,14 @@
     <Compile Include="ExportSettings.vb">
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="ExportarWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Compile Include="ExportarWindow.xaml.vb">
+      <DependentUpon>ExportarWindow.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
     <Page Include="SettingsWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

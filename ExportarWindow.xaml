@@ -1,0 +1,174 @@
+<Window x:Class="ExportarWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Exportar"
+        Width="560" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="ToolWindow"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Background="#FFF5F5F7"
+        FontFamily="Segoe UI Variable Text, Segoe UI"
+        TextElement.Foreground="#FF1D1D1F">
+
+    <Window.Resources>
+        <!-- Opção em forma de cartão: borda azul quando escolhida -->
+        <Style x:Key="OpcaoCartao" TargetType="RadioButton">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="b" Background="White" BorderBrush="#FFE5E5EA" BorderThickness="1" CornerRadius="10" Padding="12,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Width="34" Height="34" CornerRadius="8" Background="#FFF2F2F7" Margin="0,0,12,0" VerticalAlignment="Center">
+                                    <TextBlock x:Name="ico" Style="{StaticResource Icone}" Text="{TemplateBinding Tag}" FontSize="16"
+                                               Foreground="#FF86868B" HorizontalAlignment="Center"/>
+                                </Border>
+                                <ContentPresenter Grid.Column="1" VerticalAlignment="Center"/>
+                                <!-- Marcador redondo à direita -->
+                                <Grid Grid.Column="2" Width="18" Height="18" Margin="10,0,0,0" VerticalAlignment="Center">
+                                    <Ellipse x:Name="anel" Stroke="#FFC7C7CC" StrokeThickness="1.5"/>
+                                    <Ellipse x:Name="ponto" Fill="#FF007AFF" Visibility="Collapsed"/>
+                                    <TextBlock x:Name="check" Style="{StaticResource Icone}" Text="&#xE73E;" FontSize="10" Foreground="White"
+                                               HorizontalAlignment="Center" Visibility="Collapsed"/>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="BorderBrush" Value="#FFC7C7CC"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="b" Property="BorderBrush" Value="#FF007AFF"/>
+                                <Setter TargetName="b" Property="Background" Value="#FFF5F9FF"/>
+                                <Setter TargetName="ico" Property="Foreground" Value="#FF007AFF"/>
+                                <Setter TargetName="anel" Property="Visibility" Value="Collapsed"/>
+                                <Setter TargetName="ponto" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="check" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="b" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TituloSecao" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#FF86868B"/>
+            <Setter Property="Margin" Value="4,16,0,6"/>
+        </Style>
+        <Style x:Key="TituloOpcao" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#FF1D1D1F"/>
+        </Style>
+        <Style x:Key="DescOpcao" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="Foreground" Value="#FF86868B"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,2,0,0"/>
+        </Style>
+    </Window.Resources>
+
+    <StackPanel Margin="22,20,22,20">
+        <!-- Cabeçalho -->
+        <TextBlock Text="Exportar vídeos" FontSize="18" FontWeight="SemiBold"/>
+        <TextBlock Name="lblResumo" FontSize="12" Foreground="#FF86868B" Margin="0,4,0,0" TextWrapping="Wrap"/>
+
+        <!-- Segmentos (só quando algum vídeo tem cortes) -->
+        <StackPanel Name="pnlSegmentos">
+            <TextBlock Text="SEGMENTOS" Style="{StaticResource TituloSecao}"/>
+            <UniformGrid Columns="2">
+                <RadioButton Name="rbSeparados" GroupName="Segmentos" Style="{StaticResource OpcaoCartao}" Tag="&#xE8A9;" Margin="0,0,5,0" IsChecked="True">
+                    <StackPanel>
+                        <TextBlock Text="Um vídeo por segmento" Style="{StaticResource TituloOpcao}"/>
+                        <TextBlock Text="Cada trecho vira um arquivo separado." Style="{StaticResource DescOpcao}"/>
+                    </StackPanel>
+                </RadioButton>
+                <RadioButton Name="rbUnico" GroupName="Segmentos" Style="{StaticResource OpcaoCartao}" Tag="&#xE71B;" Margin="5,0,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Juntar em um vídeo" Style="{StaticResource TituloOpcao}"/>
+                        <TextBlock Text="Os trechos são unidos; o restante é cortado." Style="{StaticResource DescOpcao}"/>
+                    </StackPanel>
+                </RadioButton>
+            </UniformGrid>
+        </StackPanel>
+
+        <!-- Destino -->
+        <TextBlock Text="SALVAR EM" Style="{StaticResource TituloSecao}"/>
+        <RadioButton Name="rbPastaOriginal" GroupName="Destino" Style="{StaticResource OpcaoCartao}" Tag="&#xE8B7;" Margin="0,0,0,8" Checked="Destino_Checked">
+            <StackPanel>
+                <TextBlock Text="Mesma pasta do original" Style="{StaticResource TituloOpcao}"/>
+                <TextBlock Text="O arquivo novo recebe o sufixo _editado." Style="{StaticResource DescOpcao}"/>
+            </StackPanel>
+        </RadioButton>
+        <RadioButton Name="rbOutraPasta" GroupName="Destino" Style="{StaticResource OpcaoCartao}" Tag="&#xE838;" Checked="Destino_Checked">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="Outra pasta" Style="{StaticResource TituloOpcao}"/>
+                    <TextBlock Name="lblPastaDestino" Text="Nenhuma pasta escolhida" Style="{StaticResource DescOpcao}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                </StackPanel>
+                <Button Grid.Column="1" Content="Escolher…" Style="{StaticResource BotaoArredondado}" Padding="10,5" Margin="10,0,0,0"
+                        VerticalAlignment="Center" Click="BtnEscolherPasta_Click"/>
+            </Grid>
+        </RadioButton>
+
+        <!-- Excluir originais: só faz sentido salvando na mesma pasta -->
+        <Border Name="bdrExcluir" Background="White" BorderBrush="#FFE5E5EA" BorderThickness="1" CornerRadius="10" Padding="12,10" Margin="0,8,0,0">
+            <StackPanel>
+                <CheckBox Name="chkExcluirOriginal" VerticalContentAlignment="Center" Checked="Excluir_Changed" Unchecked="Excluir_Changed">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource Icone}" Text="&#xE7BA;" FontSize="12" Foreground="#FFFF3B30" Margin="0,0,6,0"/>
+                        <TextBlock Text="Excluir o vídeo original após a conversão" Foreground="#FFFF3B30" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </CheckBox>
+                <TextBlock Name="lblExcluirDica" Style="{StaticResource DescOpcao}" Margin="22,4,0,0"
+                           Text="Só disponível ao salvar na mesma pasta do original. Não dá para desfazer."/>
+            </StackPanel>
+        </Border>
+
+        <!-- Desempenho -->
+        <TextBlock Text="DESEMPENHO" Style="{StaticResource TituloSecao}"/>
+        <UniformGrid Columns="2">
+            <RadioButton Name="rbAlto" GroupName="Desempenho" Style="{StaticResource OpcaoCartao}" Tag="&#xE945;" Margin="0,0,5,0" IsChecked="True">
+                <StackPanel>
+                    <TextBlock Text="Alto desempenho" Style="{StaticResource TituloOpcao}"/>
+                    <TextBlock Text="Usa todo o processador." Style="{StaticResource DescOpcao}"/>
+                </StackPanel>
+            </RadioButton>
+            <RadioButton Name="rbEconomico" GroupName="Desempenho" Style="{StaticResource OpcaoCartao}" Tag="&#xEC48;" Margin="5,0,0,0">
+                <StackPanel>
+                    <TextBlock Text="Econômico" Style="{StaticResource TituloOpcao}"/>
+                    <TextBlock Text="Usa metade, sem travar o PC." Style="{StaticResource DescOpcao}"/>
+                </StackPanel>
+            </RadioButton>
+        </UniformGrid>
+
+        <!-- Ações -->
+        <Grid Margin="0,22,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="1" Content="Cancelar" Style="{StaticResource BotaoArredondado}" Padding="16,8" FontSize="13" Margin="0,0,8,0"
+                    IsCancel="True" Click="BtnCancelar_Click"/>
+            <Button Grid.Column="2" Name="btnExportar" Content="Exportar" Tag="&#xE8AB;" Style="{StaticResource BotaoPrimario}" Padding="18,8" FontSize="13"
+                    IsDefault="True" Click="BtnExportar_Click"/>
+        </Grid>
+    </StackPanel>
+</Window>

@@ -376,30 +376,6 @@
                                     </WrapPanel>
                                 </StackPanel>
                             </GroupBox>
-
-                            <Expander Name="expExportacaoDesempenho" Header="3 · Opções de exportação e desempenho" Margin="0,0,0,8" IsExpanded="False" Padding="12,10">
-                                <StackPanel Margin="0,10,0,0">
-                                    <TextBlock Text="Salvar em" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#FF1D1D1F"/>
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                        <RadioButton Name="rbSalvarPastaEscolhida" Content="Escolher uma pasta" IsChecked="True" Margin="0,0,15,0" Checked="RbSalvarPasta_Checked"/>
-                                        <RadioButton Name="rbSalvarPastaOriginal" Content="Mesma pasta do original (adiciona '_editado')" Checked="RbSalvarPasta_Checked"/>
-                                    </StackPanel>
-
-                                    <CheckBox Name="chkDeletarOriginal" Margin="0,0,0,15" Checked="ChkDeletarOriginal_Checked" Unchecked="ChkDeletarOriginal_Checked"
-                                              ToolTip="Os arquivos originais são apagados depois que a conversão termina com sucesso. Não dá para desfazer.">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Style="{StaticResource Icone}" Text="&#xE7BA;" FontSize="12" Foreground="#FFFF3B30" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                            <TextBlock Text="Excluir o vídeo original após a conversão com sucesso" Foreground="#FFFF3B30" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </CheckBox>
-
-                                    <TextBlock Text="Uso do processador (CPU)" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#FF1D1D1F"/>
-                                    <StackPanel Orientation="Horizontal">
-                                        <RadioButton Name="rbDesempenhoAlto" Content="Alto desempenho (sem limite)" IsChecked="True" Margin="0,0,15,0" Checked="RbDesempenho_Checked"/>
-                                        <RadioButton Name="rbDesempenhoEco" Content="Modo econômico (limita a 50% para não travar o PC)" Checked="RbDesempenho_Checked"/>
-                                    </StackPanel>
-                                </StackPanel>
-                            </Expander>
                         </StackPanel>
                     </ScrollViewer>
 
@@ -412,14 +388,7 @@
                                 <TextBlock Name="lblPorcentagem" Text="0%" HorizontalAlignment="Right" Margin="0,-20,0,0" FontWeight="SemiBold" Foreground="#FF1D1D1F"/>
                             </Grid>
                         </StackPanel>
-                        <!-- Aviso sempre visível quando a exclusão dos originais está ligada -->
-                        <Border Name="bdrAvisoExcluir" Visibility="Collapsed" Background="#FFFFEBEA" CornerRadius="8" Padding="10,6" Margin="0,0,0,8">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Style="{StaticResource Icone}" Text="&#xE7BA;" FontSize="12" Foreground="#FFFF3B30" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBlock Text="Os vídeos originais serão excluídos após a conversão." Foreground="#FFC4281C" FontSize="12" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Border>
-                        <Button Name="btnProcessar" Content="Converter tudo" Tag="&#xE8AB;" Height="46" Style="{StaticResource BotaoPrimario}" Click="BtnProcessar_Click" FontSize="14" FontWeight="SemiBold"/>
+                        <Button Name="btnProcessar" Content="Exportar…" Tag="&#xE8AB;" Height="46" Style="{StaticResource BotaoPrimario}" Click="BtnProcessar_Click" FontSize="14" FontWeight="SemiBold"/>
                     </StackPanel>
                 </Grid>  <!-- fecha painelConfigCompleto -->
 

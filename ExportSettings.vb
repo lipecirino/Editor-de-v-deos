@@ -9,6 +9,8 @@ Public Class ExportSettings
     Public Property SalvarNaPastaOriginal As Boolean = True
     Public Property DeletarOriginal As Boolean = False
     Public Property ModoEconomico As Boolean = False
+    Public Property PastaDestino As String = ""
+    Public Property JuntarSegmentos As Boolean = False
 End Class
 
 ''' <summary>
