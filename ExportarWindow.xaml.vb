@@ -8,6 +8,8 @@ Imports System.Windows.Media
 Partial Public Class ExportarWindow
     Private ReadOnly _settings As ExportSettings
     Private ReadOnly _qtdVideos As Integer
+    Private ReadOnly _temSegmentos As Boolean
+    Private _pronto As Boolean = False   ' ignora eventos disparados durante o InitializeComponent
 
     ''' <summary>True = juntar os segmentos em um vídeo só; False = um vídeo por segmento.</summary>
     Public Property ExportarUnico As Boolean
@@ -19,12 +21,14 @@ Partial Public Class ExportarWindow
         InitializeComponent()
         _settings = settings
         _qtdVideos = qtdVideos
+        _temSegmentos = temSegmentos
 
-        Dim resumo = If(qtdVideos = 1, "1 vídeo será convertido para MP4.", $"{qtdVideos} vídeos serão convertidos para MP4.")
+        ' Cabeçalho: quantidade e quem fica de fora
+        lblQtdVideos.Text = If(qtdVideos = 1, "1 vídeo", $"{qtdVideos} vídeos")
         If ignoradosCrono > 0 Then
-            resumo &= If(ignoradosCrono = 1, " 1 vídeo com cronoanálise fica de fora.", $" {ignoradosCrono} vídeos com cronoanálise ficam de fora.")
+            chipIgnorados.Visibility = Visibility.Visible
+            lblIgnorados.Text = If(ignoradosCrono = 1, "1 com cronoanálise fica de fora", $"{ignoradosCrono} com cronoanálise ficam de fora")
         End If
-        lblResumo.Text = resumo
 
         pnlSegmentos.Visibility = If(temSegmentos, Visibility.Visible, Visibility.Collapsed)
 
@@ -39,45 +43,56 @@ Partial Public Class ExportarWindow
         rbUnico.IsChecked = settings.JuntarSegmentos
         rbSeparados.IsChecked = Not settings.JuntarSegmentos
 
+        _pronto = True
         AtualizarEstado()
     End Sub
 
-    Private Sub Destino_Checked(sender As Object, e As RoutedEventArgs)
-        AtualizarEstado()
+    Private Sub Opcao_Changed(sender As Object, e As RoutedEventArgs)
+        If _pronto Then AtualizarEstado()
     End Sub
 
-    Private Sub Excluir_Changed(sender As Object, e As RoutedEventArgs)
-        AtualizarEstado()
-    End Sub
-
-    ' Excluir originais só vale salvando na mesma pasta; o botão principal avisa quando vai excluir
     Private Sub AtualizarEstado()
-        If chkExcluirOriginal Is Nothing OrElse btnExportar Is Nothing Then Return
-
         Dim mesmaPasta = (rbPastaOriginal.IsChecked = True)
-        chkExcluirOriginal.IsEnabled = mesmaPasta
-        bdrExcluir.Opacity = If(mesmaPasta, 1.0, 0.5)
+
+        ' A exclusão é sub-opção da "Mesma pasta": só aparece com ela escolhida
+        pnlExcluir.Visibility = If(mesmaPasta, Visibility.Visible, Visibility.Collapsed)
         If Not mesmaPasta Then chkExcluirOriginal.IsChecked = False
 
         Dim excluir = mesmaPasta AndAlso chkExcluirOriginal.IsChecked = True
         If excluir Then
             bdrExcluir.Background = New SolidColorBrush(Color.FromRgb(&HFF, &HEB, &HEA))
             bdrExcluir.BorderBrush = New SolidColorBrush(Color.FromRgb(&HFF, &H3B, &H30))
-            lblExcluirDica.Text = If(_qtdVideos = 1, "O vídeo original será apagado. Não dá para desfazer.",
-                                     $"Os {_qtdVideos} vídeos originais serão apagados. Não dá para desfazer.")
+            lblExcluirDica.Text = If(_qtdVideos = 1, "O original será apagado. Não dá para desfazer.",
+                                     $"Os {_qtdVideos} originais serão apagados. Não dá para desfazer.")
             btnExportar.Content = "Exportar e excluir originais"
             btnExportar.Background = New SolidColorBrush(Color.FromRgb(&HFF, &H3B, &H30))
         Else
             bdrExcluir.Background = Brushes.White
             bdrExcluir.BorderBrush = New SolidColorBrush(Color.FromRgb(&HE5, &HE5, &HEA))
-            lblExcluirDica.Text = "Só disponível ao salvar na mesma pasta do original. Não dá para desfazer."
+            lblExcluirDica.Text = "Apaga o arquivo original depois que a conversão der certo."
             btnExportar.Content = "Exportar"
             btnExportar.ClearValue(Button.BackgroundProperty)
         End If
+
+        lblDescDesempenho.Text = If(rbEconomico.IsChecked = True, "Usa metade do processador, sem travar o PC.", "Usa todo o processador; termina mais rápido.")
+
+        ' Rodapé: resumo em uma linha do que vai acontecer
+        Dim partes As New List(Of String)
+        If _temSegmentos Then partes.Add(If(rbUnico.IsChecked = True, "Segmentos juntos", "Um arquivo por segmento"))
+        If mesmaPasta Then
+            partes.Add(If(excluir, "Mesma pasta, apagando originais", "Mesma pasta"))
+        Else
+            partes.Add(If(String.IsNullOrEmpty(PastaDestino), "Outra pasta (a escolher)", $"Em {Path.GetFileName(PastaDestino.TrimEnd("\"c))}"))
+        End If
+        partes.Add(If(rbEconomico.IsChecked = True, "Econômico", "Alto desempenho"))
+        lblRodape.Text = String.Join(" · ", partes)
     End Sub
 
     Private Sub BtnEscolherPasta_Click(sender As Object, e As RoutedEventArgs)
-        If EscolherPasta() Then rbOutraPasta.IsChecked = True
+        If EscolherPasta() Then
+            rbOutraPasta.IsChecked = True
+            AtualizarEstado()
+        End If
     End Sub
 
     Private Function EscolherPasta() As Boolean
