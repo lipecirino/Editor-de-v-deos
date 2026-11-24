@@ -456,7 +456,7 @@
                         <TextBlock Name="lblCronoGeralResumo" Grid.Column="1" Visibility="Collapsed" Margin="12,0,12,0" VerticalAlignment="Center"
                                    FontSize="11" Foreground="#FF86868B" TextTrimming="CharacterEllipsis"/>
                         <StackPanel Grid.Column="2" Orientation="Horizontal" Cursor="Arrow">
-                            <ToggleButton Name="btnCronoTodosVideos" Content="Todos os vídeos" Tag="&#xE8F1;" Margin="0,0,6,0" Style="{StaticResource BotaoArredondadoToggle}" Click="BtnCronoTodosVideos_Click"
+                            <ToggleButton Name="btnCronoTodosVideos" Content="Todos os vídeos" Tag="&#xE8F1;" Margin="0,0,6,0" Style="{StaticResource BotaoArredondadoToggle}" Checked="BtnCronoTodosVideos_Click" Unchecked="BtnCronoTodosVideos_Click"
                                           ToolTip="Ver as cronoanálises de todos os vídeos, agrupadas por vídeo (funciona sem vídeo aberto)"/>
                             <ToggleButton Name="btnVerTodasCrono" Content="Ver todas" Tag="&#xE7B3;" Margin="0,0,6,0" Style="{StaticResource BotaoArredondadoToggle}" Click="BtnVerTodasCrono_Click"
                                           ToolTip="Mostrar na timeline as barras de tempo de todas as operações"/>
@@ -495,73 +495,67 @@
 
                     <!-- Visão geral: cronoanálises de todos os vídeos, agrupadas por vídeo (somente leitura) -->
                     <Grid Name="pnlCronoGeral" Grid.Row="1" Grid.RowSpan="4" Visibility="Collapsed" Panel.ZIndex="1" Background="White">
-                        <DataGrid Name="gridCronoGeral" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
-                                  IsReadOnly="True" HeadersVisibility="Column" BorderThickness="0" Background="White" RowBackground="White"
-                                  SelectionMode="Single" SelectionUnit="FullRow" FontSize="12" GridLinesVisibility="Horizontal"
-                                  HorizontalGridLinesBrush="#FFF2F2F7" VerticalGridLinesBrush="Transparent" Foreground="#FF1D1D1F"
-                                  RowHeaderWidth="0" SnapsToDevicePixels="True" CanUserSortColumns="False">
-                            <DataGrid.Resources>
-                                <Style TargetType="DataGridColumnHeader">
-                                    <Setter Property="Background" Value="White"/>
-                                    <Setter Property="Foreground" Value="#FF86868B"/>
-                                    <Setter Property="FontSize" Value="11"/>
-                                    <Setter Property="FontWeight" Value="SemiBold"/>
-                                    <Setter Property="Padding" Value="8,8"/>
-                                    <Setter Property="BorderBrush" Value="#FFE5E5EA"/>
-                                    <Setter Property="BorderThickness" Value="0,0,0,1"/>
-                                </Style>
-                                <Style TargetType="DataGridRow">
-                                    <Setter Property="MinHeight" Value="30"/>
-                                    <Setter Property="BorderThickness" Value="0"/>
-                                </Style>
-                            </DataGrid.Resources>
-                            <DataGrid.GroupStyle>
-                                <GroupStyle>
-                                    <GroupStyle.ContainerStyle>
-                                        <Style TargetType="GroupItem">
-                                            <Setter Property="Template">
-                                                <Setter.Value>
-                                                    <ControlTemplate TargetType="GroupItem">
-                                                        <Expander IsExpanded="True" BorderThickness="0" Margin="0,0,0,6" HorizontalContentAlignment="Stretch">
-                                                            <Expander.Header>
-                                                                <Border Background="#FFF5F5F7" CornerRadius="8" Padding="10,6" MinWidth="400">
-                                                                    <Grid>
-                                                                        <Grid.ColumnDefinitions>
-                                                                            <ColumnDefinition Width="Auto"/>
-                                                                            <ColumnDefinition Width="*"/>
-                                                                            <ColumnDefinition Width="Auto"/>
-                                                                        </Grid.ColumnDefinitions>
-                                                                        <TextBlock Grid.Column="0" Style="{StaticResource Icone}" Text="&#xE714;" Foreground="#FF007AFF" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                                            <StackPanel Orientation="Horizontal">
-                                                                                <TextBlock Text="{Binding Items[0].NomeVideo}" FontWeight="SemiBold" FontSize="12.5"/>
-                                                                                <TextBlock Text="{Binding ItemCount, StringFormat=' · {0} operações'}" Foreground="#FF86868B" FontSize="11" VerticalAlignment="Center"/>
-                                                                            </StackPanel>
-                                                                            <TextBlock Text="{Binding Items[0].CaminhoVideo}" Foreground="#FF86868B" FontSize="10.5" TextTrimming="CharacterEllipsis"
-                                                                                       ToolTip="{Binding Items[0].CaminhoVideo}"/>
-                                                                        </StackPanel>
-                                                                        <Button Grid.Column="2" Content="Abrir" Tag="&#xE8E5;" Margin="10,0,0,0" VerticalAlignment="Center"
-                                                                                Style="{StaticResource BotaoArredondado}" Click="BtnAbrirVideoCronoGeral_Click"
-                                                                                ToolTip="Abrir este vídeo no programa para continuar a cronoanálise"/>
-                                                                    </Grid>
-                                                                </Border>
-                                                            </Expander.Header>
-                                                            <ItemsPresenter/>
-                                                        </Expander>
-                                                    </ControlTemplate>
-                                                </Setter.Value>
-                                            </Setter>
-                                        </Style>
-                                    </GroupStyle.ContainerStyle>
-                                </GroupStyle>
-                            </DataGrid.GroupStyle>
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Operação" Binding="{Binding Operacao}" Width="3*" MinWidth="110"/>
-                                <DataGridTextColumn Header="Cliente" Binding="{Binding Cliente}" Width="2*" MinWidth="80"/>
-                                <DataGridTextColumn Header="Amostras" Binding="{Binding NumeroAmostras}" Width="80"/>
-                                <DataGridTextColumn Header="Duração (s)" Binding="{Binding DuracaoTexto}" Width="100"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
+                        <ScrollViewer Name="svCronoGeral" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <ItemsControl Name="lstCronoGeral" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="0,0,0,12">
+                                            <!-- Cabeçalho do vídeo: nome, caminho logo abaixo e botão para reabrir -->
+                                            <Border Background="#FFF5F5F7" CornerRadius="8" Padding="10,6">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Style="{StaticResource Icone}" Text="&#xE714;" Foreground="#FF007AFF" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Text="{Binding NomeVideo}" FontWeight="SemiBold" FontSize="12.5"/>
+                                                            <TextBlock Text="{Binding Resumo}" Foreground="#FF86868B" FontSize="11" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                        <TextBlock Text="{Binding CaminhoVideo}" Foreground="#FF86868B" FontSize="10.5" TextTrimming="CharacterEllipsis"
+                                                                   ToolTip="{Binding CaminhoVideo}"/>
+                                                    </StackPanel>
+                                                    <Button Grid.Column="2" Content="Abrir" Tag="&#xE8E5;" Margin="10,0,0,0" VerticalAlignment="Center"
+                                                            Style="{StaticResource BotaoArredondado}" Click="BtnAbrirVideoCronoGeral_Click"
+                                                            ToolTip="Abrir este vídeo no programa para continuar a cronoanálise"/>
+                                                </Grid>
+                                            </Border>
+                                            <DataGrid ItemsSource="{Binding Linhas}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                                                      IsReadOnly="True" HeadersVisibility="Column" BorderThickness="0" Background="White" RowBackground="White"
+                                                      SelectionMode="Single" SelectionUnit="FullRow" FontSize="12" GridLinesVisibility="Horizontal"
+                                                      HorizontalGridLinesBrush="#FFF2F2F7" VerticalGridLinesBrush="Transparent" Foreground="#FF1D1D1F"
+                                                      RowHeaderWidth="0" SnapsToDevicePixels="True" CanUserSortColumns="False"
+                                                      VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled"
+                                                      PreviewMouseWheel="GridCronoGeral_PreviewMouseWheel">
+                                                <DataGrid.Resources>
+                                                    <Style TargetType="DataGridColumnHeader">
+                                                        <Setter Property="Background" Value="White"/>
+                                                        <Setter Property="Foreground" Value="#FF86868B"/>
+                                                        <Setter Property="FontSize" Value="11"/>
+                                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        <Setter Property="Padding" Value="8,6"/>
+                                                        <Setter Property="BorderBrush" Value="#FFE5E5EA"/>
+                                                        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                                    </Style>
+                                                    <Style TargetType="DataGridRow">
+                                                        <Setter Property="MinHeight" Value="30"/>
+                                                        <Setter Property="BorderThickness" Value="0"/>
+                                                    </Style>
+                                                </DataGrid.Resources>
+                                                <DataGrid.Columns>
+                                                    <DataGridTextColumn Header="Operação" Binding="{Binding Operacao}" Width="3*" MinWidth="110"/>
+                                                    <DataGridTextColumn Header="Cliente" Binding="{Binding Cliente}" Width="2*" MinWidth="80"/>
+                                                    <DataGridTextColumn Header="Amostras" Binding="{Binding NumeroAmostras}" Width="80"/>
+                                                    <DataGridTextColumn Header="Duração (s)" Binding="{Binding DuracaoTexto}" Width="100"/>
+                                                </DataGrid.Columns>
+                                            </DataGrid>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
                         <TextBlock Name="lblCronoGeralVazio" Text="Nenhuma cronoanálise salva ainda." Visibility="Collapsed"
                                    HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="13" Foreground="#FF86868B"/>
                     </Grid>

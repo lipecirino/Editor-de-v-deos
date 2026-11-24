@@ -741,6 +741,19 @@ Public Class CronoGeralLinha
     End Property
 End Class
 
+' Um vídeo na visão geral: cabeçalho (nome, caminho) e suas operações
+Public Class CronoGeralVideo
+    Public Property CaminhoVideo As String = ""
+    Public Property NomeVideo As String = ""
+    Public Property Linhas As New List(Of CronoGeralLinha)()
+
+    Public ReadOnly Property Resumo As String
+        Get
+            Return $" · {Linhas.Count} {If(Linhas.Count = 1, "operação", "operações")}"
+        End Get
+    End Property
+End Class
+
 Partial Class MainWindow
     Inherits Window
 
@@ -2985,14 +2998,14 @@ Partial Class MainWindow
         If ligado Then
             LimparPreviewCrono() ' a visão geral dá lugar à visualização na timeline
             Dim linhas = LinhasCronoTodosVideos()
-            Dim visao As New ListCollectionView(linhas)
-            visao.GroupDescriptions.Add(New PropertyGroupDescription("CaminhoVideo"))
-            gridCronoGeral.ItemsSource = visao
-            Dim qtdVideos = linhas.Select(Function(l) l.CaminhoVideo).Distinct().Count()
+            Dim videos = linhas.GroupBy(Function(l) l.CaminhoVideo).
+                Select(Function(g) New CronoGeralVideo() With {.CaminhoVideo = g.Key, .NomeVideo = g.First().NomeVideo, .Linhas = g.ToList()}).ToList()
+            lstCronoGeral.ItemsSource = videos
+            Dim qtdVideos = videos.Count
             lblCronoGeralResumo.Text = $"{qtdVideos} {If(qtdVideos = 1, "vídeo", "vídeos")} · {linhas.Count} {If(linhas.Count = 1, "operação", "operações")}"
             lblCronoGeralVazio.Visibility = If(linhas.Count = 0, Visibility.Visible, Visibility.Collapsed)
         Else
-            gridCronoGeral.ItemsSource = Nothing
+            lstCronoGeral.ItemsSource = Nothing
         End If
 
         Dim oculto = If(ligado, Visibility.Collapsed, Visibility.Visible)
@@ -3006,11 +3019,17 @@ Partial Class MainWindow
         btnExportarCrono.ToolTip = If(ligado, "Exportar a cronoanálise de todos os vídeos em um CSV", Nothing)
     End Sub
 
+    ' A tabela de cada vídeo não rola sozinha: repassa a roda do mouse para a lista
+    Private Sub GridCronoGeral_PreviewMouseWheel(sender As Object, e As MouseWheelEventArgs)
+        e.Handled = True
+        svCronoGeral.ScrollToVerticalOffset(svCronoGeral.VerticalOffset - e.Delta)
+    End Sub
+
     ' Reabre no programa o vídeo do grupo (adiciona à galeria se preciso) e volta ao grid dele para continuar
     Private Sub BtnAbrirVideoCronoGeral_Click(sender As Object, e As RoutedEventArgs)
         Dim btn = TryCast(sender, Button)
-        Dim grupo = If(btn IsNot Nothing, TryCast(btn.DataContext, CollectionViewGroup), Nothing)
-        Dim caminho = If(grupo IsNot Nothing, TryCast(grupo.Name, String), Nothing)
+        Dim video = If(btn IsNot Nothing, TryCast(btn.DataContext, CronoGeralVideo), Nothing)
+        Dim caminho = If(video IsNot Nothing, video.CaminhoVideo, Nothing)
         If String.IsNullOrWhiteSpace(caminho) Then Return
         e.Handled = True
 
