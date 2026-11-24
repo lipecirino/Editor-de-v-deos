@@ -710,6 +710,37 @@ Public Class CronoAnaliseEntry
     End Property
 End Class
 
+' Linha da visão geral "Todos os vídeos": uma operação de um vídeo (somente leitura)
+Public Class CronoGeralLinha
+    Public Property CaminhoVideo As String = ""
+    Public Property NomeVideo As String = ""
+    Public Property Entry As CronoAnaliseEntry
+
+    Public ReadOnly Property Operacao As String
+        Get
+            Return Entry.Operacao
+        End Get
+    End Property
+
+    Public ReadOnly Property Cliente As String
+        Get
+            Return Entry.Cliente
+        End Get
+    End Property
+
+    Public ReadOnly Property NumeroAmostras As Integer
+        Get
+            Return Entry.NumeroAmostras
+        End Get
+    End Property
+
+    Public ReadOnly Property DuracaoTexto As String
+        Get
+            Return Entry.DuracaoDisplay
+        End Get
+    End Property
+End Class
+
 Partial Class MainWindow
     Inherits Window
 
@@ -1146,6 +1177,22 @@ Partial Class MainWindow
         Return cache
     End Function
 
+    Private Shared Function CriarEntryDoCache(cronoDados As CronoAnaliseCacheEntry) As CronoAnaliseEntry
+        Return New CronoAnaliseEntry() With {
+            .Operacao = cronoDados.Operacao,
+            .Cliente = cronoDados.Cliente,
+            .NumeroAmostras = cronoDados.NumeroAmostras,
+            .Inicio1 = cronoDados.Inicio1,
+            .Fim1 = cronoDados.Fim1,
+            .Inicio2 = cronoDados.Inicio2,
+            .Fim2 = cronoDados.Fim2,
+            .Inicio3 = cronoDados.Inicio3,
+            .Fim3 = cronoDados.Fim3,
+            .Inicio4 = cronoDados.Inicio4,
+            .Fim4 = cronoDados.Fim4
+        }
+    End Function
+
     Private Sub CarregarCronoAnaliseDoVideo(videoTarefa As VideoTarefa)
         cronoEntries.Clear()
 
@@ -1155,20 +1202,7 @@ Partial Class MainWindow
         If cache Is Nothing Then Return
 
         For Each cronoDados In cache.CronoAnalises
-            Dim entry As New CronoAnaliseEntry() With {
-                .Operacao = cronoDados.Operacao,
-                .Cliente = cronoDados.Cliente,
-                .NumeroAmostras = cronoDados.NumeroAmostras,
-                .Inicio1 = cronoDados.Inicio1,
-                .Fim1 = cronoDados.Fim1,
-                .Inicio2 = cronoDados.Inicio2,
-                .Fim2 = cronoDados.Fim2,
-                .Inicio3 = cronoDados.Inicio3,
-                .Fim3 = cronoDados.Fim3,
-                .Inicio4 = cronoDados.Inicio4,
-                .Fim4 = cronoDados.Fim4
-            }
-            cronoEntries.Add(entry)
+            cronoEntries.Add(CriarEntryDoCache(cronoDados))
         Next
 
         videoTarefa.TemCronoAnalise = (cache.CronoAnalises.Count > 0)
@@ -2909,6 +2943,7 @@ Partial Class MainWindow
 
     Private Sub BtnModoCrono_Unchecked(sender As Object, e As RoutedEventArgs)
         modoCronoAtivo = False
+        If visaoTodosVideos Then DefinirVisaoTodosVideos(False)
         AtualizarBloqueiosCronoCorte()
 
         ' Se o painel estiver desacoplado, fechar a janela flutuante (isso reacopla automaticamente)
@@ -2922,7 +2957,57 @@ Partial Class MainWindow
         btnModoCrono.ClearValue(Button.ForegroundProperty)
     End Sub
 
+    ' --- VISÃO GERAL: cronoanálises de todos os vídeos, agrupadas por vídeo (funciona sem vídeo aberto) ---
+    Private visaoTodosVideos As Boolean = False
+
+    ' Lê tudo o que está salvo (já incluindo o que está no grid agora), um vídeo após o outro
+    Private Function LinhasCronoTodosVideos() As List(Of CronoGeralLinha)
+        If videoAtual IsNot Nothing Then SalvarCronoAnaliseDoVideo(videoAtual)
+        Dim linhas As New List(Of CronoGeralLinha)()
+        If cacheGlobal Is Nothing Then Return linhas
+        For Each v In cacheGlobal.Videos.Where(Function(x) x.CronoAnalises.Count > 0).OrderBy(Function(x) x.NomeVideo, StringComparer.CurrentCultureIgnoreCase)
+            Dim nome = If(String.IsNullOrWhiteSpace(v.NomeVideo), Path.GetFileName(v.CaminhoVideo), v.NomeVideo)
+            For Each d In v.CronoAnalises
+                linhas.Add(New CronoGeralLinha() With {.CaminhoVideo = v.CaminhoVideo, .NomeVideo = nome, .Entry = CriarEntryDoCache(d)})
+            Next
+        Next
+        Return linhas
+    End Function
+
+    Private Sub BtnCronoTodosVideos_Click(sender As Object, e As RoutedEventArgs)
+        DefinirVisaoTodosVideos(btnCronoTodosVideos.IsChecked = True)
+    End Sub
+
+    Private Sub DefinirVisaoTodosVideos(ligado As Boolean)
+        visaoTodosVideos = ligado
+        If btnCronoTodosVideos.IsChecked <> ligado Then btnCronoTodosVideos.IsChecked = ligado
+
+        If ligado Then
+            LimparPreviewCrono() ' a visão geral dá lugar à visualização na timeline
+            Dim linhas = LinhasCronoTodosVideos()
+            Dim visao As New ListCollectionView(linhas)
+            visao.GroupDescriptions.Add(New PropertyGroupDescription("CaminhoVideo"))
+            gridCronoGeral.ItemsSource = visao
+            Dim qtdVideos = linhas.Select(Function(l) l.CaminhoVideo).Distinct().Count()
+            lblCronoGeralResumo.Text = $"{qtdVideos} {If(qtdVideos = 1, "vídeo", "vídeos")} · {linhas.Count} {If(linhas.Count = 1, "operação", "operações")}"
+            lblCronoGeralVazio.Visibility = If(linhas.Count = 0, Visibility.Visible, Visibility.Collapsed)
+        Else
+            gridCronoGeral.ItemsSource = Nothing
+        End If
+
+        Dim oculto = If(ligado, Visibility.Collapsed, Visibility.Visible)
+        pnlCronoGeral.Visibility = If(ligado, Visibility.Visible, Visibility.Collapsed)
+        lblCronoGeralResumo.Visibility = If(ligado, Visibility.Visible, Visibility.Collapsed)
+        pnlCronoControles.Visibility = oculto
+        svCronoVideo.Visibility = oculto
+        btnVerTodasCrono.Visibility = oculto
+        btnNovaOperacao.Visibility = oculto
+        btnLimparCrono.Visibility = oculto
+        btnExportarCrono.ToolTip = If(ligado, "Exportar a cronoanálise de todos os vídeos em um CSV", Nothing)
+    End Sub
+
     Private Sub RegistrarTempoAtual()
+        If visaoTodosVideos Then Return
         If Not TemVideoAtivo() Then
             ConfirmacaoWindow.Avisar(Me, "Nenhum vídeo aberto", "Abra um vídeo antes de registrar a cronoanálise.", TipoAviso.Atencao)
             Return
@@ -3028,6 +3113,7 @@ Partial Class MainWindow
     End Sub
 
     Private Sub AdicionarNovaOperacao(Optional iniciarEdicaoOperacao As Boolean = True)
+        If visaoTodosVideos Then Return
         If Not TemVideoAtivo() Then
             ConfirmacaoWindow.Avisar(Me, "Nenhum vídeo aberto", "Abra um vídeo antes de adicionar registros de cronoanálise.", TipoAviso.Atencao)
             Return
@@ -3087,8 +3173,20 @@ Partial Class MainWindow
             SalvarCronoAnaliseDoVideo(videoAtual)
         End If
 
-        If cronoEntries.Count = 0 Then
-            ConfirmacaoWindow.Avisar(Me, "Nada para exportar", "Não há registros de cronoanálise neste vídeo.", TipoAviso.Informacao)
+        ' Linhas a exportar: todos os vídeos (visão geral) ou só o vídeo aberto
+        Dim linhasCsv As List(Of CronoGeralLinha)
+        If visaoTodosVideos Then
+            linhasCsv = LinhasCronoTodosVideos()
+        Else
+            linhasCsv = cronoEntries.Select(Function(en) New CronoGeralLinha() With {
+                .NomeVideo = If(videoAtual IsNot Nothing, Path.GetFileName(videoAtual.Caminho), String.Empty),
+                .CaminhoVideo = If(videoAtual IsNot Nothing, videoAtual.Caminho, String.Empty),
+                .Entry = en}).ToList()
+        End If
+
+        If linhasCsv.Count = 0 Then
+            ConfirmacaoWindow.Avisar(Me, "Nada para exportar",
+                If(visaoTodosVideos, "Não há registros de cronoanálise salvos.", "Não há registros de cronoanálise neste vídeo."), TipoAviso.Informacao)
             Return
         End If
 
@@ -3104,9 +3202,10 @@ Partial Class MainWindow
 
                 Using sw As New StreamWriter(save.FileName, False, Text.Encoding.UTF8)
                     sw.WriteLine("Nome do vídeo;Caminho do vídeo;Operação;Cliente;Nº Amostras;Início1;Fim1;Início2;Fim2;Início3;Fim3;Início4;Fim4;Duração")
-                    Dim nomeVideo = If(videoAtual IsNot Nothing, Path.GetFileName(videoAtual.Caminho), String.Empty)
-                    Dim caminhoVideo = If(videoAtual IsNot Nothing, videoAtual.Caminho, String.Empty)
-                    For Each entry In cronoEntries
+                    For Each linhaCsv In linhasCsv
+                        Dim entry = linhaCsv.Entry
+                        Dim nomeVideo = linhaCsv.NomeVideo
+                        Dim caminhoVideo = linhaCsv.CaminhoVideo
                         Dim duracaoTotal As Double = Math.Max(0, entry.Fim1 - entry.Inicio1) +
                                                      Math.Max(0, entry.Fim2 - entry.Inicio2) +
                                                      Math.Max(0, entry.Fim3 - entry.Inicio3) +
@@ -3182,6 +3281,7 @@ Partial Class MainWindow
                 End If
             Next
 
+            If visaoTodosVideos Then DefinirVisaoTodosVideos(True)
             ConfirmacaoWindow.Avisar(Me, "Cache limpo", "Os dados de cronoanálise de todos os vídeos foram apagados.", TipoAviso.Sucesso)
         End If
     End Sub
