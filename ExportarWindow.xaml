@@ -12,6 +12,12 @@
         TextElement.Foreground="#FF1D1D1F">
 
     <Window.Resources>
+        <!-- Cor de destaque da tela: muda com o desempenho (verde = alto, vermelho = econômico) -->
+        <SolidColorBrush x:Key="CorDestaque" Color="#FF34C759"/>
+        <SolidColorBrush x:Key="CorDestaqueTexto" Color="#FF248A3D"/>
+        <SolidColorBrush x:Key="CorDestaqueFundo" Color="#FFF2FBF4"/>
+        <SolidColorBrush x:Key="CorDestaqueChip" Color="#FFE3F6E8"/>
+
         <!-- NÍVEL 1 – decisão principal: cartão grande com ícone, título e descrição -->
         <Style x:Key="OpcaoCartao" TargetType="RadioButton">
             <Setter Property="Cursor" Value="Hand"/>
@@ -32,7 +38,7 @@
                                 <ContentPresenter Grid.Column="1" VerticalAlignment="Center"/>
                                 <Grid Grid.Column="2" Width="18" Height="18" Margin="10,0,0,0" VerticalAlignment="Center">
                                     <Ellipse x:Name="anel" Stroke="#FFC7C7CC" StrokeThickness="1.5"/>
-                                    <Ellipse x:Name="ponto" Fill="#FF007AFF" Visibility="Collapsed"/>
+                                    <Ellipse x:Name="ponto" Fill="{DynamicResource CorDestaque}" Visibility="Collapsed"/>
                                     <TextBlock x:Name="check" Style="{StaticResource Icone}" Text="&#xE73E;" FontSize="10" Foreground="White"
                                                HorizontalAlignment="Center" Visibility="Collapsed"/>
                                 </Grid>
@@ -43,9 +49,9 @@
                                 <Setter TargetName="b" Property="BorderBrush" Value="#FFC7C7CC"/>
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="b" Property="BorderBrush" Value="#FF007AFF"/>
-                                <Setter TargetName="b" Property="Background" Value="#FFF5F9FF"/>
-                                <Setter TargetName="icoFundo" Property="Background" Value="#FF007AFF"/>
+                                <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource CorDestaque}"/>
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource CorDestaqueFundo}"/>
+                                <Setter TargetName="icoFundo" Property="Background" Value="{DynamicResource CorDestaque}"/>
                                 <Setter TargetName="ico" Property="Foreground" Value="White"/>
                                 <Setter TargetName="anel" Property="Visibility" Value="Collapsed"/>
                                 <Setter TargetName="ponto" Property="Visibility" Value="Visible"/>
@@ -64,7 +70,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="b" Background="Transparent" CornerRadius="6" Padding="12,5">
+                        <Border x:Name="b" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="6" Padding="12,4">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                 <TextBlock x:Name="ico" Style="{StaticResource Icone}" Text="{TemplateBinding Tag}" FontSize="12" Foreground="#FF86868B" Margin="0,0,6,0"/>
                                 <ContentPresenter x:Name="txt" VerticalAlignment="Center" TextElement.Foreground="#FF86868B"/>
@@ -73,12 +79,13 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="b" Property="Background" Value="White"/>
+                                <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource CorDestaque}"/>
                                 <Setter TargetName="b" Property="Effect">
                                     <Setter.Value>
                                         <DropShadowEffect BlurRadius="4" ShadowDepth="1" Opacity="0.12" Direction="270"/>
                                     </Setter.Value>
                                 </Setter>
-                                <Setter TargetName="ico" Property="Foreground" Value="#FF007AFF"/>
+                                <Setter TargetName="ico" Property="Foreground" Value="{DynamicResource CorDestaque}"/>
                                 <Setter TargetName="txt" Property="TextElement.Foreground" Value="#FF1D1D1F"/>
                                 <Setter TargetName="txt" Property="TextElement.FontWeight" Value="SemiBold"/>
                             </Trigger>
@@ -131,14 +138,14 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <Border Width="44" Height="44" CornerRadius="11" Background="#FF007AFF" Margin="0,0,14,0" VerticalAlignment="Center">
+                <Border Width="44" Height="44" CornerRadius="11" Background="{DynamicResource CorDestaque}" Margin="0,0,14,0" VerticalAlignment="Center">
                     <TextBlock Style="{StaticResource Icone}" Text="&#xE8AB;" FontSize="20" Foreground="White" HorizontalAlignment="Center"/>
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Text="Exportar vídeos" FontSize="20" FontWeight="SemiBold"/>
                     <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                        <Border Style="{StaticResource Chip}" Background="#FFE5F1FF">
-                            <TextBlock Name="lblQtdVideos" FontSize="11" FontWeight="SemiBold" Foreground="#FF007AFF"/>
+                        <Border Style="{StaticResource Chip}" Background="{DynamicResource CorDestaqueChip}">
+                            <TextBlock Name="lblQtdVideos" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource CorDestaqueTexto}"/>
                         </Border>
                         <Border Style="{StaticResource Chip}" Background="#FFF2F2F7">
                             <TextBlock Text="MP4 · H.264" FontSize="11" Foreground="#FF86868B"/>
@@ -214,7 +221,7 @@
                         <TextBlock Text="Outra pasta" Style="{StaticResource TituloOpcao}"/>
                         <TextBlock Name="lblPastaDestino" Text="Nenhuma pasta escolhida" Style="{StaticResource DescOpcao}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
                     </StackPanel>
-                    <Button Grid.Column="1" Content="Escolher…" Style="{StaticResource BotaoArredondado}" Padding="10,5" Margin="10,0,0,0"
+                    <Button Grid.Column="1" Content="Escolher…" Style="{StaticResource BotaoArredondado}" Foreground="{DynamicResource CorDestaqueTexto}" Padding="10,5" Margin="10,0,0,0"
                             VerticalAlignment="Center" Click="BtnEscolherPasta_Click"/>
                 </Grid>
             </RadioButton>

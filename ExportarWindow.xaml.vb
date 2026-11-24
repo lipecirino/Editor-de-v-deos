@@ -51,8 +51,26 @@ Partial Public Class ExportarWindow
         If _pronto Then AtualizarEstado()
     End Sub
 
+    ' Cor de destaque de toda a tela conforme o desempenho: verde = alto, vermelho = econômico
+    Private Sub AplicarCorDestaque(economico As Boolean)
+        Dim principal, texto, fundo, chip As Color
+        If economico Then
+            principal = Color.FromRgb(&HFF, &H3B, &H30) : texto = Color.FromRgb(&HD7, &H0, &H15)
+            fundo = Color.FromRgb(&HFF, &HF5, &HF4) : chip = Color.FromRgb(&HFF, &HE5, &HE3)
+        Else
+            principal = Color.FromRgb(&H34, &HC7, &H59) : texto = Color.FromRgb(&H24, &H8A, &H3D)
+            fundo = Color.FromRgb(&HF2, &HFB, &HF4) : chip = Color.FromRgb(&HE3, &HF6, &HE8)
+        End If
+        Resources("CorDestaque") = New SolidColorBrush(principal)
+        Resources("CorDestaqueTexto") = New SolidColorBrush(texto)
+        Resources("CorDestaqueFundo") = New SolidColorBrush(fundo)
+        Resources("CorDestaqueChip") = New SolidColorBrush(chip)
+    End Sub
+
     Private Sub AtualizarEstado()
         Dim mesmaPasta = (rbPastaOriginal.IsChecked = True)
+        Dim economico = (rbEconomico.IsChecked = True)
+        AplicarCorDestaque(economico)
 
         ' A exclusão é sub-opção da "Mesma pasta": só aparece com ela escolhida
         pnlExcluir.Visibility = If(mesmaPasta, Visibility.Visible, Visibility.Collapsed)
@@ -71,7 +89,7 @@ Partial Public Class ExportarWindow
             bdrExcluir.BorderBrush = New SolidColorBrush(Color.FromRgb(&HE5, &HE5, &HEA))
             lblExcluirDica.Text = "Apaga o arquivo original depois que a conversão der certo."
             btnExportar.Content = "Exportar"
-            btnExportar.ClearValue(Button.BackgroundProperty)
+            btnExportar.SetResourceReference(Button.BackgroundProperty, "CorDestaque")
         End If
 
         lblDescDesempenho.Text = If(rbEconomico.IsChecked = True, "Usa metade do processador, sem travar o PC.", "Usa todo o processador; termina mais rápido.")
