@@ -193,6 +193,9 @@
     <Compile Include="ExportSettings.vb">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="ProcessosFilhos.vb">
+      <SubType>Code</SubType>
+    </Compile>
     <Page Include="ExportarWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

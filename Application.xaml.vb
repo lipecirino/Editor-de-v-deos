@@ -9,6 +9,8 @@ Class Application
 
     Protected Overrides Sub OnStartup(e As StartupEventArgs)
         MyBase.OnStartup(e)
+        ' Todos os ffmpeg/ffprobe abertos pelo app ficam presos a ele e morrem junto quando ele fecha
+        ProcessosFilhos.Iniciar()
         GlobalFFOptions.Configure(New FFOptions With {
             .BinaryFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg")
         })
