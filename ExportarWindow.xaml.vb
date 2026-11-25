@@ -28,13 +28,13 @@ Partial Public Class ExportarWindow
         Return r.Trim().TrimEnd("."c)
     End Function
 
-    ''' <summary>Monta "Cidade - UF - Velocidade - aaaa.mm.dd"; vazio se faltar algum campo.</summary>
+    ''' <summary>Monta "(Cidade - UF) - (Velocidade) - (aaaa.mm.dd)"; vazio se faltar algum campo.</summary>
     Private Function MontarNomePasta() As String
         Dim cidade = LimparNome(txtCidade.Text)
         Dim uf = LimparNome(txtEstado.Text)
         Dim vel = LimparNome(txtVelocidade.Text)
         If cidade = "" OrElse uf = "" OrElse vel = "" OrElse Not dpData.SelectedDate.HasValue Then Return ""
-        Return $"{cidade} - {uf} - {vel} - {dpData.SelectedDate.Value:yyyy.MM.dd}"
+        Return $"({cidade} - {uf}) - ({vel}) - ({dpData.SelectedDate.Value:yyyy.MM.dd})"
     End Function
 
     Private Sub Campo_TextChanged(sender As Object, e As TextChangedEventArgs)
