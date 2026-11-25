@@ -2967,6 +2967,7 @@ Partial Class MainWindow
     Private Sub BtnModoCrono_Unchecked(sender As Object, e As RoutedEventArgs)
         modoCronoAtivo = False
         If visaoTodosVideos Then DefinirVisaoTodosVideos(False)
+        If visaoAnalise Then DefinirVisaoAnalise(False)
         AtualizarBloqueiosCronoCorte()
 
         ' Se o painel estiver desacoplado, fechar a janela flutuante (isso reacopla automaticamente)
@@ -3002,6 +3003,7 @@ Partial Class MainWindow
     End Sub
 
     Private Sub DefinirVisaoTodosVideos(ligado As Boolean)
+        If ligado AndAlso visaoAnalise Then DefinirVisaoAnalise(False)
         visaoTodosVideos = ligado
         If btnCronoTodosVideos.IsChecked <> ligado Then btnCronoTodosVideos.IsChecked = ligado
 
@@ -3024,9 +3026,279 @@ Partial Class MainWindow
         pnlCronoControles.Visibility = oculto
         svCronoVideo.Visibility = oculto
         btnVerTodasCrono.Visibility = oculto
+        btnCronoAnalise.Visibility = oculto
         btnNovaOperacao.Visibility = oculto
         btnLimparCrono.Visibility = oculto
         btnExportarCrono.ToolTip = If(ligado, "Exportar a cronoanálise de todos os vídeos em um CSV", Nothing)
+    End Sub
+
+    ' --- ANÁLISE DE TEMPOS: dispersão das amostras de uma operação por vez, com a média como eixo horizontal ---
+    Private visaoAnalise As Boolean = False
+    Private atualizandoAnalise As Boolean = False
+
+    ' Grupo de amostras de uma operação (cada linha do grid com tempo é uma amostra)
+    Private Class GrupoAnalise
+        Public Property Chave As String
+        Public Property Nome As String
+        Public Property Tempos As New List(Of Double)()
+        Public Overrides Function ToString() As String
+            Return $"{Nome}  ({Tempos.Count})"
+        End Function
+    End Class
+
+    Private Sub BtnCronoAnalise_Click(sender As Object, e As RoutedEventArgs)
+        DefinirVisaoAnalise(btnCronoAnalise.IsChecked = True)
+    End Sub
+
+    Private Sub DefinirVisaoAnalise(ligado As Boolean)
+        If visaoAnalise = ligado Then
+            If btnCronoAnalise.IsChecked <> ligado Then btnCronoAnalise.IsChecked = ligado
+            Return
+        End If
+        visaoAnalise = ligado
+        If btnCronoAnalise.IsChecked <> ligado Then btnCronoAnalise.IsChecked = ligado
+
+        If ligado Then
+            LimparPreviewCrono()
+            AddHandler cronoEntries.CollectionChanged, AddressOf CronoEntriesMudou_Analise
+            AtualizarListaAnalise()
+        Else
+            RemoveHandler cronoEntries.CollectionChanged, AddressOf CronoEntriesMudou_Analise
+        End If
+
+        Dim oculto = If(ligado, Visibility.Collapsed, Visibility.Visible)
+        pnlCronoAnalise.Visibility = If(ligado, Visibility.Visible, Visibility.Collapsed)
+        pnlCronoControles.Visibility = oculto
+        svCronoVideo.Visibility = oculto
+        btnVerTodasCrono.Visibility = oculto
+        btnNovaOperacao.Visibility = oculto
+        btnCronoTodosVideos.Visibility = oculto
+    End Sub
+
+    Private Sub CronoEntriesMudou_Analise(sender As Object, e As System.Collections.Specialized.NotifyCollectionChangedEventArgs)
+        If visaoAnalise Then AtualizarListaAnalise()
+    End Sub
+
+    ' Monta o seletor de operações a partir das linhas do vídeo (mantém a operação escolhida, se ainda existir)
+    Private Sub AtualizarListaAnalise()
+        Dim anterior = TryCast(cmbAnaliseOperacao.SelectedItem, GrupoAnalise)
+        Dim grupos As New List(Of GrupoAnalise)()
+        For Each en In cronoEntries
+            Dim nome = If(en.Operacao, "").Trim()
+            If nome = "" OrElse en.DuracaoSegundos <= 0 Then Continue For
+            Dim chave = nome.ToUpperInvariant()
+            Dim g = grupos.FirstOrDefault(Function(x) x.Chave = chave)
+            If g Is Nothing Then
+                g = New GrupoAnalise() With {.Chave = chave, .Nome = nome}
+                grupos.Add(g)
+            End If
+            g.Tempos.Add(en.DuracaoSegundos)
+        Next
+
+        atualizandoAnalise = True
+        cmbAnaliseOperacao.ItemsSource = grupos
+        Dim novo = If(anterior IsNot Nothing, grupos.FirstOrDefault(Function(x) x.Chave = anterior.Chave), Nothing)
+        cmbAnaliseOperacao.SelectedItem = If(novo, grupos.FirstOrDefault())
+        atualizandoAnalise = False
+
+        Dim vazio = (grupos.Count = 0)
+        lblAnaliseVazio.Visibility = If(vazio, Visibility.Visible, Visibility.Collapsed)
+        cnvAnalise.Visibility = If(vazio, Visibility.Collapsed, Visibility.Visible)
+        cmbAnaliseOperacao.IsEnabled = Not vazio
+        btnAnaliseAnt.IsEnabled = grupos.Count > 1
+        btnAnaliseProx.IsEnabled = grupos.Count > 1
+        DesenharGraficoAnalise()
+    End Sub
+
+    Private Sub CmbAnaliseOperacao_SelectionChanged(sender As Object, e As SelectionChangedEventArgs)
+        If atualizandoAnalise Then Return
+        DesenharGraficoAnalise()
+    End Sub
+
+    Private Sub BtnAnaliseAnt_Click(sender As Object, e As RoutedEventArgs)
+        Dim n = cmbAnaliseOperacao.Items.Count
+        If n > 1 Then cmbAnaliseOperacao.SelectedIndex = (cmbAnaliseOperacao.SelectedIndex - 1 + n) Mod n
+    End Sub
+
+    Private Sub BtnAnaliseProx_Click(sender As Object, e As RoutedEventArgs)
+        Dim n = cmbAnaliseOperacao.Items.Count
+        If n > 1 Then cmbAnaliseOperacao.SelectedIndex = (cmbAnaliseOperacao.SelectedIndex + 1) Mod n
+    End Sub
+
+    Private Sub CnvAnalise_SizeChanged(sender As Object, e As SizeChangedEventArgs)
+        DesenharGraficoAnalise()
+    End Sub
+
+    Private Shared Function PincelAnalise(r As Byte, g As Byte, b As Byte) As SolidColorBrush
+        Dim p As New SolidColorBrush(Color.FromRgb(r, g, b))
+        p.Freeze()
+        Return p
+    End Function
+
+    ' Mesma escala de cores do desvio na tabela: verde ≤5%, amarelo ≤15%, laranja ≤30%, vermelho acima
+    Private Shared Function CorDoDesvio(desvioPerc As Double) As SolidColorBrush
+        Dim d = Math.Abs(desvioPerc)
+        If d <= 5 Then Return PincelAnalise(&H4C, &HAF, &H50)
+        If d <= 15 Then Return PincelAnalise(&HFF, &HC1, &H7)
+        If d <= 30 Then Return PincelAnalise(&HFF, &H98, &H0)
+        Return PincelAnalise(&HF4, &H43, &H36)
+    End Function
+
+    Private Sub AdicionarTextoAnalise(texto As String, x As Double, y As Double, Optional alinharDireita As Boolean = False,
+                                      Optional centralizar As Boolean = False, Optional cor As Brush = Nothing, Optional tam As Double = 10.5)
+        Dim tb As New TextBlock() With {.Text = texto, .FontSize = tam, .Foreground = If(cor, Brushes.Gray)}
+        tb.Measure(New Size(Double.PositiveInfinity, Double.PositiveInfinity))
+        Dim w = tb.DesiredSize.Width
+        Dim h = tb.DesiredSize.Height
+        Canvas.SetLeft(tb, If(alinharDireita, x - w, If(centralizar, x - w / 2, x)))
+        Canvas.SetTop(tb, y - h / 2)
+        cnvAnalise.Children.Add(tb)
+    End Sub
+
+    ' Cores do cartão de variação (CV): quanto menor, mais regular a operação
+    Private Sub AtualizarCartaoCv(cv As Double)
+        Dim fundo As Color, texto As Color
+        If cv <= 5 Then
+            fundo = Color.FromRgb(&HE8, &HF6, &HE9) : texto = Color.FromRgb(&H2E, &H7D, &H32)
+        ElseIf cv <= 15 Then
+            fundo = Color.FromRgb(&HFF, &HF6, &HD9) : texto = Color.FromRgb(&H9A, &H72, &H0)
+        ElseIf cv <= 30 Then
+            fundo = Color.FromRgb(&HFF, &HEC, &HD6) : texto = Color.FromRgb(&HC2, &H6A, &H0)
+        Else
+            fundo = Color.FromRgb(&HFD, &HE8, &HE6) : texto = Color.FromRgb(&HC6, &H28, &H28)
+        End If
+        bdAnCv.Background = New SolidColorBrush(fundo)
+        lblAnCv.Foreground = New SolidColorBrush(texto)
+    End Sub
+
+    Private Sub DesenharGraficoAnalise()
+        cnvAnalise.Children.Clear()
+        Dim grupo = TryCast(cmbAnaliseOperacao.SelectedItem, GrupoAnalise)
+        pnlAnaliseTiles.Visibility = If(grupo Is Nothing, Visibility.Collapsed, Visibility.Visible)
+        pnlAnaliseLegenda.Visibility = pnlAnaliseTiles.Visibility
+        bdAnaliseGrafico.Visibility = pnlAnaliseTiles.Visibility
+        If grupo Is Nothing Then
+            lblAnaliseContador.Text = ""
+            Return
+        End If
+
+        Dim tempos = grupo.Tempos
+        Dim n = tempos.Count
+        Dim media = tempos.Average()
+        Dim dp As Double = If(n > 1, Math.Sqrt(tempos.Sum(Function(t) (t - media) * (t - media)) / n), 0)
+        Dim minimo = tempos.Min()
+        Dim maximo = tempos.Max()
+        Dim cv = If(media > 0, dp / media * 100.0, 0)
+
+        lblAnaliseContador.Text = $"Operação {cmbAnaliseOperacao.SelectedIndex + 1} de {cmbAnaliseOperacao.Items.Count}"
+        lblAnN.Text = n.ToString()
+        lblAnMedia.Text = $"{media:F2} s"
+        lblAnDp.Text = $"{dp:F2} s"
+        lblAnCv.Text = $"{cv:F1}%"
+        lblAnMin.Text = $"{minimo:F2} s"
+        lblAnMax.Text = $"{maximo:F2} s"
+        AtualizarCartaoCv(cv)
+
+        Dim W = cnvAnalise.ActualWidth
+        Dim H = cnvAnalise.ActualHeight
+        Dim mEsq As Double = 58, mDir As Double = 20, mTop As Double = 22, mBase As Double = 38
+        Dim pw = W - mEsq - mDir
+        Dim ph = H - mTop - mBase
+        If pw < 40 OrElse ph < 40 Then Return
+
+        ' Escala vertical: sempre inclui a média e os extremos, com folga
+        Dim lo = Math.Min(minimo, media - dp)
+        Dim hi = Math.Max(maximo, media + dp)
+        Dim folga = (hi - lo) * 0.18
+        If folga <= 0 Then folga = Math.Max(media * 0.1, 0.5)
+        lo = Math.Max(0, lo - folga)
+        hi = hi + folga
+        Dim Y = Function(v As Double) mTop + (hi - v) / (hi - lo) * ph
+
+        Dim cinzaGrade = PincelAnalise(&HEC, &HEC, &HF1)
+        Dim cinzaTexto = PincelAnalise(&H86, &H86, &H8B)
+        Dim escuro = PincelAnalise(&H1D, &H1D, &H1F)
+        Dim azul = PincelAnalise(&H0, &H7A, &HFF)
+
+        ' Grade horizontal tracejada e rótulos do eixo vertical (tempo, em segundos)
+        Dim passos = 5
+        For i As Integer = 0 To passos
+            Dim v = lo + (hi - lo) * i / passos
+            Dim yy = Y(v)
+            cnvAnalise.Children.Add(New Shapes.Line() With {.X1 = mEsq, .X2 = mEsq + pw, .Y1 = yy, .Y2 = yy, .Stroke = cinzaGrade, .StrokeThickness = 1,
+                                                            .StrokeDashArray = If(i = passos, Nothing, New DoubleCollection({3.0, 3.0}))})
+            AdicionarTextoAnalise(v.ToString("F2"), mEsq - 8, yy, alinharDireita:=True, cor:=cinzaTexto)
+        Next
+        AdicionarTextoAnalise("Tempo (s)", mEsq - 8, mTop - 14, alinharDireita:=True, cor:=cinzaTexto, tam:=9.5)
+        AdicionarTextoAnalise("Amostra", mEsq + pw / 2, mTop + ph + 29, centralizar:=True, cor:=cinzaTexto, tam:=9.5)
+
+        ' Faixa de ±1 desvio padrão
+        If dp > 0 Then
+            Dim faixa As New Shapes.Rectangle() With {.Width = pw, .Height = Math.Max(1, Y(media - dp) - Y(media + dp)), .Fill = New SolidColorBrush(Color.FromArgb(&H17, &H0, &H7A, &HFF))}
+            Canvas.SetLeft(faixa, mEsq)
+            Canvas.SetTop(faixa, Y(media + dp))
+            faixa.ToolTip = $"±1 desvio padrão ({media - dp:F2} a {media + dp:F2} s)"
+            cnvAnalise.Children.Add(faixa)
+        End If
+
+        ' Eixo horizontal = média
+        Dim yMedia = Y(media)
+        cnvAnalise.Children.Add(New Shapes.Line() With {.X1 = mEsq, .X2 = mEsq + pw, .Y1 = yMedia, .Y2 = yMedia, .Stroke = azul, .StrokeThickness = 1.5, .StrokeDashArray = New DoubleCollection({6.0, 3.0})})
+        Dim pilula As New Border() With {.Background = azul, .CornerRadius = New CornerRadius(9), .Padding = New Thickness(8, 1, 8, 1),
+                                         .Child = New TextBlock() With {.Text = $"média {media:F2} s", .FontSize = 10.5, .FontWeight = FontWeights.SemiBold, .Foreground = Brushes.White}}
+        pilula.Measure(New Size(Double.PositiveInfinity, Double.PositiveInfinity))
+        Canvas.SetLeft(pilula, mEsq + pw - pilula.DesiredSize.Width - 4)
+        Canvas.SetTop(pilula, yMedia - pilula.DesiredSize.Height / 2)
+        Panel.SetZIndex(pilula, 5)
+        cnvAnalise.Children.Add(pilula)
+
+        ' Barras (da média até cada amostra) com um ponto na ponta
+        Dim slot = pw / n
+        Dim larguraBarra = Math.Min(30.0, Math.Max(3.0, slot * 0.4))
+        Dim idxMin = tempos.IndexOf(minimo)
+        Dim idxMax = tempos.IndexOf(maximo)
+        Dim salto = CInt(Math.Ceiling(24.0 / slot))
+        If salto < 1 Then salto = 1
+        For i As Integer = 0 To n - 1
+            Dim t = tempos(i)
+            Dim cx = mEsq + slot * (i + 0.5)
+            Dim yy = Y(t)
+            Dim desvioPerc = If(media > 0, (t - media) / media * 100.0, 0)
+            Dim cor = CorDoDesvio(desvioPerc)
+            Dim dica = $"Amostra {i + 1}: {t:F2} s" & vbCrLf & $"{If(desvioPerc >= 0, "+", "")}{desvioPerc:F1}% em relação à média"
+
+            Dim barra As New Shapes.Rectangle() With {.Width = larguraBarra, .Height = Math.Max(2, Math.Abs(yy - yMedia)), .RadiusX = 4, .RadiusY = 4,
+                .Fill = New SolidColorBrush(Color.FromArgb(&H3C, cor.Color.R, cor.Color.G, cor.Color.B)), .ToolTip = dica}
+            Canvas.SetLeft(barra, cx - larguraBarra / 2)
+            Canvas.SetTop(barra, Math.Min(yy, yMedia))
+            cnvAnalise.Children.Add(barra)
+
+            Dim ponto As New Shapes.Ellipse() With {.Width = 14, .Height = 14, .Fill = cor, .Stroke = Brushes.White, .StrokeThickness = 2, .ToolTip = dica,
+                .RenderTransformOrigin = New Point(0.5, 0.5), .Cursor = Cursors.Hand,
+                .Effect = New System.Windows.Media.Effects.DropShadowEffect() With {.BlurRadius = 5, .ShadowDepth = 1, .Opacity = 0.25}}
+            Canvas.SetLeft(ponto, cx - 7)
+            Canvas.SetTop(ponto, yy - 7)
+            Panel.SetZIndex(ponto, 4)
+            Dim barraRef = barra
+            AddHandler ponto.MouseEnter, Sub(s, ev)
+                                             CType(s, Shapes.Ellipse).RenderTransform = New ScaleTransform(1.35, 1.35)
+                                             barraRef.Fill = New SolidColorBrush(Color.FromArgb(&H70, cor.Color.R, cor.Color.G, cor.Color.B))
+                                         End Sub
+            AddHandler ponto.MouseLeave, Sub(s, ev)
+                                             CType(s, Shapes.Ellipse).RenderTransform = Transform.Identity
+                                             barraRef.Fill = New SolidColorBrush(Color.FromArgb(&H3C, cor.Color.R, cor.Color.G, cor.Color.B))
+                                         End Sub
+            cnvAnalise.Children.Add(ponto)
+
+            ' Valor junto ao ponto: sempre no menor e no maior; nos demais, se houver espaço
+            Dim extremo = (n > 1 AndAlso (i = idxMin OrElse i = idxMax))
+            If extremo OrElse slot >= 46 Then
+                AdicionarTextoAnalise(t.ToString("F2"), cx, If(t >= media, yy - 16, yy + 16), centralizar:=True,
+                                      cor:=escuro, tam:=If(extremo, 11, 10))
+            End If
+            ' Número da amostra no eixo horizontal (omite alguns se estiver apertado)
+            If i Mod salto = 0 Then AdicionarTextoAnalise((i + 1).ToString(), cx, mTop + ph + 13, centralizar:=True, cor:=cinzaTexto)
+        Next
     End Sub
 
     ' A tabela de cada vídeo não rola sozinha: repassa a roda do mouse para a lista
@@ -3069,7 +3341,7 @@ Partial Class MainWindow
     End Sub
 
     Private Sub RegistrarTempoAtual()
-        If visaoTodosVideos Then Return
+        If visaoTodosVideos OrElse visaoAnalise Then Return
         If Not TemVideoAtivo() Then
             ConfirmacaoWindow.Avisar(Me, "Nenhum vídeo aberto", "Abra um vídeo antes de registrar a cronoanálise.", TipoAviso.Atencao)
             Return
@@ -3175,7 +3447,7 @@ Partial Class MainWindow
     End Sub
 
     Private Sub AdicionarNovaOperacao(Optional iniciarEdicaoOperacao As Boolean = True)
-        If visaoTodosVideos Then Return
+        If visaoTodosVideos OrElse visaoAnalise Then Return
         If Not TemVideoAtivo() Then
             ConfirmacaoWindow.Avisar(Me, "Nenhum vídeo aberto", "Abra um vídeo antes de adicionar registros de cronoanálise.", TipoAviso.Atencao)
             Return

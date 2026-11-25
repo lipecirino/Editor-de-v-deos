@@ -458,6 +458,8 @@
                         <StackPanel Grid.Column="2" Orientation="Horizontal" Cursor="Arrow">
                             <ToggleButton Name="btnCronoTodosVideos" Content="Todos os vídeos" Tag="&#xE8F1;" Margin="0,0,6,0" Style="{StaticResource BotaoArredondadoToggle}" Checked="BtnCronoTodosVideos_Click" Unchecked="BtnCronoTodosVideos_Click"
                                           ToolTip="Ver as cronoanálises de todos os vídeos, agrupadas por vídeo (funciona sem vídeo aberto)"/>
+                            <ToggleButton Name="btnCronoAnalise" Content="Análise de tempos" Tag="&#xE9D9;" Margin="0,0,6,0" Style="{StaticResource BotaoArredondadoToggle}" Checked="BtnCronoAnalise_Click" Unchecked="BtnCronoAnalise_Click"
+                                          ToolTip="Gráfico da distribuição dos tempos de cada operação (uma por vez)"/>
                             <ToggleButton Name="btnVerTodasCrono" Content="Ver todas" Tag="&#xE7B3;" Margin="0,0,6,0" Style="{StaticResource BotaoArredondadoToggle}" Click="BtnVerTodasCrono_Click"
                                           ToolTip="Mostrar na timeline as barras de tempo de todas as operações"/>
                             <Button Name="btnNovaOperacao" Content="Operação" Tag="&#xE710;" Style="{StaticResource BotaoArredondado}" Click="BtnNovaOperacao_Click"
@@ -558,6 +560,93 @@
                         </ScrollViewer>
                         <TextBlock Name="lblCronoGeralVazio" Text="Nenhuma cronoanálise salva ainda." Visibility="Collapsed"
                                    HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="13" Foreground="#FF86868B"/>
+                    </Grid>
+
+                    <!-- Análise de tempos: gráfico de dispersão das amostras de uma operação por vez, com a média como eixo -->
+                    <Grid Name="pnlCronoAnalise" Grid.Row="1" Grid.RowSpan="4" Visibility="Collapsed" Panel.ZIndex="1" Background="White">
+                        <Grid.Resources>
+                            <Style x:Key="AnTile" TargetType="Border">
+                                <Setter Property="Background" Value="#FFF5F5F7"/>
+                                <Setter Property="CornerRadius" Value="10"/>
+                                <Setter Property="Padding" Value="12,8"/>
+                                <Setter Property="Margin" Value="0,0,8,0"/>
+                            </Style>
+                            <Style x:Key="AnTileRotulo" TargetType="TextBlock">
+                                <Setter Property="FontSize" Value="10"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Setter Property="Foreground" Value="#FF86868B"/>
+                            </Style>
+                            <Style x:Key="AnTileValor" TargetType="TextBlock">
+                                <Setter Property="FontSize" Value="19"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Setter Property="Foreground" Value="#FF1D1D1F"/>
+                                <Setter Property="Margin" Value="0,2,0,0"/>
+                            </Style>
+                            <Style x:Key="AnLegendaTexto" TargetType="TextBlock">
+                                <Setter Property="FontSize" Value="10.5"/>
+                                <Setter Property="Foreground" Value="#FF86868B"/>
+                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                <Setter Property="Margin" Value="5,0,14,0"/>
+                            </Style>
+                        </Grid.Resources>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Seletor de operação -->
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                            <Button Name="btnAnaliseAnt" Tag="&#xE76B;" Width="36" Height="30" Padding="0" Style="{StaticResource BotaoArredondado}"
+                                    Click="BtnAnaliseAnt_Click" ToolTip="Operação anterior"/>
+                            <ComboBox Name="cmbAnaliseOperacao" Width="340" Height="30" Margin="4,0,0,0" VerticalContentAlignment="Center" FontSize="12.5" FontWeight="SemiBold"
+                                      SelectionChanged="CmbAnaliseOperacao_SelectionChanged"/>
+                            <Button Name="btnAnaliseProx" Tag="&#xE76C;" Width="36" Height="30" Padding="0" Margin="4,0,0,0" Style="{StaticResource BotaoArredondado}"
+                                    Click="BtnAnaliseProx_Click" ToolTip="Próxima operação"/>
+                            <TextBlock Name="lblAnaliseContador" Margin="12,0,0,0" VerticalAlignment="Center" FontSize="11" Foreground="#FF86868B"/>
+                        </StackPanel>
+
+                        <!-- Indicadores -->
+                        <UniformGrid Name="pnlAnaliseTiles" Grid.Row="1" Rows="1" Columns="6" Margin="0,0,-8,10">
+                            <Border Style="{StaticResource AnTile}">
+                                <StackPanel><TextBlock Style="{StaticResource AnTileRotulo}" Text="AMOSTRAS"/><TextBlock Name="lblAnN" Style="{StaticResource AnTileValor}"/></StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource AnTile}" Background="#FFEAF3FF">
+                                <StackPanel><TextBlock Style="{StaticResource AnTileRotulo}" Text="MÉDIA" Foreground="#FF007AFF"/><TextBlock Name="lblAnMedia" Style="{StaticResource AnTileValor}" Foreground="#FF007AFF"/></StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource AnTile}">
+                                <StackPanel><TextBlock Style="{StaticResource AnTileRotulo}" Text="DESVIO PADRÃO"/><TextBlock Name="lblAnDp" Style="{StaticResource AnTileValor}"/></StackPanel>
+                            </Border>
+                            <Border Name="bdAnCv" Style="{StaticResource AnTile}" ToolTip="Coeficiente de variação: desvio padrão dividido pela média. Quanto menor, mais regular a operação.">
+                                <StackPanel><TextBlock Style="{StaticResource AnTileRotulo}" Text="VARIAÇÃO (CV)"/><TextBlock Name="lblAnCv" Style="{StaticResource AnTileValor}"/></StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource AnTile}">
+                                <StackPanel><TextBlock Style="{StaticResource AnTileRotulo}" Text="MENOR TEMPO"/><TextBlock Name="lblAnMin" Style="{StaticResource AnTileValor}"/></StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource AnTile}">
+                                <StackPanel><TextBlock Style="{StaticResource AnTileRotulo}" Text="MAIOR TEMPO"/><TextBlock Name="lblAnMax" Style="{StaticResource AnTileValor}"/></StackPanel>
+                            </Border>
+                        </UniformGrid>
+
+                        <!-- Gráfico -->
+                        <Border Name="bdAnaliseGrafico" Grid.Row="2" Background="#FFFAFAFC" CornerRadius="12" BorderBrush="#FFE5E5EA" BorderThickness="1">
+                            <Canvas Name="cnvAnalise" ClipToBounds="True" SizeChanged="CnvAnalise_SizeChanged"/>
+                        </Border>
+                        <TextBlock Name="lblAnaliseVazio" Grid.Row="2" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   FontSize="13" Foreground="#FF86868B" TextAlignment="Center"
+                                   Text="Nenhuma operação com tempo registrado neste vídeo."/>
+
+                        <!-- Legenda -->
+                        <StackPanel Name="pnlAnaliseLegenda" Grid.Row="3" Orientation="Horizontal" Margin="2,8,0,0">
+                            <TextBlock Text="Distância da média:" FontSize="10.5" FontWeight="SemiBold" Foreground="#FF86868B" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <Ellipse Width="9" Height="9" Fill="#FF4CAF50" VerticalAlignment="Center"/><TextBlock Style="{StaticResource AnLegendaTexto}" Text="até 5%"/>
+                            <Ellipse Width="9" Height="9" Fill="#FFFFC107" VerticalAlignment="Center"/><TextBlock Style="{StaticResource AnLegendaTexto}" Text="até 15%"/>
+                            <Ellipse Width="9" Height="9" Fill="#FFFF9800" VerticalAlignment="Center"/><TextBlock Style="{StaticResource AnLegendaTexto}" Text="até 30%"/>
+                            <Ellipse Width="9" Height="9" Fill="#FFF44336" VerticalAlignment="Center"/><TextBlock Style="{StaticResource AnLegendaTexto}" Text="acima de 30%"/>
+                            <Rectangle Width="16" Height="8" Fill="#1A007AFF" Stroke="#FF007AFF" StrokeThickness="1" RadiusX="2" RadiusY="2" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                            <TextBlock Style="{StaticResource AnLegendaTexto}" Text="±1 desvio padrão"/>
+                        </StackPanel>
                     </Grid>
 
                     <ScrollViewer Name="svCronoVideo" Grid.Row="3" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
