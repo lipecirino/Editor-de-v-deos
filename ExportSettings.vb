@@ -14,6 +14,7 @@ Public Class ExportSettings
 
     ' Pasta padronizada "Cidade - UF - Velocidade - aaaa.mm.dd" (opcional; os campos ficam salvos entre sessões)
     Public Property UsarPastaPadronizada As Boolean = False
+    Public Property PadronizadaCliente As String = ""
     Public Property PadronizadaCidade As String = ""
     Public Property PadronizadaEstado As String = ""
     Public Property PadronizadaVelocidade As String = ""

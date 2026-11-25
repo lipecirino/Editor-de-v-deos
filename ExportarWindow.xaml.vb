@@ -28,13 +28,14 @@ Partial Public Class ExportarWindow
         Return r.Trim().TrimEnd("."c)
     End Function
 
-    ''' <summary>Monta "(Cidade - UF) - (Velocidade) - (aaaa.mm.dd)"; vazio se faltar algum campo.</summary>
+    ''' <summary>Monta "(Cliente - Cidade - UF) - (Velocidade) - (aaaa.mm.dd)"; vazio se faltar algum campo.</summary>
     Private Function MontarNomePasta() As String
+        Dim cliente = LimparNome(txtCliente.Text)
         Dim cidade = LimparNome(txtCidade.Text)
         Dim uf = LimparNome(txtEstado.Text)
         Dim vel = LimparNome(txtVelocidade.Text)
-        If cidade = "" OrElse uf = "" OrElse vel = "" OrElse Not dpData.SelectedDate.HasValue Then Return ""
-        Return $"({cidade} - {uf}) - ({vel}) - ({dpData.SelectedDate.Value:yyyy.MM.dd})"
+        If cliente = "" OrElse cidade = "" OrElse uf = "" OrElse vel = "" OrElse Not dpData.SelectedDate.HasValue Then Return ""
+        Return $"({cliente} - {cidade} - {uf}) - ({vel}) - ({dpData.SelectedDate.Value:yyyy.MM.dd})"
     End Function
 
     Private Sub Campo_TextChanged(sender As Object, e As TextChangedEventArgs)
@@ -72,6 +73,7 @@ Partial Public Class ExportarWindow
         rbSeparados.IsChecked = Not settings.JuntarSegmentos
 
         chkPadronizada.IsChecked = settings.UsarPastaPadronizada
+        txtCliente.Text = If(settings.PadronizadaCliente, "")
         txtCidade.Text = If(settings.PadronizadaCidade, "")
         txtEstado.Text = If(settings.PadronizadaEstado, "")
         txtVelocidade.Text = If(settings.PadronizadaVelocidade, "")
@@ -118,7 +120,7 @@ Partial Public Class ExportarWindow
         gridPadronizada.Visibility = If(padronizada, Visibility.Visible, Visibility.Collapsed)
         lblNomePasta.Visibility = gridPadronizada.Visibility
         Dim nomePasta = MontarNomePasta()
-        lblNomePasta.Text = If(nomePasta = "", "Preencha cidade, estado, velocidade e data.", "Pasta: " & nomePasta)
+        lblNomePasta.Text = If(nomePasta = "", "Preencha cliente, cidade, estado, velocidade e data.", "Pasta: " & nomePasta)
 
         Dim excluir = mesmaPasta AndAlso chkExcluirOriginal.IsChecked = True
         If excluir Then
@@ -177,13 +179,14 @@ Partial Public Class ExportarWindow
 
         Dim usarPadronizada = rbOutraPasta.IsChecked = True AndAlso chkPadronizada.IsChecked = True
         If usarPadronizada AndAlso MontarNomePasta() = "" Then
-            ConfirmacaoWindow.Avisar(Me, "Pasta padronizada incompleta", "Preencha cidade, estado, velocidade e data, ou desmarque a opção.", TipoAviso.Informacao)
+            ConfirmacaoWindow.Avisar(Me, "Pasta padronizada incompleta", "Preencha cliente, cidade, estado, velocidade e data, ou desmarque a opção.", TipoAviso.Informacao)
             Return
         End If
         NomePastaPadronizada = If(usarPadronizada, MontarNomePasta(), "")
 
         ' Guarda os campos mesmo que a opção esteja desligada, para reaproveitar depois
         _settings.UsarPastaPadronizada = (chkPadronizada.IsChecked = True)
+        _settings.PadronizadaCliente = txtCliente.Text.Trim()
         _settings.PadronizadaCidade = txtCidade.Text.Trim()
         _settings.PadronizadaEstado = txtEstado.Text.Trim()
         _settings.PadronizadaVelocidade = txtVelocidade.Text.Trim()

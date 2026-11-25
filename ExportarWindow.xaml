@@ -248,15 +248,19 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                            <TextBlock Text="Cidade" Style="{StaticResource DescOpcao}" Margin="0,0,0,2"/>
-                            <TextBlock Grid.Column="1" Text="Estado" Style="{StaticResource DescOpcao}" Margin="6,0,0,2"/>
-                            <TextBlock Grid.Column="2" Text="Velocidade" Style="{StaticResource DescOpcao}" Margin="6,0,0,2"/>
-                            <TextBlock Grid.Column="3" Text="Data" Style="{StaticResource DescOpcao}" Margin="6,0,0,2"/>
-                            <TextBox Name="txtCidade" Grid.Row="1" Padding="4,3" TextChanged="Campo_TextChanged"/>
-                            <TextBox Name="txtEstado" Grid.Row="1" Grid.Column="1" Margin="6,0,0,0" Padding="4,3" MaxLength="2" CharacterCasing="Upper" TextChanged="Campo_TextChanged"/>
-                            <TextBox Name="txtVelocidade" Grid.Row="1" Grid.Column="2" Margin="6,0,0,0" Padding="4,3" TextChanged="Campo_TextChanged"/>
-                            <DatePicker Name="dpData" Grid.Row="1" Grid.Column="3" Margin="6,0,0,0" SelectedDateChanged="Campo_DataChanged"/>
+                            <TextBlock Grid.ColumnSpan="4" Text="Cliente" Style="{StaticResource DescOpcao}" Margin="0,0,0,2"/>
+                            <TextBox Name="txtCliente" Grid.Row="1" Grid.ColumnSpan="4" Margin="0,0,0,8" Padding="4,3" TextChanged="Campo_TextChanged"/>
+                            <TextBlock Grid.Row="2" Text="Cidade" Style="{StaticResource DescOpcao}" Margin="0,0,0,2"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="Estado" Style="{StaticResource DescOpcao}" Margin="6,0,0,2"/>
+                            <TextBlock Grid.Row="2" Grid.Column="2" Text="Velocidade" Style="{StaticResource DescOpcao}" Margin="6,0,0,2"/>
+                            <TextBlock Grid.Row="2" Grid.Column="3" Text="Data" Style="{StaticResource DescOpcao}" Margin="6,0,0,2"/>
+                            <TextBox Name="txtCidade" Grid.Row="3" Padding="4,3" TextChanged="Campo_TextChanged"/>
+                            <TextBox Name="txtEstado" Grid.Row="3" Grid.Column="1" Margin="6,0,0,0" Padding="4,3" MaxLength="2" CharacterCasing="Upper" TextChanged="Campo_TextChanged"/>
+                            <TextBox Name="txtVelocidade" Grid.Row="3" Grid.Column="2" Margin="6,0,0,0" Padding="4,3" TextChanged="Campo_TextChanged"/>
+                            <DatePicker Name="dpData" Grid.Row="3" Grid.Column="3" Margin="6,0,0,0" SelectedDateChanged="Campo_DataChanged"/>
                         </Grid>
                         <TextBlock Name="lblNomePasta" Style="{StaticResource DescOpcao}" Margin="20,6,0,0" FontSize="11"/>
                     </StackPanel>
