@@ -226,6 +226,43 @@
                 </Grid>
             </RadioButton>
 
+            <!-- Sub-opção da "Outra pasta": cria uma subpasta com nome padronizado dentro da pasta escolhida (opcional) -->
+            <Grid Name="pnlPadronizada" Margin="28,0,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Border Width="2" Background="#FFD1D1D6" Margin="0,0,12,0"/>
+                <Border Grid.Column="1" Background="White" BorderBrush="#FFE5E5EA" BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="0,6,0,0">
+                    <StackPanel>
+                        <CheckBox Name="chkPadronizada" VerticalContentAlignment="Center" Checked="Opcao_Changed" Unchecked="Opcao_Changed">
+                            <TextBlock Text="Criar pasta com nome padronizado" FontWeight="SemiBold" FontSize="12"/>
+                        </CheckBox>
+                        <Grid Name="gridPadronizada" Margin="20,8,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="60"/>
+                                <ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="115"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Cidade" Style="{StaticResource DescOpcao}" Margin="0,0,0,2"/>
+                            <TextBlock Grid.Column="1" Text="Estado" Style="{StaticResource DescOpcao}" Margin="6,0,0,2"/>
+                            <TextBlock Grid.Column="2" Text="Velocidade" Style="{StaticResource DescOpcao}" Margin="6,0,0,2"/>
+                            <TextBlock Grid.Column="3" Text="Data" Style="{StaticResource DescOpcao}" Margin="6,0,0,2"/>
+                            <TextBox Name="txtCidade" Grid.Row="1" Padding="4,3" TextChanged="Campo_TextChanged"/>
+                            <TextBox Name="txtEstado" Grid.Row="1" Grid.Column="1" Margin="6,0,0,0" Padding="4,3" MaxLength="2" CharacterCasing="Upper" TextChanged="Campo_TextChanged"/>
+                            <TextBox Name="txtVelocidade" Grid.Row="1" Grid.Column="2" Margin="6,0,0,0" Padding="4,3" TextChanged="Campo_TextChanged"/>
+                            <DatePicker Name="dpData" Grid.Row="1" Grid.Column="3" Margin="6,0,0,0" SelectedDateChanged="Campo_DataChanged"/>
+                        </Grid>
+                        <TextBlock Name="lblNomePasta" Style="{StaticResource DescOpcao}" Margin="20,6,0,0" FontSize="11"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
             <!-- 3. Ajuste secundário: desempenho em uma linha só -->
             <Border Margin="0,18,0,0" Padding="0,14,0,0" BorderBrush="#FFE5E5EA" BorderThickness="0,1,0,0">
                 <Grid>

@@ -11,6 +11,13 @@ Public Class ExportSettings
     Public Property ModoEconomico As Boolean = False
     Public Property PastaDestino As String = ""
     Public Property JuntarSegmentos As Boolean = False
+
+    ' Pasta padronizada "Cidade - UF - Velocidade - aaaa.mm.dd" (opcional; os campos ficam salvos entre sessões)
+    Public Property UsarPastaPadronizada As Boolean = False
+    Public Property PadronizadaCidade As String = ""
+    Public Property PadronizadaEstado As String = ""
+    Public Property PadronizadaVelocidade As String = ""
+    Public Property PadronizadaData As String = ""   ' yyyy-MM-dd; vazio = hoje
 End Class
 
 ''' <summary>

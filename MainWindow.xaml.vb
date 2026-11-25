@@ -2341,6 +2341,16 @@ Partial Class MainWindow
         Dim salvarNaOriginal As Boolean = cfg.SalvarNaPastaOriginal
         Dim excluirOriginais As Boolean = cfg.DeletarOriginal
         Dim destino As String = If(salvarNaOriginal, "", telaExportar.PastaDestino)
+        ' Pasta padronizada opcional: criada dentro da pasta escolhida
+        If Not salvarNaOriginal AndAlso Not String.IsNullOrEmpty(telaExportar.NomePastaPadronizada) Then
+            Try
+                destino = Path.Combine(destino, telaExportar.NomePastaPadronizada)
+                Directory.CreateDirectory(destino)
+            Catch ex As Exception
+                ConfirmacaoWindow.Avisar(Me, "Não foi possível criar a pasta", ex.Message, TipoAviso.Erro)
+                Return
+            End Try
+        End If
 
         segmentoTravado = Nothing
         estaProcessando = True

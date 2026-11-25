@@ -17,6 +17,34 @@ Partial Public Class ExportarWindow
     ''' <summary>Pasta escolhida quando a opção é "Outra pasta" (vazio = mesma pasta do original).</summary>
     Public Property PastaDestino As String = ""
 
+    ''' <summary>Nome da subpasta padronizada a criar dentro de PastaDestino (vazio = não criar).</summary>
+    Public Property NomePastaPadronizada As String = ""
+
+    Private Shared Function LimparNome(s As String) As String
+        Dim r = If(s, "").Trim()
+        For Each c In Path.GetInvalidFileNameChars()
+            r = r.Replace(c, " "c)
+        Next
+        Return r.Trim().TrimEnd("."c)
+    End Function
+
+    ''' <summary>Monta "Cidade - UF - Velocidade - aaaa.mm.dd"; vazio se faltar algum campo.</summary>
+    Private Function MontarNomePasta() As String
+        Dim cidade = LimparNome(txtCidade.Text)
+        Dim uf = LimparNome(txtEstado.Text)
+        Dim vel = LimparNome(txtVelocidade.Text)
+        If cidade = "" OrElse uf = "" OrElse vel = "" OrElse Not dpData.SelectedDate.HasValue Then Return ""
+        Return $"{cidade} - {uf} - {vel} - {dpData.SelectedDate.Value:yyyy.MM.dd}"
+    End Function
+
+    Private Sub Campo_TextChanged(sender As Object, e As TextChangedEventArgs)
+        If _pronto Then AtualizarEstado()
+    End Sub
+
+    Private Sub Campo_DataChanged(sender As Object, e As SelectionChangedEventArgs)
+        If _pronto Then AtualizarEstado()
+    End Sub
+
     Public Sub New(settings As ExportSettings, qtdVideos As Integer, ignoradosCrono As Integer, temSegmentos As Boolean)
         InitializeComponent()
         _settings = settings
@@ -42,6 +70,14 @@ Partial Public Class ExportarWindow
         rbAlto.IsChecked = Not settings.ModoEconomico
         rbUnico.IsChecked = settings.JuntarSegmentos
         rbSeparados.IsChecked = Not settings.JuntarSegmentos
+
+        chkPadronizada.IsChecked = settings.UsarPastaPadronizada
+        txtCidade.Text = If(settings.PadronizadaCidade, "")
+        txtEstado.Text = If(settings.PadronizadaEstado, "")
+        txtVelocidade.Text = If(settings.PadronizadaVelocidade, "")
+        Dim dataSalva As Date
+        dpData.SelectedDate = If(Date.TryParseExact(settings.PadronizadaData, "yyyy-MM-dd", Globalization.CultureInfo.InvariantCulture,
+                                                     Globalization.DateTimeStyles.None, dataSalva), dataSalva, Date.Today)
 
         _pronto = True
         AtualizarEstado()
@@ -75,6 +111,14 @@ Partial Public Class ExportarWindow
         ' A exclusão é sub-opção da "Mesma pasta": só aparece com ela escolhida
         pnlExcluir.Visibility = If(mesmaPasta, Visibility.Visible, Visibility.Collapsed)
         If Not mesmaPasta Then chkExcluirOriginal.IsChecked = False
+
+        ' A pasta padronizada é sub-opção da "Outra pasta"
+        pnlPadronizada.Visibility = If(mesmaPasta, Visibility.Collapsed, Visibility.Visible)
+        Dim padronizada = Not mesmaPasta AndAlso chkPadronizada.IsChecked = True
+        gridPadronizada.Visibility = If(padronizada, Visibility.Visible, Visibility.Collapsed)
+        lblNomePasta.Visibility = gridPadronizada.Visibility
+        Dim nomePasta = MontarNomePasta()
+        lblNomePasta.Text = If(nomePasta = "", "Preencha cidade, estado, velocidade e data.", "Pasta: " & nomePasta)
 
         Dim excluir = mesmaPasta AndAlso chkExcluirOriginal.IsChecked = True
         If excluir Then
@@ -130,6 +174,20 @@ Partial Public Class ExportarWindow
         If rbOutraPasta.IsChecked = True AndAlso (String.IsNullOrEmpty(PastaDestino) OrElse Not Directory.Exists(PastaDestino)) Then
             If Not EscolherPasta() Then Return
         End If
+
+        Dim usarPadronizada = rbOutraPasta.IsChecked = True AndAlso chkPadronizada.IsChecked = True
+        If usarPadronizada AndAlso MontarNomePasta() = "" Then
+            ConfirmacaoWindow.Avisar(Me, "Pasta padronizada incompleta", "Preencha cidade, estado, velocidade e data, ou desmarque a opção.", TipoAviso.Informacao)
+            Return
+        End If
+        NomePastaPadronizada = If(usarPadronizada, MontarNomePasta(), "")
+
+        ' Guarda os campos mesmo que a opção esteja desligada, para reaproveitar depois
+        _settings.UsarPastaPadronizada = (chkPadronizada.IsChecked = True)
+        _settings.PadronizadaCidade = txtCidade.Text.Trim()
+        _settings.PadronizadaEstado = txtEstado.Text.Trim()
+        _settings.PadronizadaVelocidade = txtVelocidade.Text.Trim()
+        _settings.PadronizadaData = If(dpData.SelectedDate.HasValue, dpData.SelectedDate.Value.ToString("yyyy-MM-dd"), "")
 
         ExportarUnico = (rbUnico.IsChecked = True)
 
