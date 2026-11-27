@@ -196,6 +196,15 @@
     <Compile Include="ProcessosFilhos.vb">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Paleta.vb">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Modelos.vb">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CronoPanelWindow.vb">
+      <SubType>Code</SubType>
+    </Compile>
     <Page Include="ConfirmacaoWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

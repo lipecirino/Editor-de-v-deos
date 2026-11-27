@@ -93,11 +93,11 @@ Partial Public Class ExportarWindow
     Private Sub AplicarCorDestaque(economico As Boolean)
         Dim principal, texto, fundo, chip As Color
         If Not economico Then
-            principal = Color.FromRgb(&HFF, &H3B, &H30) : texto = Color.FromRgb(&HD7, &H0, &H15)
+            principal = Paleta.Vermelho.Color : texto = Color.FromRgb(&HD7, &H0, &H15)
             fundo = Color.FromRgb(&HFF, &HF5, &HF4) : chip = Color.FromRgb(&HFF, &HE5, &HE3)
         Else
-            principal = Color.FromRgb(&H34, &HC7, &H59) : texto = Color.FromRgb(&H24, &H8A, &H3D)
-            fundo = Color.FromRgb(&HF2, &HFB, &HF4) : chip = Color.FromRgb(&HE3, &HF6, &HE8)
+            principal = Paleta.Verde.Color : texto = Color.FromRgb(&H24, &H8A, &H3D)
+            fundo = Color.FromRgb(&HF2, &HFB, &HF4) : chip = Paleta.VerdeClaro.Color
         End If
         Resources("CorDestaque") = New SolidColorBrush(principal)
         Resources("CorDestaqueTexto") = New SolidColorBrush(texto)
@@ -124,15 +124,15 @@ Partial Public Class ExportarWindow
 
         Dim excluir = mesmaPasta AndAlso chkExcluirOriginal.IsChecked = True
         If excluir Then
-            bdrExcluir.Background = New SolidColorBrush(Color.FromRgb(&HFF, &HEB, &HEA))
-            bdrExcluir.BorderBrush = New SolidColorBrush(Color.FromRgb(&HFF, &H3B, &H30))
+            bdrExcluir.Background = Paleta.VermelhoClaro
+            bdrExcluir.BorderBrush = Paleta.Vermelho
             lblExcluirDica.Text = If(_qtdVideos = 1, "O original será apagado. Não dá para desfazer.",
                                      $"Os {_qtdVideos} originais serão apagados. Não dá para desfazer.")
             btnExportar.Content = "Exportar e excluir originais"
-            btnExportar.Background = New SolidColorBrush(Color.FromRgb(&HFF, &H3B, &H30))
+            btnExportar.Background = Paleta.Vermelho
         Else
             bdrExcluir.Background = Brushes.White
-            bdrExcluir.BorderBrush = New SolidColorBrush(Color.FromRgb(&HE5, &HE5, &HEA))
+            bdrExcluir.BorderBrush = Paleta.Borda
             lblExcluirDica.Text = "Apaga o arquivo original depois que a conversão der certo."
             btnExportar.Content = "Exportar"
             btnExportar.SetResourceReference(Button.BackgroundProperty, "CorDestaque")

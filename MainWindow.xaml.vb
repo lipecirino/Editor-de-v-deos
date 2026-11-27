@@ -16,744 +16,6 @@ Imports System.Text.Json.Serialization
 Imports System.Diagnostics
 Imports System.Windows.Media.Imaging
 
-' --- CLASSE DE DADOS PARA CACHE DE CRONOANÁLISE ---
-<Serializable()>
-Public Class CronoAnaliseCacheEntry
-    Public Property Operacao As String = ""
-    Public Property Cliente As String = ""
-    Public Property NumeroAmostras As Integer = 0
-    Public Property Inicio1 As Double = 0
-    Public Property Fim1 As Double = 0
-    Public Property Inicio2 As Double = 0
-    Public Property Fim2 As Double = 0
-    Public Property Inicio3 As Double = 0
-    Public Property Fim3 As Double = 0
-    Public Property Inicio4 As Double = 0
-    Public Property Fim4 As Double = 0
-End Class
-
-<Serializable()>
-Public Class VideoCacheData
-    Public Property CaminhoVideo As String = ""
-    Public Property NomeVideo As String = ""
-    Public Property TemCronoAnalise As Boolean = False
-    Public Property CronoAnalises As New List(Of CronoAnaliseCacheEntry)()
-End Class
-
-<Serializable()>
-Public Class CacheGlobal
-    Public Property Videos As New List(Of VideoCacheData)()
-End Class
-
-' --- SEGMENTO DE CORTE (INÍCIO/FIM EM SEGUNDOS) ---
-Public Class SegmentoCorte
-    Public Property Inicio As Double = 0
-    Public Property Fim As Double = 0
-    Public Property Rotulo As String = ""   ' nome da operação (usado na visão geral da cronoanálise)
-    Public Property Dono As CronoAnaliseEntry = Nothing   ' linha da cronoanálise de origem (visão geral)
-
-    Public ReadOnly Property Duracao As Double
-        Get
-            Return Math.Max(0, Fim - Inicio)
-        End Get
-    End Property
-End Class
-
-' --- CLASSE DE DADOS INDIVIDUAIS ---
-Public Class VideoTarefa
-    Implements INotifyPropertyChanged
-
-    Public Event PropertyChanged As PropertyChangedEventHandler Implements INotifyPropertyChanged.PropertyChanged
-
-    Private _caminho As String
-    Private _temCronoAnalise As Boolean = False
-
-    Public Property Caminho As String
-        Get
-            Return _caminho
-        End Get
-        Set(value As String)
-            _caminho = value
-        End Set
-    End Property
-
-    ' Primeiro tempo registrado do próximo segmento (-1 = nenhum)
-    Public Property TempoPendente As Double = -1
-    Public Property FiltroFFmpeg As String = ""
-
-    ' Cada segmento é exportado como um vídeo separado (sem segmentos, exporta o vídeo inteiro)
-    Public Property Segmentos As New List(Of SegmentoCorte)()
-
-    Public Property TemCronoAnalise As Boolean
-        Get
-            Return _temCronoAnalise
-        End Get
-        Set(value As Boolean)
-            If value <> _temCronoAnalise Then
-                _temCronoAnalise = value
-                RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(NameOf(TemCronoAnalise)))
-                RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(NameOf(NomeComFlag)))
-            End If
-        End Set
-    End Property
-
-    ' Tem cortes definidos (ou 1º tempo pendente) a serem feitos: usado no indicador da galeria
-    Private _temCortes As Boolean = False
-
-    Public Property TemCortes As Boolean
-        Get
-            Return _temCortes
-        End Get
-        Set(value As Boolean)
-            If value <> _temCortes Then
-                _temCortes = value
-                RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(NameOf(TemCortes)))
-            End If
-        End Set
-    End Property
-
-    ' --- EXPORTAÇÃO: o card do vídeo na galeria vira uma barra de progresso ---
-    Private _exportando As Boolean = False
-    Private _progresso As Double = 0   ' 0..1
-
-    Public Property Exportando As Boolean
-        Get
-            Return _exportando
-        End Get
-        Set(value As Boolean)
-            If value <> _exportando Then
-                _exportando = value
-                RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(NameOf(Exportando)))
-            End If
-        End Set
-    End Property
-
-    Public Property Progresso As Double
-        Get
-            Return _progresso
-        End Get
-        Set(value As Double)
-            value = Math.Max(0, Math.Min(1, value))
-            If value <> _progresso Then
-                _progresso = value
-                RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(NameOf(Progresso)))
-            End If
-        End Set
-    End Property
-
-    Public ReadOnly Property NomeComFlag As String
-        Get
-            Return Path.GetFileName(Caminho)
-        End Get
-    End Property
-
-    ' Rotação só da visualização deste vídeo, em graus acumulados (múltiplos de 90; não afeta a exportação)
-    Public Property RotacaoVisualizacao As Double = 0
-
-    ' --- Miniatura e duração exibidas no card da galeria (carregadas em segundo plano) ---
-    Private _miniatura As ImageSource
-    Private _duracaoTexto As String = ""
-
-    Public Property Miniatura As ImageSource
-        Get
-            Return _miniatura
-        End Get
-        Set(value As ImageSource)
-            _miniatura = value
-            RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(NameOf(Miniatura)))
-        End Set
-    End Property
-
-    Public Property DuracaoTexto As String
-        Get
-            Return _duracaoTexto
-        End Get
-        Set(value As String)
-            _duracaoTexto = value
-            RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(NameOf(DuracaoTexto)))
-        End Set
-    End Property
-
-    Public Overrides Function ToString() As String
-        Return NomeComFlag
-    End Function
-End Class
-
-' --- JANELA FLUTUANTE PARA CRONOANÁLISE ---
-Public Class CronoPanelWindow
-    Inherits Window
-
-    Private _mainWindow As MainWindow
-    Private _cronoPanel As Border
-
-    Public Sub New(mainWindow As MainWindow, cronoPanel As Border)
-        Me._mainWindow = mainWindow
-        Me._cronoPanel = cronoPanel
-
-        ' Configurar a janela flutuante
-        Me.Title = "Cronoanálise"
-        Me.Width = 1250
-        Me.Height = 350
-        Me.WindowStartupLocation = WindowStartupLocation.CenterOwner
-        Me.Owner = mainWindow
-
-        ' Criar o container para o painel
-        Dim grid = New Grid()
-        grid.RowDefinitions.Add(New RowDefinition() With {.Height = New GridLength(1, GridUnitType.Star)})
-
-        ' Mover o painel para dentro da janela
-        Dim parent = VisualTreeHelper.GetParent(_cronoPanel)
-        If TypeOf parent Is Panel Then
-            CType(parent, Panel).Children.Remove(_cronoPanel)
-        End If
-
-        ' Adicionar o painel à janela
-        Grid.SetRow(_cronoPanel, 0)
-        grid.Children.Add(_cronoPanel)
-        Me.Content = grid
-
-        ' Quando a janela fechar, re-acoplar o painel
-        AddHandler Me.Closed, Sub()
-                                  _mainWindow.ReacoplarCronoPanel(_cronoPanel)
-                              End Sub
-    End Sub
-
-    Public Property CronoPanel As Border
-        Get
-            Return _cronoPanel
-        End Get
-        Set(value As Border)
-            _cronoPanel = value
-        End Set
-    End Property
-
-    Public ReadOnly Property MainWindow As MainWindow
-        Get
-            Return _mainWindow
-        End Get
-    End Property
-
-End Class
-
-' --- CLASSE PARA O MODO CRONOANÁLISE ---
-Public Class CronoAnaliseEntry
-    Implements INotifyPropertyChanged
-
-    Public Event PropertyChanged As PropertyChangedEventHandler Implements INotifyPropertyChanged.PropertyChanged
-
-    Private _operacao As String
-
-    ' 8 campos: 4 pares (início/fim)
-    Private _valores(7) As Double
-    Private _displays(7) As String
-    Private _proximoCampo As Integer = 0
-
-    Private Sub RaisePropertyChanged(propName As String)
-        RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(propName))
-    End Sub
-
-    Public Property Operacao As String
-        Get
-            Return _operacao
-        End Get
-        Set(value As String)
-            _operacao = value
-            RaisePropertyChanged(NameOf(Operacao))
-        End Set
-    End Property
-
-    Private _numeroAmostras As Integer = 0
-
-    Public Property NumeroAmostras As Integer
-        Get
-            Return _numeroAmostras
-        End Get
-        Set(value As Integer)
-            If value < 0 Then value = 0
-            _numeroAmostras = value
-            RaisePropertyChanged(NameOf(NumeroAmostras))
-        End Set
-    End Property
-
-    Private _cliente As String
-
-    Public Property Cliente As String
-        Get
-            Return _cliente
-        End Get
-        Set(value As String)
-            _cliente = value
-            RaisePropertyChanged(NameOf(Cliente))
-        End Set
-    End Property
-
-    ' False quando há cortes reais a fazer no vídeo (a visualização fica desabilitada)
-    Private _podeVisualizar As Boolean = True
-
-    Public Property PodeVisualizar As Boolean
-        Get
-            Return _podeVisualizar
-        End Get
-        Set(value As Boolean)
-            If _podeVisualizar = value Then Return
-            _podeVisualizar = value
-            RaisePropertyChanged(NameOf(PodeVisualizar))
-        End Set
-    End Property
-
-    ' Indica que a reprodução está travada nos trechos desta linha (botão "visualizar")
-    Private _visualizando As Boolean = False
-
-    Public Property Visualizando As Boolean
-        Get
-            Return _visualizando
-        End Get
-        Set(value As Boolean)
-            If _visualizando = value Then Return
-            _visualizando = value
-            RaisePropertyChanged(NameOf(Visualizando))
-        End Set
-    End Property
-
-    ' Índices dos campos
-    Public Const IDX_INICIO1 As Integer = 0
-    Public Const IDX_FIM1 As Integer = 1
-    Public Const IDX_INICIO2 As Integer = 2
-    Public Const IDX_FIM2 As Integer = 3
-    Public Const IDX_INICIO3 As Integer = 4
-    Public Const IDX_FIM3 As Integer = 5
-    Public Const IDX_INICIO4 As Integer = 6
-    Public Const IDX_FIM4 As Integer = 7
-
-    ' Propriedades de valor (segundos)
-    Public Property Inicio1 As Double
-        Get
-            Return _valores(IDX_INICIO1)
-        End Get
-        Set(value As Double)
-            _valores(IDX_INICIO1) = value
-            Inicio1Display = SegundosParaCrono(value)
-            RaisePropertyChanged(NameOf(Inicio1))
-            RaisePropertyChanged(NameOf(DuracaoDisplay))
-        End Set
-    End Property
-
-    Public Property Fim1 As Double
-        Get
-            Return _valores(IDX_FIM1)
-        End Get
-        Set(value As Double)
-            _valores(IDX_FIM1) = value
-            Fim1Display = SegundosParaCrono(value)
-            RaisePropertyChanged(NameOf(Fim1))
-            RaisePropertyChanged(NameOf(DuracaoDisplay))
-        End Set
-    End Property
-
-    Public Property Inicio2 As Double
-        Get
-            Return _valores(IDX_INICIO2)
-        End Get
-        Set(value As Double)
-            _valores(IDX_INICIO2) = value
-            Inicio2Display = SegundosParaCrono(value)
-            RaisePropertyChanged(NameOf(Inicio2))
-            RaisePropertyChanged(NameOf(DuracaoDisplay))
-        End Set
-    End Property
-
-    Public Property Fim2 As Double
-        Get
-            Return _valores(IDX_FIM2)
-        End Get
-        Set(value As Double)
-            _valores(IDX_FIM2) = value
-            Fim2Display = SegundosParaCrono(value)
-            RaisePropertyChanged(NameOf(Fim2))
-            RaisePropertyChanged(NameOf(DuracaoDisplay))
-        End Set
-    End Property
-
-    Public Property Inicio3 As Double
-        Get
-            Return _valores(IDX_INICIO3)
-        End Get
-        Set(value As Double)
-            _valores(IDX_INICIO3) = value
-            Inicio3Display = SegundosParaCrono(value)
-            RaisePropertyChanged(NameOf(Inicio3))
-            RaisePropertyChanged(NameOf(DuracaoDisplay))
-        End Set
-    End Property
-
-    Public Property Fim3 As Double
-        Get
-            Return _valores(IDX_FIM3)
-        End Get
-        Set(value As Double)
-            _valores(IDX_FIM3) = value
-            Fim3Display = SegundosParaCrono(value)
-            RaisePropertyChanged(NameOf(Fim3))
-            RaisePropertyChanged(NameOf(DuracaoDisplay))
-        End Set
-    End Property
-
-    Public Property Inicio4 As Double
-        Get
-            Return _valores(IDX_INICIO4)
-        End Get
-        Set(value As Double)
-            _valores(IDX_INICIO4) = value
-            Inicio4Display = SegundosParaCrono(value)
-            RaisePropertyChanged(NameOf(Inicio4))
-            RaisePropertyChanged(NameOf(DuracaoDisplay))
-        End Set
-    End Property
-
-    Public Property Fim4 As Double
-        Get
-            Return _valores(IDX_FIM4)
-        End Get
-        Set(value As Double)
-            _valores(IDX_FIM4) = value
-            Fim4Display = SegundosParaCrono(value)
-            RaisePropertyChanged(NameOf(Fim4))
-            RaisePropertyChanged(NameOf(DuracaoDisplay))
-        End Set
-    End Property
-
-    ' Propriedades de display (mm:ss,cc)
-    Public Property Inicio1Display As String
-        Get
-            Return _displays(IDX_INICIO1)
-        End Get
-        Set(value As String)
-            If value <> _displays(IDX_INICIO1) Then
-                _displays(IDX_INICIO1) = value
-                Dim parsed = CronoParaSegundos(value)
-                If parsed.HasValue Then
-                    _valores(IDX_INICIO1) = parsed.Value
-                    RaisePropertyChanged(NameOf(Inicio1))
-                    RaisePropertyChanged(NameOf(DuracaoDisplay))
-                End If
-                RaisePropertyChanged(NameOf(Inicio1Display))
-            End If
-        End Set
-    End Property
-
-    Public Property Fim1Display As String
-        Get
-            Return _displays(IDX_FIM1)
-        End Get
-        Set(value As String)
-            If value <> _displays(IDX_FIM1) Then
-                _displays(IDX_FIM1) = value
-                Dim parsed = CronoParaSegundos(value)
-                If parsed.HasValue Then
-                    _valores(IDX_FIM1) = parsed.Value
-                    RaisePropertyChanged(NameOf(Fim1))
-                    RaisePropertyChanged(NameOf(DuracaoDisplay))
-                End If
-                RaisePropertyChanged(NameOf(Fim1Display))
-            End If
-        End Set
-    End Property
-
-    Public Property Inicio2Display As String
-        Get
-            Return _displays(IDX_INICIO2)
-        End Get
-        Set(value As String)
-            If value <> _displays(IDX_INICIO2) Then
-                _displays(IDX_INICIO2) = value
-                Dim parsed = CronoParaSegundos(value)
-                If parsed.HasValue Then
-                    _valores(IDX_INICIO2) = parsed.Value
-                    RaisePropertyChanged(NameOf(Inicio2))
-                    RaisePropertyChanged(NameOf(DuracaoDisplay))
-                End If
-                RaisePropertyChanged(NameOf(Inicio2Display))
-            End If
-        End Set
-    End Property
-
-    Public Property Fim2Display As String
-        Get
-            Return _displays(IDX_FIM2)
-        End Get
-        Set(value As String)
-            If value <> _displays(IDX_FIM2) Then
-                _displays(IDX_FIM2) = value
-                Dim parsed = CronoParaSegundos(value)
-                If parsed.HasValue Then
-                    _valores(IDX_FIM2) = parsed.Value
-                    RaisePropertyChanged(NameOf(Fim2))
-                    RaisePropertyChanged(NameOf(DuracaoDisplay))
-                End If
-                RaisePropertyChanged(NameOf(Fim2Display))
-            End If
-        End Set
-    End Property
-
-    Public Property Inicio3Display As String
-        Get
-            Return _displays(IDX_INICIO3)
-        End Get
-        Set(value As String)
-            If value <> _displays(IDX_INICIO3) Then
-                _displays(IDX_INICIO3) = value
-                Dim parsed = CronoParaSegundos(value)
-                If parsed.HasValue Then
-                    _valores(IDX_INICIO3) = parsed.Value
-                    RaisePropertyChanged(NameOf(Inicio3))
-                    RaisePropertyChanged(NameOf(DuracaoDisplay))
-                End If
-                RaisePropertyChanged(NameOf(Inicio3Display))
-            End If
-        End Set
-    End Property
-
-    Public Property Fim3Display As String
-        Get
-            Return _displays(IDX_FIM3)
-        End Get
-        Set(value As String)
-            If value <> _displays(IDX_FIM3) Then
-                _displays(IDX_FIM3) = value
-                Dim parsed = CronoParaSegundos(value)
-                If parsed.HasValue Then
-                    _valores(IDX_FIM3) = parsed.Value
-                    RaisePropertyChanged(NameOf(Fim3))
-                    RaisePropertyChanged(NameOf(DuracaoDisplay))
-                End If
-                RaisePropertyChanged(NameOf(Fim3Display))
-            End If
-        End Set
-    End Property
-
-    Public Property Inicio4Display As String
-        Get
-            Return _displays(IDX_INICIO4)
-        End Get
-        Set(value As String)
-            If value <> _displays(IDX_INICIO4) Then
-                _displays(IDX_INICIO4) = value
-                Dim parsed = CronoParaSegundos(value)
-                If parsed.HasValue Then
-                    _valores(IDX_INICIO4) = parsed.Value
-                    RaisePropertyChanged(NameOf(Inicio4))
-                    RaisePropertyChanged(NameOf(DuracaoDisplay))
-                End If
-                RaisePropertyChanged(NameOf(Inicio4Display))
-            End If
-        End Set
-    End Property
-
-    Public Property Fim4Display As String
-        Get
-            Return _displays(IDX_FIM4)
-        End Get
-        Set(value As String)
-            If value <> _displays(IDX_FIM4) Then
-                _displays(IDX_FIM4) = value
-                Dim parsed = CronoParaSegundos(value)
-                If parsed.HasValue Then
-                    _valores(IDX_FIM4) = parsed.Value
-                    RaisePropertyChanged(NameOf(Fim4))
-                    RaisePropertyChanged(NameOf(DuracaoDisplay))
-                End If
-                RaisePropertyChanged(NameOf(Fim4Display))
-            End If
-        End Set
-    End Property
-
-    ' Retorna o índice do próximo campo vazio (0-7) ou -1 se todos cheios
-    Public Function ObterProximoCampoVazio() As Integer
-        For i As Integer = 0 To 7
-            If _valores(i) = 0 Then
-                Return i
-            End If
-        Next
-        Return -1
-    End Function
-
-    ' Define o valor no índice especificado
-    Public Sub SetValorCampo(indice As Integer, valor As Double)
-        If indice < 0 OrElse indice > 7 Then Return
-        Select Case indice
-            Case IDX_INICIO1 : Inicio1 = valor
-            Case IDX_FIM1 : Fim1 = valor
-            Case IDX_INICIO2 : Inicio2 = valor
-            Case IDX_FIM2 : Fim2 = valor
-            Case IDX_INICIO3 : Inicio3 = valor
-            Case IDX_FIM3 : Fim3 = valor
-            Case IDX_INICIO4 : Inicio4 = valor
-            Case IDX_FIM4 : Fim4 = valor
-        End Select
-    End Sub
-
-    Public Shared Function SegundosParaCrono(segundos As Double) As String
-        If segundos = 0 Then Return ""
-        Dim ts = TimeSpan.FromSeconds(segundos)
-        Dim centesimos = CInt((ts.Milliseconds / 10))
-        Dim totalMin = Int(ts.TotalMinutes)
-        Return $"{totalMin:00}:{ts.Seconds:00},{centesimos:00}"
-    End Function
-
-    Public Shared Function CronoParaSegundos(crono As String) As Double?
-        If String.IsNullOrWhiteSpace(crono) Then Return Nothing
-        crono = crono.Trim().Replace(",", ".")
-        Dim match = System.Text.RegularExpressions.Regex.Match(crono, "^(?:(\d+):)?(\d+)(?:\.(\d+))?$")
-        If match.Success Then
-            Dim minutos As Double = 0
-            Dim segundos As Double = 0
-            Dim centesimos As Double = 0
-            If match.Groups(1).Success Then Double.TryParse(match.Groups(1).Value, minutos)
-            If match.Groups(2).Success Then Double.TryParse(match.Groups(2).Value, segundos)
-            If match.Groups(3).Success Then
-                Dim cents As String = match.Groups(3).Value.PadRight(2, "0"c).Substring(0, 2)
-                Double.TryParse(cents, centesimos)
-            End If
-            Return minutos * 60 + segundos + centesimos / 100.0
-        End If
-        Return Nothing
-    End Function
-
-    ' Duração total calculada: soma dos pares (Fim - Início)
-    Public ReadOnly Property DuracaoDisplay As String
-        Get
-            Dim total As Double = 0
-            total += Math.Max(0, Fim1 - Inicio1)
-            total += Math.Max(0, Fim2 - Inicio2)
-            total += Math.Max(0, Fim3 - Inicio3)
-            total += Math.Max(0, Fim4 - Inicio4)
-            If total <= 0 Then Return ""
-            ' Formatar como segundos,centésimos (ex: 125,67)
-            Dim segundosInt = CInt(Math.Floor(total))
-            Dim centesimos = CInt((total - segundosInt) * 100)
-            Return $"{segundosInt},{centesimos:D2}"
-        End Get
-    End Property
-
-    ' Duração em segundos (para cálculos)
-    Public ReadOnly Property DuracaoSegundos As Double
-        Get
-            Dim total As Double = 0
-            total += Math.Max(0, Fim1 - Inicio1)
-            total += Math.Max(0, Fim2 - Inicio2)
-            total += Math.Max(0, Fim3 - Inicio3)
-            total += Math.Max(0, Fim4 - Inicio4)
-            Return total
-        End Get
-    End Property
-
-    ' Propriedades para análise estatística (serão calculadas externamente)
-    Private _desvioPercentual As Double = 0
-    Private _barraLargura As Double = 0
-    Private _barraCorBrush As Brush = Brushes.Gray
-    Private _desvioTexto As String = ""
-
-    Public Property DesvioPercentual As Double
-        Get
-            Return _desvioPercentual
-        End Get
-        Set(value As Double)
-            _desvioPercentual = value
-            RaisePropertyChanged(NameOf(DesvioPercentual))
-            RaisePropertyChanged(NameOf(DesvioTexto))
-            RaisePropertyChanged(NameOf(BarraLarguraEsq))
-            RaisePropertyChanged(NameOf(BarraLarguraDir))
-        End Set
-    End Property
-
-    Public Property BarraLargura As Double
-        Get
-            Return _barraLargura
-        End Get
-        Set(value As Double)
-            _barraLargura = value
-            RaisePropertyChanged(NameOf(BarraLargura))
-            RaisePropertyChanged(NameOf(BarraLarguraEsq))
-            RaisePropertyChanged(NameOf(BarraLarguraDir))
-        End Set
-    End Property
-
-    ' Largura da barra para cada lado do eixo central (a trilha tem largura fixa)
-    Public ReadOnly Property BarraLarguraEsq As Double
-        Get
-            Return If(_desvioPercentual < 0, _barraLargura, 0)
-        End Get
-    End Property
-
-    Public ReadOnly Property BarraLarguraDir As Double
-        Get
-            Return If(_desvioPercentual >= 0, _barraLargura, 0)
-        End Get
-    End Property
-
-    Public Property BarraCorBrush As Brush
-        Get
-            Return _barraCorBrush
-        End Get
-        Set(value As Brush)
-            _barraCorBrush = value
-            RaisePropertyChanged(NameOf(BarraCorBrush))
-        End Set
-    End Property
-
-    Public ReadOnly Property DesvioTexto As String
-        Get
-            If DuracaoSegundos = 0 Then Return ""
-            Dim sinal = If(_desvioPercentual >= 0, "+", "")
-            Return $"{sinal}{_desvioPercentual:F1}%"
-        End Get
-    End Property
-End Class
-
-' Linha da visão geral "Todos os vídeos": uma operação de um vídeo (somente leitura)
-Public Class CronoGeralLinha
-    Public Property CaminhoVideo As String = ""
-    Public Property NomeVideo As String = ""
-    Public Property Entry As CronoAnaliseEntry
-
-    Public ReadOnly Property Operacao As String
-        Get
-            Return Entry.Operacao
-        End Get
-    End Property
-
-    Public ReadOnly Property Cliente As String
-        Get
-            Return Entry.Cliente
-        End Get
-    End Property
-
-    Public ReadOnly Property NumeroAmostras As Integer
-        Get
-            Return Entry.NumeroAmostras
-        End Get
-    End Property
-
-    Public ReadOnly Property DuracaoTexto As String
-        Get
-            Return Entry.DuracaoDisplay
-        End Get
-    End Property
-End Class
-
-' Um vídeo na visão geral: cabeçalho (nome, caminho) e suas operações
-Public Class CronoGeralVideo
-    Public Property CaminhoVideo As String = ""
-    Public Property NomeVideo As String = ""
-    Public Property Linhas As New List(Of CronoGeralLinha)()
-
-    Public ReadOnly Property Resumo As String
-        Get
-            Return $" · {Linhas.Count} {If(Linhas.Count = 1, "operação", "operações")}"
-        End Get
-    End Property
-End Class
-
 Partial Class MainWindow
     Inherits Window
 
@@ -807,13 +69,7 @@ Partial Class MainWindow
     Private Sub RecalcularSegmentosTodos()
         segmentosTodos = New List(Of SegmentoCorte)()
         For Each en In cronoEntries
-            Dim ini = {en.Inicio1, en.Inicio2, en.Inicio3, en.Inicio4}
-            Dim fim = {en.Fim1, en.Fim2, en.Fim3, en.Fim4}
-            For i = 0 To 3
-                If fim(i) > ini(i) AndAlso fim(i) > 0 Then
-                    segmentosTodos.Add(New SegmentoCorte() With {.Inicio = ini(i), .Fim = fim(i), .Rotulo = If(en.Operacao, ""), .Dono = en})
-                End If
-            Next
+            segmentosTodos.AddRange(en.ObterTrechos())
         Next
         segmentosTodos.Sort(Function(x, y) x.Inicio.CompareTo(y.Inicio))
     End Sub
@@ -894,16 +150,7 @@ Partial Class MainWindow
     End Sub
 
     Private Sub RecalcularSegmentosPreview()
-        segmentosPreview = New List(Of SegmentoCorte)()
-        If previewEntry Is Nothing Then Return
-        Dim ini = {previewEntry.Inicio1, previewEntry.Inicio2, previewEntry.Inicio3, previewEntry.Inicio4}
-        Dim fim = {previewEntry.Fim1, previewEntry.Fim2, previewEntry.Fim3, previewEntry.Fim4}
-        For i = 0 To 3
-            If fim(i) > ini(i) AndAlso fim(i) > 0 Then
-                segmentosPreview.Add(New SegmentoCorte() With {.Inicio = ini(i), .Fim = fim(i)})
-            End If
-        Next
-        segmentosPreview.Sort(Function(x, y) x.Inicio.CompareTo(y.Inicio))
+        segmentosPreview = If(previewEntry Is Nothing, New List(Of SegmentoCorte)(), previewEntry.ObterTrechos())
     End Sub
 
     Private Sub PreviewEntry_PropertyChanged(sender As Object, e As PropertyChangedEventArgs)
@@ -1015,34 +262,16 @@ Partial Class MainWindow
     ' --- ANÁLISE ESTATÍSTICA ---
     Private Sub AtualizarAnaliseEstatistica()
         ' Agrupar por operação e calcular média e desvio padrão
-        Dim grupos = cronoEntries.Where(Function(e) e.DuracaoSegundos > 0).GroupBy(Function(e) e.Operacao?.Trim()?.ToUpper())
+        Dim grupos = cronoEntries.Where(Function(e) e.DuracaoSegundos > 0).GroupBy(Function(e) EstatisticaTempos.ChaveOperacao(e.Operacao))
 
         For Each grupo In grupos
             If String.IsNullOrWhiteSpace(grupo.Key) Then Continue For
 
-            ' Calcular média do grupo
-            Dim duracoes = grupo.Select(Function(e) e.DuracaoSegundos).ToList()
-            If duracoes.Count < 1 Then Continue For
-
-            Dim media As Double = duracoes.Average()
-
-            ' Calcular desvio padrão
-            Dim desvioPadrao As Double = 0
-            If duracoes.Count > 1 Then
-                Dim variancia = duracoes.Sum(Function(d) Math.Pow(d - media, 2)) / duracoes.Count
-                desvioPadrao = Math.Sqrt(variancia)
-            End If
+            Dim est As New EstatisticaTempos(grupo.Select(Function(e) e.DuracaoSegundos))
 
             ' Atualizar cada entry do grupo
             For Each entry In grupo
-                Dim duracao = entry.DuracaoSegundos
-
-                ' Calcular desvio percentual em relação à média
-                Dim desvioPerc As Double = 0
-                If media > 0 Then
-                    desvioPerc = ((duracao - media) / media) * 100.0
-                End If
-
+                Dim desvioPerc As Double = est.DesvioPercentual(entry.DuracaoSegundos)
                 entry.DesvioPercentual = desvioPerc
 
                 ' Largura da barra proporcional ao desvio percentual: eixo central = 0%, extremos = -100% e +100%.
@@ -1053,23 +282,7 @@ Partial Class MainWindow
 
                 entry.BarraLargura = larguraBarra
 
-                ' Definir cor baseada no desvio
-                Dim cor As Brush
-                If Math.Abs(desvioPerc) <= 5 Then
-                    ' Verde: dentro de 5% da média (muito bom)
-                    cor = New SolidColorBrush(Color.FromRgb(&H4C, &HAF, &H50))
-                ElseIf Math.Abs(desvioPerc) <= 15 Then
-                    ' Amarelo: entre 5% e 15% (aceitável)
-                    cor = New SolidColorBrush(Color.FromRgb(&HFF, &HC1, &H7))
-                ElseIf Math.Abs(desvioPerc) <= 30 Then
-                    ' Laranja: entre 15% e 30% (atenção)
-                    cor = New SolidColorBrush(Color.FromRgb(&HFF, &H98, &H0))
-                Else
-                    ' Vermelho: mais de 30% (dispersão alta)
-                    cor = New SolidColorBrush(Color.FromRgb(&HF4, &H43, &H36))
-                End If
-
-                entry.BarraCorBrush = cor
+                entry.BarraCorBrush = FaixaDesvio.De(desvioPerc).Cor
             Next
         Next
 
@@ -1190,22 +403,6 @@ Partial Class MainWindow
         Return cache
     End Function
 
-    Private Shared Function CriarEntryDoCache(cronoDados As CronoAnaliseCacheEntry) As CronoAnaliseEntry
-        Return New CronoAnaliseEntry() With {
-            .Operacao = cronoDados.Operacao,
-            .Cliente = cronoDados.Cliente,
-            .NumeroAmostras = cronoDados.NumeroAmostras,
-            .Inicio1 = cronoDados.Inicio1,
-            .Fim1 = cronoDados.Fim1,
-            .Inicio2 = cronoDados.Inicio2,
-            .Fim2 = cronoDados.Fim2,
-            .Inicio3 = cronoDados.Inicio3,
-            .Fim3 = cronoDados.Fim3,
-            .Inicio4 = cronoDados.Inicio4,
-            .Fim4 = cronoDados.Fim4
-        }
-    End Function
-
     Private Sub CarregarCronoAnaliseDoVideo(videoTarefa As VideoTarefa)
         cronoEntries.Clear()
 
@@ -1215,7 +412,7 @@ Partial Class MainWindow
         If cache Is Nothing Then Return
 
         For Each cronoDados In cache.CronoAnalises
-            cronoEntries.Add(CriarEntryDoCache(cronoDados))
+            cronoEntries.Add(CronoAnaliseEntry.DoCache(cronoDados))
         Next
 
         videoTarefa.TemCronoAnalise = (cache.CronoAnalises.Count > 0)
@@ -1233,20 +430,7 @@ Partial Class MainWindow
         cache.CronoAnalises.Clear()
 
         For Each entry In cronoEntries
-            Dim cronoDados As New CronoAnaliseCacheEntry() With {
-                .Operacao = entry.Operacao,
-                .Cliente = entry.Cliente,
-                .NumeroAmostras = entry.NumeroAmostras,
-                .Inicio1 = entry.Inicio1,
-                .Fim1 = entry.Fim1,
-                .Inicio2 = entry.Inicio2,
-                .Fim2 = entry.Fim2,
-                .Inicio3 = entry.Inicio3,
-                .Fim3 = entry.Fim3,
-                .Inicio4 = entry.Inicio4,
-                .Fim4 = entry.Fim4
-            }
-            cache.CronoAnalises.Add(cronoDados)
+            cache.CronoAnalises.Add(entry.ParaCache())
         Next
 
         cache.TemCronoAnalise = (cronoEntries.Count > 0)
@@ -1431,11 +615,10 @@ Partial Class MainWindow
         Dim pastas = itens.Where(Function(f) Directory.Exists(f)).Count()
         arrasteAceito = Not estaProcessando AndAlso (videos > 0 OrElse pastas > 0)
 
-        Dim azul = Color.FromRgb(&H0, &H7A, &HFF), cinza = Color.FromRgb(&H8E, &H8E, &H93)
-        Dim cor = If(arrasteAceito, azul, cinza)
-        retAlvoArrastar.Stroke = New SolidColorBrush(cor)
-        bdrIconeArrastar.Background = New SolidColorBrush(cor)
-        bdrAlvoArrastar.Background = New SolidColorBrush(If(arrasteAceito, Color.FromArgb(&HF2, &HE5, &HF1, &HFF), Color.FromArgb(&HF2, &HF2, &HF2, &HF7)))
+        Dim cor = If(arrasteAceito, Paleta.Azul, Paleta.Cinza)
+        retAlvoArrastar.Stroke = cor
+        bdrIconeArrastar.Background = cor
+        bdrAlvoArrastar.Background = Paleta.ComAlfa(If(arrasteAceito, Paleta.AzulClaro, Paleta.FundoCinza), &HF2)
         icoArrastar.Text = If(arrasteAceito, ChrW(&HE896).ToString(), ChrW(&HE711).ToString())
         lblArrastarDica.Visibility = If(arrasteAceito, Visibility.Visible, Visibility.Collapsed)
 
@@ -1691,7 +874,7 @@ Partial Class MainWindow
         Dim normalizado = ((CInt(alvo) Mod 360) + 360) Mod 360
         bdrSeloRotacao.Visibility = If(normalizado = 0, Visibility.Collapsed, Visibility.Visible)
         lblSeloRotacao.Text = If(normalizado = 180, "Girado 180°", If(normalizado = 90, "Girado 90° à direita", "Girado 90° à esquerda"))
-        Dim corBotao = If(normalizado = 0, New SolidColorBrush(Color.FromRgb(&HE9, &HE9, &HEE)), New SolidColorBrush(Color.FromRgb(&HE5, &HF1, &HFF)))
+        Dim corBotao = If(normalizado = 0, Paleta.BotaoFundo, Paleta.AzulClaro)
         btnGirarEsquerda.Background = corBotao
         btnGirarDireita.Background = corBotao
     End Sub
@@ -1762,9 +945,7 @@ Partial Class MainWindow
     Private Sub AtualizarLabelVelocidade()
         ' Velocidade normal em cinza; fora do normal em azul, para chamar atenção sem fugir da paleta
         lblVelocidade.Text = $"{_velocidadeReproducao:F1}×"
-        lblVelocidade.Foreground = New SolidColorBrush(If(_velocidadeReproducao = 1.0,
-                                                           Color.FromRgb(&H86, &H86, &H8B),
-                                                           Color.FromRgb(&H0, &H7A, &HFF)))
+        lblVelocidade.Foreground = If(_velocidadeReproducao = 1.0, Paleta.TextoSecundario, Paleta.Azul)
     End Sub
 
     Private Sub BtnMuteAudio_Checked(sender As Object, e As RoutedEventArgs)
@@ -1946,24 +1127,25 @@ Partial Class MainWindow
         AtualizarMarcaTempoCrono()
     End Sub
 
+    ' Colunas do grid da cronoanálise: 0 excluir, 1 operação, 2 cliente, 3 amostras, 4..11 tempos (Início1..Fim4), 12 duração
+    Private Const COL_AMOSTRAS As Integer = 3
+    Private Const COL_PRIMEIRO_TEMPO As Integer = 4
+    Private Const COL_DURACAO As Integer = COL_PRIMEIRO_TEMPO + CronoAnaliseEntry.NUM_CAMPOS
+
+    ' Índice do campo de tempo (0-7) da coluna do grid, ou -1 se não for uma coluna de tempo
+    Private Shared Function CampoDaColuna(displayIndex As Integer) As Integer
+        Dim campo = displayIndex - COL_PRIMEIRO_TEMPO
+        Return If(campo >= 0 AndAlso campo < CronoAnaliseEntry.NUM_CAMPOS, campo, -1)
+    End Function
+
     ' Risquinho na timeline no tempo da célula de tempo (Início/Fim) selecionada na cronoanálise
     Private Sub AtualizarMarcaTempoCrono()
         Dim t As Double = -1
         If gridCrono IsNot Nothing AndAlso gridCrono.SelectedCells.Count > 0 Then
             Dim cel = gridCrono.SelectedCells(gridCrono.SelectedCells.Count - 1)
             Dim entry = TryCast(cel.Item, CronoAnaliseEntry)
-            If entry IsNot Nothing AndAlso cel.Column IsNot Nothing Then
-                Select Case cel.Column.DisplayIndex
-                    Case 4 : t = entry.Inicio1
-                    Case 5 : t = entry.Fim1
-                    Case 6 : t = entry.Inicio2
-                    Case 7 : t = entry.Fim2
-                    Case 8 : t = entry.Inicio3
-                    Case 9 : t = entry.Fim3
-                    Case 10 : t = entry.Inicio4
-                    Case 11 : t = entry.Fim4
-                End Select
-            End If
+            Dim campo = If(cel.Column IsNot Nothing, CampoDaColuna(cel.Column.DisplayIndex), -1)
+            If entry IsNot Nothing AndAlso campo >= 0 Then t = entry.ValorCampo(campo)
         End If
 
         Dim rmin = slLinhaTempo.Minimum, rmax = slLinhaTempo.Maximum
@@ -1980,12 +1162,23 @@ Partial Class MainWindow
 
     ' --- CORTE MÚLTIPLO ---
     ' Alterna entre azul escuro e azul médio para manter o visual limpo
-    Private Shared ReadOnly CoresSegmentos As Color() = {
-        Color.FromRgb(&H1B, &H3A, &H6B), Color.FromRgb(&H3B, &H82, &HC4)}
+    Private Shared ReadOnly CoresSegmentos As SolidColorBrush() = {
+        Paleta.Pincel(Color.FromRgb(&H1B, &H3A, &H6B)), Paleta.Pincel(Color.FromRgb(&H3B, &H82, &HC4))}
+    ' Segmento fora de foco (outro bloco travado) e trecho da timeline fora dos blocos ativos: quase da cor do fundo
+    Private Shared ReadOnly CorSegmentoApagado As SolidColorBrush = Paleta.Pincel(Color.FromRgb(&HEE, &HEE, &HF1))
+    Private Shared ReadOnly CorLacunaTimeline As SolidColorBrush = Paleta.Pincel(Color.FromRgb(&HF1, &HF1, &HF4))
 
-    Private Function CorSegmento(indice As Integer) As Color
+    Private Function CorSegmento(indice As Integer) As SolidColorBrush
         Return CoresSegmentos(indice Mod CoresSegmentos.Length)
     End Function
+
+    ' Clique numa marca do segmento na timeline (linha ou círculo): trava/destrava a reprodução nele
+    Private Sub LigarCliqueSegmento(marca As FrameworkElement, seg As SegmentoCorte)
+        AddHandler marca.MouseLeftButtonDown, Sub(s, ev)
+                                                  AlternarTravaSegmento(seg)
+                                                  ev.Handled = True
+                                              End Sub
+    End Sub
 
     Private Sub BtnLimparSegmentos_Click(sender As Object, e As RoutedEventArgs)
         If videoAtual Is Nothing Then Return
@@ -2152,7 +1345,7 @@ Partial Class MainWindow
                 .Text = $"{i + 1}:  {FormatarTempo(seg.Inicio)} → {FormatarTempo(seg.Fim)}  ({FormatarTempo(seg.Duracao)})",
                 .VerticalAlignment = VerticalAlignment.Center, .FontSize = 11, .Foreground = Brushes.White}
             Dim btnX As New Button() With {
-                .Content = ChrW(&HE711), .FontFamily = New FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), .Width = 18, .Height = 18, .FontSize = 9, .Margin = New Thickness(6, 0, 0, 0),
+                .Content = ChrW(&HE711), .FontFamily = CType(FindResource("FonteIcones"), FontFamily), .Width = 18, .Height = 18, .FontSize = 9, .Margin = New Thickness(6, 0, 0, 0),
                 .Foreground = Brushes.White, .Background = Brushes.Transparent, .BorderThickness = New Thickness(0),
                 .Cursor = Cursors.Hand, .Tag = seg, .ToolTip = "Remover este segmento"}
             AddHandler btnX.Click, AddressOf BtnRemoverSegmento_Click
@@ -2160,7 +1353,7 @@ Partial Class MainWindow
             painel.Children.Add(txt)
             If Not emPreview Then painel.Children.Add(btnX) ' trechos da cronoanálise não são removidos por aqui
             Dim chip As New Border() With {
-                .Background = New SolidColorBrush(cor), .CornerRadius = New CornerRadius(10), .Cursor = Cursors.Hand, .Tag = seg,
+                .Background = cor, .CornerRadius = New CornerRadius(10), .Cursor = Cursors.Hand, .Tag = seg,
                 .BorderBrush = Brushes.Black, .BorderThickness = New Thickness(If(Object.ReferenceEquals(seg, segmentoTravado), 2, 0)),
                 .ToolTip = "Clique para travar/destravar a reprodução neste segmento",
                 .Padding = New Thickness(10, 2, 4, 2), .Margin = New Thickness(0, 0, 6, 4), .Child = painel}
@@ -2181,6 +1374,7 @@ Partial Class MainWindow
         If span <= 0 OrElse larguraCanvas <= 0 Then
             Return
         End If
+        Dim Px = Function(t As Double) (t - rmin) / span * larguraCanvas ' tempo → posição no canvas da timeline
 
         For i = 0 To segs.Count - 1
             Dim seg = segs(i)
@@ -2190,45 +1384,38 @@ Partial Class MainWindow
             If verTodos Then
                 ' cada operação mantém a sua cor; sem seleção todas aparecem coloridas, com seleção só as selecionadas
                 cor = CorSegmento(Math.Max(0, cronoEntries.IndexOf(seg.Dono)))
-                If selecionadas.Count > 0 AndAlso Not selecionadas.Contains(seg.Dono) Then cor = Color.FromRgb(&HC7, &HC7, &HCC)
+                If selecionadas.Count > 0 AndAlso Not selecionadas.Contains(seg.Dono) Then cor = Paleta.CinzaDesativado
             ElseIf segmentoTravado IsNot Nothing AndAlso Not travado Then
-                cor = Color.FromRgb(&HEE, &HEE, &HF1)
+                cor = CorSegmentoApagado
             End If
             Dim fim = Math.Min(seg.Fim, rmax)
             Dim inicio = Math.Max(seg.Inicio, rmin)
             If fim <= inicio Then Continue For ' fora da faixa visível da timeline
-            Dim pxInicio = ((inicio - rmin) / span) * larguraCanvas
-            Dim pxFim = ((fim - rmin) / span) * larguraCanvas
-            Dim largura = Math.Max(2, pxFim - pxInicio)
-            Dim dica = $"{If(String.IsNullOrWhiteSpace(seg.Rotulo), "", seg.Rotulo & " · ")}Parte {i + 1}: {FormatarTempo(seg.Inicio)} → {FormatarTempo(seg.Fim)} (duração {FormatarTempo(seg.Duracao)})"
+            Dim pxInicio = Px(inicio)
+            Dim largura = Math.Max(2, Px(fim) - pxInicio)
+            Dim dica = $"{If(String.IsNullOrWhiteSpace(seg.Rotulo), "", seg.Rotulo & " · ")}Parte {i + 1}: {FormatarTempo(seg.Inicio)} → {FormatarTempo(seg.Fim)} (duração {FormatarTempo(seg.Duracao)})" &
+                       vbCrLf & "Clique para travar/destravar a reprodução neste segmento"
 
             ' Linha fina com a largura do segmento; cada segmento ocupa uma "pista" empilhada acima da linha do tempo
             Dim centroPista As Double = -4 - (pistas(i) * 7)
             Dim linha As New Border() With {
-                .Width = largura, .Height = 4, .CornerRadius = New CornerRadius(2), .Tag = "seg", .Cursor = Cursors.Hand, .ToolTip = dica & vbCrLf & "Clique para travar/destravar a reprodução neste segmento",
-                .Background = New SolidColorBrush(cor)}
+                .Width = largura, .Height = 4, .CornerRadius = New CornerRadius(2), .Tag = "seg", .Cursor = Cursors.Hand, .ToolTip = dica,
+                .Background = cor}
             Canvas.SetLeft(linha, pxInicio)
             Canvas.SetTop(linha, centroPista - 2)
-            Dim segClique = seg
-            AddHandler linha.MouseLeftButtonDown, Sub(s, ev)
-                                                      AlternarTravaSegmento(segClique)
-                                                      ev.Handled = True
-                                                  End Sub
+            LigarCliqueSegmento(linha, seg)
             canvasCorte.Children.Add(linha)
 
             ' Círculo numerado na pista do segmento (centro do segmento)
             Dim circulo As New Border() With {
-                .Width = 18, .Height = 18, .CornerRadius = New CornerRadius(9), .Tag = "seg", .Cursor = Cursors.Hand, .ToolTip = dica & vbCrLf & "Clique para travar/destravar a reprodução neste segmento",
-                .Background = New SolidColorBrush(cor), .BorderBrush = If(travado, Brushes.Black, Brushes.White),
+                .Width = 18, .Height = 18, .CornerRadius = New CornerRadius(9), .Tag = "seg", .Cursor = Cursors.Hand, .ToolTip = dica,
+                .Background = cor, .BorderBrush = If(travado, Brushes.Black, Brushes.White),
                 .BorderThickness = New Thickness(If(travado, 2, 1.5)),
                 .Child = New TextBlock() With {.Text = (i + 1).ToString(), .Foreground = Brushes.White, .FontSize = 10,
                     .FontWeight = FontWeights.Bold, .HorizontalAlignment = HorizontalAlignment.Center, .VerticalAlignment = VerticalAlignment.Center}}
             Canvas.SetLeft(circulo, pxInicio + (largura / 2) - 9)
             Canvas.SetTop(circulo, centroPista - 9)
-            AddHandler circulo.MouseLeftButtonDown, Sub(s, ev)
-                                                        AlternarTravaSegmento(segClique)
-                                                        ev.Handled = True
-                                                    End Sub
+            LigarCliqueSegmento(circulo, seg)
             canvasCorte.Children.Add(circulo)
         Next
 
@@ -2250,11 +1437,11 @@ Partial Class MainWindow
             If cursor < rmax Then lacunas.Add({cursor, rmax})
             For Each lac In lacunas
                 If lac(1) <= lac(0) Then Continue For
-                Dim x0 = ((lac(0) - rmin) / span) * larguraCanvas
-                Dim x1 = ((lac(1) - rmin) / span) * larguraCanvas
+                Dim x0 = Px(lac(0))
+                Dim x1 = Px(lac(1))
                 Dim lacuna As New Border() With {
                     .Width = Math.Max(1, x1 - x0), .Height = 6, .CornerRadius = New CornerRadius(3), .Tag = "seg", .IsHitTestVisible = False,
-                    .Background = New SolidColorBrush(Color.FromRgb(&HF1, &HF1, &HF4)), .Opacity = 1}
+                    .Background = CorLacunaTimeline, .Opacity = 1}
                 Canvas.SetLeft(lacuna, x0)
                 Canvas.SetTop(lacuna, 5)
                 canvasCorte.Children.Add(lacuna)
@@ -2359,7 +1546,7 @@ Partial Class MainWindow
 
         btnProcessar.Content = "Cancelar conversão"
         btnProcessar.Tag = ChrW(&HE711).ToString()
-        btnProcessar.Background = New SolidColorBrush(Color.FromRgb(&HFF, &H3B, &H30))
+        btnProcessar.Background = Paleta.Vermelho
         painelProgresso.Visibility = Visibility.Visible
 
         If mediaClock IsNot Nothing Then
@@ -2992,7 +2179,7 @@ Partial Class MainWindow
         For Each v In cacheGlobal.Videos.Where(Function(x) x.CronoAnalises.Count > 0).OrderBy(Function(x) x.NomeVideo, StringComparer.CurrentCultureIgnoreCase)
             Dim nome = If(String.IsNullOrWhiteSpace(v.NomeVideo), Path.GetFileName(v.CaminhoVideo), v.NomeVideo)
             For Each d In v.CronoAnalises
-                linhas.Add(New CronoGeralLinha() With {.CaminhoVideo = v.CaminhoVideo, .NomeVideo = nome, .Entry = CriarEntryDoCache(d)})
+                linhas.Add(New CronoGeralLinha() With {.CaminhoVideo = v.CaminhoVideo, .NomeVideo = nome, .Entry = CronoAnaliseEntry.DoCache(d)})
             Next
         Next
         Return linhas
@@ -3086,7 +2273,7 @@ Partial Class MainWindow
         For Each en In cronoEntries
             Dim nome = If(en.Operacao, "").Trim()
             If nome = "" OrElse en.DuracaoSegundos <= 0 Then Continue For
-            Dim chave = nome.ToUpperInvariant()
+            Dim chave = EstatisticaTempos.ChaveOperacao(nome)
             Dim g = grupos.FirstOrDefault(Function(x) x.Chave = chave)
             If g Is Nothing Then
                 g = New GrupoAnalise() With {.Chave = chave, .Nome = nome}
@@ -3129,21 +2316,6 @@ Partial Class MainWindow
         DesenharGraficoAnalise()
     End Sub
 
-    Private Shared Function PincelAnalise(r As Byte, g As Byte, b As Byte) As SolidColorBrush
-        Dim p As New SolidColorBrush(Color.FromRgb(r, g, b))
-        p.Freeze()
-        Return p
-    End Function
-
-    ' Mesma escala de cores do desvio na tabela: verde ≤5%, amarelo ≤15%, laranja ≤30%, vermelho acima
-    Private Shared Function CorDoDesvio(desvioPerc As Double) As SolidColorBrush
-        Dim d = Math.Abs(desvioPerc)
-        If d <= 5 Then Return PincelAnalise(&H4C, &HAF, &H50)
-        If d <= 15 Then Return PincelAnalise(&HFF, &HC1, &H7)
-        If d <= 30 Then Return PincelAnalise(&HFF, &H98, &H0)
-        Return PincelAnalise(&HF4, &H43, &H36)
-    End Function
-
     Private Sub AdicionarTextoAnalise(texto As String, x As Double, y As Double, Optional alinharDireita As Boolean = False,
                                       Optional centralizar As Boolean = False, Optional cor As Brush = Nothing, Optional tam As Double = 10.5)
         Dim tb As New TextBlock() With {.Text = texto, .FontSize = tam, .Foreground = If(cor, Brushes.Gray)}
@@ -3157,18 +2329,9 @@ Partial Class MainWindow
 
     ' Cores do cartão de variação (CV): quanto menor, mais regular a operação
     Private Sub AtualizarCartaoCv(cv As Double)
-        Dim fundo As Color, texto As Color
-        If cv <= 5 Then
-            fundo = Color.FromRgb(&HE8, &HF6, &HE9) : texto = Color.FromRgb(&H2E, &H7D, &H32)
-        ElseIf cv <= 15 Then
-            fundo = Color.FromRgb(&HFF, &HF6, &HD9) : texto = Color.FromRgb(&H9A, &H72, &H0)
-        ElseIf cv <= 30 Then
-            fundo = Color.FromRgb(&HFF, &HEC, &HD6) : texto = Color.FromRgb(&HC2, &H6A, &H0)
-        Else
-            fundo = Color.FromRgb(&HFD, &HE8, &HE6) : texto = Color.FromRgb(&HC6, &H28, &H28)
-        End If
-        bdAnCv.Background = New SolidColorBrush(fundo)
-        lblAnCv.Foreground = New SolidColorBrush(texto)
+        Dim faixa = FaixaDesvio.De(cv)
+        bdAnCv.Background = faixa.Fundo
+        lblAnCv.Foreground = faixa.TextoCor
     End Sub
 
     Private Sub DesenharGraficoAnalise()
@@ -3183,12 +2346,13 @@ Partial Class MainWindow
         End If
 
         Dim tempos = grupo.Tempos
-        Dim n = tempos.Count
-        Dim media = tempos.Average()
-        Dim dp As Double = If(n > 1, Math.Sqrt(tempos.Sum(Function(t) (t - media) * (t - media)) / n), 0)
-        Dim minimo = tempos.Min()
-        Dim maximo = tempos.Max()
-        Dim cv = If(media > 0, dp / media * 100.0, 0)
+        Dim est As New EstatisticaTempos(tempos)
+        Dim n = est.N
+        Dim media = est.Media
+        Dim dp = est.DesvioPadrao
+        Dim minimo = est.Minimo
+        Dim maximo = est.Maximo
+        Dim cv = est.Cv
 
         lblAnaliseContador.Text = $"Operação {cmbAnaliseOperacao.SelectedIndex + 1} de {cmbAnaliseOperacao.Items.Count}"
         lblAnN.Text = n.ToString()
@@ -3215,10 +2379,10 @@ Partial Class MainWindow
         hi = hi + folga
         Dim Y = Function(v As Double) mTop + (hi - v) / (hi - lo) * ph
 
-        Dim cinzaGrade = PincelAnalise(&HEC, &HEC, &HF1)
-        Dim cinzaTexto = PincelAnalise(&H86, &H86, &H8B)
-        Dim escuro = PincelAnalise(&H1D, &H1D, &H1F)
-        Dim azul = PincelAnalise(&H0, &H7A, &HFF)
+        Dim cinzaGrade = Paleta.Pincel(Color.FromRgb(&HEC, &HEC, &HF1))
+        Dim cinzaTexto = Paleta.TextoSecundario
+        Dim escuro = Paleta.Texto
+        Dim corMedia = Paleta.Azul
 
         ' Grade horizontal tracejada e rótulos do eixo vertical (tempo, em segundos)
         Dim passos = 5
@@ -3234,7 +2398,7 @@ Partial Class MainWindow
 
         ' Faixa de ±1 desvio padrão
         If dp > 0 Then
-            Dim faixa As New Shapes.Rectangle() With {.Width = pw, .Height = Math.Max(1, Y(media - dp) - Y(media + dp)), .Fill = New SolidColorBrush(Color.FromArgb(&H17, &H0, &H7A, &HFF))}
+            Dim faixa As New Shapes.Rectangle() With {.Width = pw, .Height = Math.Max(1, Y(media - dp) - Y(media + dp)), .Fill = Paleta.ComAlfa(corMedia, &H17)}
             Canvas.SetLeft(faixa, mEsq)
             Canvas.SetTop(faixa, Y(media + dp))
             faixa.ToolTip = $"±1 desvio padrão ({media - dp:F2} a {media + dp:F2} s)"
@@ -3243,8 +2407,8 @@ Partial Class MainWindow
 
         ' Eixo horizontal = média
         Dim yMedia = Y(media)
-        cnvAnalise.Children.Add(New Shapes.Line() With {.X1 = mEsq, .X2 = mEsq + pw, .Y1 = yMedia, .Y2 = yMedia, .Stroke = azul, .StrokeThickness = 1.5, .StrokeDashArray = New DoubleCollection({6.0, 3.0})})
-        Dim pilula As New Border() With {.Background = azul, .CornerRadius = New CornerRadius(9), .Padding = New Thickness(8, 1, 8, 1),
+        cnvAnalise.Children.Add(New Shapes.Line() With {.X1 = mEsq, .X2 = mEsq + pw, .Y1 = yMedia, .Y2 = yMedia, .Stroke = corMedia, .StrokeThickness = 1.5, .StrokeDashArray = New DoubleCollection({6.0, 3.0})})
+        Dim pilula As New Border() With {.Background = corMedia, .CornerRadius = New CornerRadius(9), .Padding = New Thickness(8, 1, 8, 1),
                                          .Child = New TextBlock() With {.Text = $"média {media:F2} s", .FontSize = 10.5, .FontWeight = FontWeights.SemiBold, .Foreground = Brushes.White}}
         pilula.Measure(New Size(Double.PositiveInfinity, Double.PositiveInfinity))
         Canvas.SetLeft(pilula, mEsq + pw - pilula.DesiredSize.Width - 4)
@@ -3263,12 +2427,13 @@ Partial Class MainWindow
             Dim t = tempos(i)
             Dim cx = mEsq + slot * (i + 0.5)
             Dim yy = Y(t)
-            Dim desvioPerc = If(media > 0, (t - media) / media * 100.0, 0)
-            Dim cor = CorDoDesvio(desvioPerc)
+            Dim desvioPerc = est.DesvioPercentual(t)
+            Dim cor = FaixaDesvio.De(desvioPerc).Cor
+            Dim barraNormal = Paleta.ComAlfa(cor, &H3C), barraDestaque = Paleta.ComAlfa(cor, &H70)
             Dim dica = $"Amostra {i + 1}: {t:F2} s" & vbCrLf & $"{If(desvioPerc >= 0, "+", "")}{desvioPerc:F1}% em relação à média"
 
             Dim barra As New Shapes.Rectangle() With {.Width = larguraBarra, .Height = Math.Max(2, Math.Abs(yy - yMedia)), .RadiusX = 4, .RadiusY = 4,
-                .Fill = New SolidColorBrush(Color.FromArgb(&H3C, cor.Color.R, cor.Color.G, cor.Color.B)), .ToolTip = dica}
+                .Fill = barraNormal, .ToolTip = dica}
             Canvas.SetLeft(barra, cx - larguraBarra / 2)
             Canvas.SetTop(barra, Math.Min(yy, yMedia))
             cnvAnalise.Children.Add(barra)
@@ -3282,11 +2447,11 @@ Partial Class MainWindow
             Dim barraRef = barra
             AddHandler ponto.MouseEnter, Sub(s, ev)
                                              CType(s, Shapes.Ellipse).RenderTransform = New ScaleTransform(1.35, 1.35)
-                                             barraRef.Fill = New SolidColorBrush(Color.FromArgb(&H70, cor.Color.R, cor.Color.G, cor.Color.B))
+                                             barraRef.Fill = barraDestaque
                                          End Sub
             AddHandler ponto.MouseLeave, Sub(s, ev)
                                              CType(s, Shapes.Ellipse).RenderTransform = Transform.Identity
-                                             barraRef.Fill = New SolidColorBrush(Color.FromArgb(&H3C, cor.Color.R, cor.Color.G, cor.Color.B))
+                                             barraRef.Fill = barraNormal
                                          End Sub
             cnvAnalise.Children.Add(ponto)
 
@@ -3364,12 +2529,7 @@ Partial Class MainWindow
             ' Usar a última célula selecionada (a mais recente)
             Dim ultimaCell = gridCrono.SelectedCells(gridCrono.SelectedCells.Count - 1)
             entry = TryCast(ultimaCell.Item, CronoAnaliseEntry)
-            If ultimaCell.Column IsNot Nothing Then
-                Dim di = ultimaCell.Column.DisplayIndex
-                If di >= 4 AndAlso di <= 11 Then
-                    proxCampo = di - 4
-                End If
-            End If
+            If ultimaCell.Column IsNot Nothing Then proxCampo = CampoDaColuna(ultimaCell.Column.DisplayIndex)
         End If
 
         ' Prioridade 2: CurrentCell (célula com foco)
@@ -3377,10 +2537,7 @@ Partial Class MainWindow
             entry = TryCast(gridCrono.CurrentItem, CronoAnaliseEntry)
         End If
         If proxCampo < 0 AndAlso gridCrono.CurrentCell.Column IsNot Nothing Then
-            Dim di = gridCrono.CurrentCell.Column.DisplayIndex
-            If di >= 4 AndAlso di <= 11 Then
-                proxCampo = di - 4
-            End If
+            proxCampo = CampoDaColuna(gridCrono.CurrentCell.Column.DisplayIndex)
         End If
 
         ' Prioridade 3: fallback para a última entry
@@ -3540,26 +2697,18 @@ Partial Class MainWindow
                         Dim entry = linhaCsv.Entry
                         Dim nomeVideo = linhaCsv.NomeVideo
                         Dim caminhoVideo = linhaCsv.CaminhoVideo
-                        Dim duracaoTotal As Double = Math.Max(0, entry.Fim1 - entry.Inicio1) +
-                                                     Math.Max(0, entry.Fim2 - entry.Inicio2) +
-                                                     Math.Max(0, entry.Fim3 - entry.Inicio3) +
-                                                     Math.Max(0, entry.Fim4 - entry.Inicio4)
-                        Dim linha = String.Join(";", {
+                        Dim duracaoTotal As Double = entry.DuracaoSegundos
+                        Dim campos As New List(Of String) From {
                             EscaparCampoCsv(nomeVideo),
                             EscaparCampoCsv(caminhoVideo),
                             EscaparCampoCsv(entry.Operacao),
                             EscaparCampoCsv(entry.Cliente),
-                            EscaparCampoCsv(entry.NumeroAmostras.ToString()),
-                            If(entry.Inicio1 > 0, EscaparCampoCsv(entry.Inicio1Display), ""),
-                            If(entry.Fim1 > 0, EscaparCampoCsv(entry.Fim1Display), ""),
-                            If(entry.Inicio2 > 0, EscaparCampoCsv(entry.Inicio2Display), ""),
-                            If(entry.Fim2 > 0, EscaparCampoCsv(entry.Fim2Display), ""),
-                            If(entry.Inicio3 > 0, EscaparCampoCsv(entry.Inicio3Display), ""),
-                            If(entry.Fim3 > 0, EscaparCampoCsv(entry.Fim3Display), ""),
-                            If(entry.Inicio4 > 0, EscaparCampoCsv(entry.Inicio4Display), ""),
-                            If(entry.Fim4 > 0, EscaparCampoCsv(entry.Fim4Display), ""),
-                            If(duracaoTotal > 0, EscaparCampoCsv(duracaoTotal.ToString("F2", System.Globalization.CultureInfo.InvariantCulture).Replace(".", ",")), "")
-                        })
+                            EscaparCampoCsv(entry.NumeroAmostras.ToString())}
+                        For c = 0 To CronoAnaliseEntry.NUM_CAMPOS - 1
+                            campos.Add(If(entry.ValorCampo(c) > 0, EscaparCampoCsv(entry.DisplayCampo(c)), ""))
+                        Next
+                        campos.Add(If(duracaoTotal > 0, EscaparCampoCsv(duracaoTotal.ToString("F2", System.Globalization.CultureInfo.InvariantCulture).Replace(".", ",")), ""))
+                        Dim linha = String.Join(";", campos)
                         sw.WriteLine(linha)
                     Next
                 End Using
@@ -3653,29 +2802,13 @@ Partial Class MainWindow
             If entry Is Nothing OrElse cellInfo.Column Is Nothing Then Continue For
 
             Dim di = cellInfo.Column.DisplayIndex
+            Dim campo = CampoDaColuna(di)
             Dim val As Double? = Nothing
-
-            Select Case di
-                Case 4 : val = CronoAnaliseEntry.CronoParaSegundos(entry.Inicio1Display)
-                Case 5 : val = CronoAnaliseEntry.CronoParaSegundos(entry.Fim1Display)
-                Case 6 : val = CronoAnaliseEntry.CronoParaSegundos(entry.Inicio2Display)
-                Case 7 : val = CronoAnaliseEntry.CronoParaSegundos(entry.Fim2Display)
-                Case 8 : val = CronoAnaliseEntry.CronoParaSegundos(entry.Inicio3Display)
-                Case 9 : val = CronoAnaliseEntry.CronoParaSegundos(entry.Fim3Display)
-                Case 10 : val = CronoAnaliseEntry.CronoParaSegundos(entry.Inicio4Display)
-                Case 11 : val = CronoAnaliseEntry.CronoParaSegundos(entry.Fim4Display)
-                Case 12
-                    Dim dur = entry.DuracaoDisplay
-                    If Not String.IsNullOrWhiteSpace(dur) Then
-                        Dim parts = dur.Split(","c)
-                        If parts.Length = 2 Then
-                            Dim sec As Double, cents As Double
-                            If Double.TryParse(parts(0), sec) AndAlso Double.TryParse(parts(1), cents) Then
-                                val = sec + cents / 100.0
-                            End If
-                        End If
-                    End If
-            End Select
+            If campo >= 0 Then
+                val = CronoAnaliseEntry.CronoParaSegundos(entry.DisplayCampo(campo))
+            ElseIf di = COL_DURACAO Then
+                val = entry.DuracaoSegundos
+            End If
 
             If val.HasValue AndAlso val.Value > 0 Then
                 valores.Add(val.Value)
@@ -3843,7 +2976,7 @@ Partial Class MainWindow
         ' Validar entrada conforme a coluna em edição
         If gridCrono.CurrentCell.Column IsNot Nothing Then
             Dim colIndex = gridCrono.CurrentCell.Column.DisplayIndex
-            If colIndex = 3 Then
+            If colIndex = COL_AMOSTRAS Then
                 ' Nº Amostras: apenas dígitos
                 For Each ch As Char In e.Text
                     If Not Char.IsDigit(ch) Then
@@ -3851,7 +2984,7 @@ Partial Class MainWindow
                         Exit For
                     End If
                 Next
-            ElseIf colIndex >= 4 AndAlso colIndex <= 11 Then
+            ElseIf CampoDaColuna(colIndex) >= 0 Then
                 ' Colunas de tempo (Início1..Fim4): apenas dígitos, ':' e ','
                 For Each ch As Char In e.Text
                     If Not Char.IsDigit(ch) AndAlso ch <> ":"c AndAlso ch <> ","c Then
@@ -3883,24 +3016,11 @@ Partial Class MainWindow
                                 entry.Operacao = ""
                             Case 2 ' Cliente
                                 entry.Cliente = ""
-                            Case 3 ' Nº Amostras
+                            Case COL_AMOSTRAS
                                 entry.NumeroAmostras = 0
-                            Case 4 ' Início1
-                                entry.Inicio1 = 0
-                            Case 5 ' Fim1
-                                entry.Fim1 = 0
-                            Case 6 ' Início2
-                                entry.Inicio2 = 0
-                            Case 7 ' Fim2
-                                entry.Fim2 = 0
-                            Case 8 ' Início3
-                                entry.Inicio3 = 0
-                            Case 9 ' Fim3
-                                entry.Fim3 = 0
-                            Case 10 ' Início4
-                                entry.Inicio4 = 0
-                            Case 11 ' Fim4
-                                entry.Fim4 = 0
+                            Case Else ' Início1..Fim4
+                                Dim campo = CampoDaColuna(colIndex)
+                                If campo >= 0 Then entry.SetValorCampo(campo, 0)
                         End Select
                         entriesProcessadas.Add(entry)
                     End If
@@ -3928,8 +3048,8 @@ Partial Class MainWindow
         Dim settings = SettingsManager.Carregar()
 
         ' Converter string da tecla para o enum Key
-        Dim teclaFrameAnt As Key = CType([Enum].Parse(GetType(Key), settings.Atalhos("FrameAnterior")), Key)
-        Dim teclaFrameProx As Key = CType([Enum].Parse(GetType(Key), settings.Atalhos("FrameProximo")), Key)
+        Dim teclaFrameAnt As Key = TeclaDoAtalho(settings, "FrameAnterior")
+        Dim teclaFrameProx As Key = TeclaDoAtalho(settings, "FrameProximo")
 
         ' Verificar atalho para Frame Anterior
         If e.Key = teclaFrameAnt AndAlso Not editandoCelula Then
@@ -3944,9 +3064,9 @@ Partial Class MainWindow
         End If
 
         If modoCronoAtivo AndAlso Not editandoCelula Then
-            Dim teclaRegistrar As Key = CType([Enum].Parse(GetType(Key), settings.Atalhos("RegistrarTempo")), Key)
-            Dim teclaPlayPause As Key = CType([Enum].Parse(GetType(Key), settings.Atalhos("PlayPause")), Key)
-            Dim teclaNovaOp As Key = CType([Enum].Parse(GetType(Key), settings.Atalhos("NovaOperacao")), Key)
+            Dim teclaRegistrar As Key = TeclaDoAtalho(settings, "RegistrarTempo")
+            Dim teclaPlayPause As Key = TeclaDoAtalho(settings, "PlayPause")
+            Dim teclaNovaOp As Key = TeclaDoAtalho(settings, "NovaOperacao")
 
             ' Verificar atalho para Registrar Tempo
             If e.Key = teclaRegistrar Then

@@ -24,29 +24,29 @@ Partial Public Class ConfirmacaoWindow
         Title = titulo
 
         ' Ícone e cor conforme o tipo
-        Dim glifo As Integer, cor As Color, fundo As Color
+        Dim glifo As Integer, cor As Brush, fundo As Brush
         Select Case tipo
             Case TipoAviso.Sucesso
-                glifo = &HE73E : cor = Color.FromRgb(&H34, &HC7, &H59) : fundo = Color.FromRgb(&HE3, &HF6, &HE8)
+                glifo = &HE73E : cor = Paleta.Verde : fundo = Paleta.VerdeClaro
             Case TipoAviso.Atencao
-                glifo = &HE7BA : cor = Color.FromRgb(&HFF, &H95, &H0) : fundo = Color.FromRgb(&HFF, &HF4, &HE5)
+                glifo = &HE7BA : cor = Paleta.Laranja : fundo = Paleta.LaranjaClaro
             Case TipoAviso.Erro
-                glifo = &HEA39 : cor = Color.FromRgb(&HFF, &H3B, &H30) : fundo = Color.FromRgb(&HFF, &HEB, &HEA)
+                glifo = &HEA39 : cor = Paleta.Vermelho : fundo = Paleta.VermelhoClaro
             Case TipoAviso.Pergunta
-                glifo = &HE9CE : cor = Color.FromRgb(&H0, &H7A, &HFF) : fundo = Color.FromRgb(&HE5, &HF1, &HFF)
+                glifo = &HE9CE : cor = Paleta.Azul : fundo = Paleta.AzulClaro
             Case Else
-                glifo = &HE946 : cor = Color.FromRgb(&H0, &H7A, &HFF) : fundo = Color.FromRgb(&HE5, &HF1, &HFF)
+                glifo = &HE946 : cor = Paleta.Azul : fundo = Paleta.AzulClaro
         End Select
         If destrutivo Then
-            glifo = &HE7BA : cor = Color.FromRgb(&HFF, &H3B, &H30) : fundo = Color.FromRgb(&HFF, &HEB, &HEA)
+            glifo = &HE7BA : cor = Paleta.Vermelho : fundo = Paleta.VermelhoClaro
         End If
         icoConfirmacao.Text = ChrW(glifo).ToString()
-        icoConfirmacao.Foreground = New SolidColorBrush(cor)
-        bdrIcone.Background = New SolidColorBrush(fundo)
+        icoConfirmacao.Foreground = cor
+        bdrIcone.Background = fundo
 
         ' Botões: aviso tem só "OK"; pergunta tem confirmar + cancelar
         btnSim.Content = textoConfirmar
-        If destrutivo Then btnSim.Background = New SolidColorBrush(Color.FromRgb(&HFF, &H3B, &H30))
+        If destrutivo Then btnSim.Background = Paleta.Vermelho
         If String.IsNullOrEmpty(textoCancelar) Then
             btnNao.Visibility = Visibility.Collapsed
             btnNao.IsDefault = False

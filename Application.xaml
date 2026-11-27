@@ -16,10 +16,31 @@
 
         <!-- ===== Padrão visual (inspirado no Apple): fundo cinza-claro, cartões brancos, azul #007AFF como destaque ===== -->
 
+        <!-- Paleta: fonte única das cores (usadas no XAML com StaticResource e no código pelo módulo Paleta) -->
+        <SolidColorBrush x:Key="CorAzul" Color="#FF007AFF"/>
+        <SolidColorBrush x:Key="CorAzulClaro" Color="#FFE5F1FF"/>
+        <SolidColorBrush x:Key="CorVerde" Color="#FF34C759"/>
+        <SolidColorBrush x:Key="CorVerdeClaro" Color="#FFE3F6E8"/>
+        <SolidColorBrush x:Key="CorLaranja" Color="#FFFF9500"/>
+        <SolidColorBrush x:Key="CorLaranjaClaro" Color="#FFFFF4E5"/>
+        <SolidColorBrush x:Key="CorVermelho" Color="#FFFF3B30"/>
+        <SolidColorBrush x:Key="CorVermelhoClaro" Color="#FFFFEBEA"/>
+        <SolidColorBrush x:Key="CorTexto" Color="#FF1D1D1F"/>
+        <SolidColorBrush x:Key="CorTextoMedio" Color="#FF3A3A3C"/>
+        <SolidColorBrush x:Key="CorTextoSecundario" Color="#FF86868B"/>
+        <SolidColorBrush x:Key="CorCinza" Color="#FF8E8E93"/>
+        <SolidColorBrush x:Key="CorCinzaClaro" Color="#FFAEAEB2"/>
+        <SolidColorBrush x:Key="CorCinzaDesativado" Color="#FFC7C7CC"/>
+        <SolidColorBrush x:Key="CorBordaForte" Color="#FFD1D1D6"/>
+        <SolidColorBrush x:Key="CorBorda" Color="#FFE5E5EA"/>
+        <SolidColorBrush x:Key="CorBotaoFundo" Color="#FFE9E9EE"/>
+        <SolidColorBrush x:Key="CorFundoCinza" Color="#FFF2F2F7"/>
+        <SolidColorBrush x:Key="CorFundoJanela" Color="#FFF5F5F7"/>
+
         <!-- Botão base: secundário (cinza-claro com texto azul) -->
         <Style x:Key="BotaoArredondado" TargetType="Button">
-            <Setter Property="Background" Value="#FFE9E9EE"/>
-            <Setter Property="Foreground" Value="#FF007AFF"/>
+            <Setter Property="Background" Value="{StaticResource CorBotaoFundo}"/>
+            <Setter Property="Foreground" Value="{StaticResource CorAzul}"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="10,4"/>
@@ -48,20 +69,20 @@
 
         <!-- Ação principal: azul preenchido -->
         <Style x:Key="BotaoPrimario" TargetType="Button" BasedOn="{StaticResource BotaoArredondado}">
-            <Setter Property="Background" Value="#FF007AFF"/>
+            <Setter Property="Background" Value="{StaticResource CorAzul}"/>
             <Setter Property="Foreground" Value="White"/>
         </Style>
 
         <!-- Ação destrutiva: cinza-claro com texto vermelho -->
         <Style x:Key="BotaoPerigo" TargetType="Button" BasedOn="{StaticResource BotaoArredondado}">
-            <Setter Property="Background" Value="#FFE9E9EE"/>
-            <Setter Property="Foreground" Value="#FFFF3B30"/>
+            <Setter Property="Background" Value="{StaticResource CorBotaoFundo}"/>
+            <Setter Property="Foreground" Value="{StaticResource CorVermelho}"/>
         </Style>
 
         <!-- Alternância: cinza-claro; quando ligado, azul preenchido -->
         <Style x:Key="BotaoArredondadoToggle" TargetType="ToggleButton">
-            <Setter Property="Background" Value="#FFE9E9EE"/>
-            <Setter Property="Foreground" Value="#FF007AFF"/>
+            <Setter Property="Background" Value="{StaticResource CorBotaoFundo}"/>
+            <Setter Property="Foreground" Value="{StaticResource CorAzul}"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="10,4"/>
@@ -80,7 +101,7 @@
                             <Trigger Property="Tag" Value="{x:Null}"><Setter TargetName="ico" Property="Visibility" Value="Collapsed"/></Trigger>
                             <Trigger Property="Content" Value="{x:Null}"><Setter TargetName="ico" Property="Margin" Value="0"/></Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="b" Property="Background" Value="#FF007AFF"/>
+                                <Setter TargetName="b" Property="Background" Value="{StaticResource CorAzul}"/>
                                 <Setter Property="Foreground" Value="White"/>
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="b" Property="Opacity" Value="0.8"/></Trigger>
@@ -101,8 +122,8 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
                             <ContentPresenter ContentSource="Header" Margin="4,0,0,6" TextElement.FontSize="12"
-                                              TextElement.FontWeight="SemiBold" TextElement.Foreground="#FF86868B"/>
-                            <Border Grid.Row="1" Background="White" BorderBrush="#FFE5E5EA" BorderThickness="1" CornerRadius="10"
+                                              TextElement.FontWeight="SemiBold" TextElement.Foreground="{StaticResource CorTextoSecundario}"/>
+                            <Border Grid.Row="1" Background="White" BorderBrush="{StaticResource CorBorda}" BorderThickness="1" CornerRadius="10"
                                     Padding="{TemplateBinding Padding}">
                                 <ContentPresenter/>
                             </Border>
@@ -118,7 +139,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Expander">
-                        <Border Background="{TemplateBinding Background}" BorderBrush="#FFE5E5EA" BorderThickness="1" CornerRadius="10"
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{StaticResource CorBorda}" BorderThickness="1" CornerRadius="10"
                                 Padding="{TemplateBinding Padding}">
                             <Grid>
                                 <Grid.RowDefinitions>
@@ -130,7 +151,7 @@
                                     <ToggleButton.Template>
                                         <ControlTemplate TargetType="ToggleButton">
                                             <StackPanel Orientation="Horizontal" Background="Transparent">
-                                                <Path x:Name="chev" Data="M 0,0 L 4,4 L 8,0" Stroke="#FF86868B" StrokeThickness="1.6"
+                                                <Path x:Name="chev" Data="M 0,0 L 4,4 L 8,0" Stroke="{StaticResource CorTextoSecundario}" StrokeThickness="1.6"
                                                       VerticalAlignment="Center" Margin="0,0,8,0" RenderTransformOrigin="0.5,0.5">
                                                     <Path.RenderTransform><RotateTransform Angle="-90"/></Path.RenderTransform>
                                                 </Path>
@@ -146,7 +167,7 @@
                                         </ControlTemplate>
                                     </ToggleButton.Template>
                                     <TextBlock Text="{Binding Header, RelativeSource={RelativeSource AncestorType=Expander}}"
-                                               FontWeight="SemiBold" FontSize="12" Foreground="#FF1D1D1F"/>
+                                               FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource CorTexto}"/>
                                 </ToggleButton>
                                 <ContentPresenter x:Name="conteudo" Grid.Row="1" Visibility="Collapsed"/>
                             </Grid>
@@ -168,12 +189,12 @@
                     <ControlTemplate TargetType="TabItem">
                         <Border x:Name="tab" Background="Transparent" BorderBrush="Transparent" BorderThickness="0,0,0,2" Padding="12,8" Cursor="Hand">
                             <ContentPresenter ContentSource="Header" TextElement.FontWeight="SemiBold" TextElement.FontSize="12"
-                                              TextElement.Foreground="#FF86868B" x:Name="cab"/>
+                                              TextElement.Foreground="{StaticResource CorTextoSecundario}" x:Name="cab"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="tab" Property="BorderBrush" Value="#FF007AFF"/>
-                                <Setter TargetName="cab" Property="TextElement.Foreground" Value="#FF007AFF"/>
+                                <Setter TargetName="tab" Property="BorderBrush" Value="{StaticResource CorAzul}"/>
+                                <Setter TargetName="cab" Property="TextElement.Foreground" Value="{StaticResource CorAzul}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>

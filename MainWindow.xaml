@@ -4,7 +4,7 @@
         Title="Editor de Vídeo (Padronização)" 
         Height="750" Width="1250" MinHeight="650" MinWidth="1200"
         WindowStartupLocation="CenterScreen"
-        Background="#FFF5F5F7" FontFamily="Segoe UI Variable Text, Segoe UI" TextElement.Foreground="#FF1D1D1F"
+        Background="{StaticResource CorFundoJanela}" FontFamily="Segoe UI Variable Text, Segoe UI" TextElement.Foreground="{StaticResource CorTexto}"
         KeyboardNavigation.DirectionalNavigation="None"
         AllowDrop="True" PreviewDragEnter="Janela_PreviewDragEnter">
 
@@ -15,13 +15,13 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Slider">
                         <Grid Cursor="Hand">
-                            <Border Height="4" Background="#FFD1D1D6" VerticalAlignment="Center" CornerRadius="2"/>
+                            <Border Height="4" Background="{StaticResource CorBordaForte}" VerticalAlignment="Center" CornerRadius="2"/>
                             <Track x:Name="PART_Track">
                                 <Track.DecreaseRepeatButton>
                                     <RepeatButton Focusable="False">
                                         <RepeatButton.Template>
                                             <ControlTemplate TargetType="RepeatButton">
-                                                <Border Height="4" Background="#FF007AFF" CornerRadius="2"/>
+                                                <Border Height="4" Background="{StaticResource CorAzul}" CornerRadius="2"/>
                                             </ControlTemplate>
                                         </RepeatButton.Template>
                                     </RepeatButton>
@@ -30,7 +30,7 @@
                                     <Thumb x:Name="Thumb" Cursor="Hand" Focusable="False">
                                         <Thumb.Template>
                                             <ControlTemplate TargetType="Thumb">
-                                                <Ellipse x:Name="bolinha" Width="16" Height="16" Fill="White" Stroke="#FFC7C7CC" StrokeThickness="1" Margin="-1,0"/>
+                                                <Ellipse x:Name="bolinha" Width="16" Height="16" Fill="White" Stroke="{StaticResource CorCinzaDesativado}" StrokeThickness="1" Margin="-1,0"/>
                                             </ControlTemplate>
                                         </Thumb.Template>
                                     </Thumb>
@@ -43,8 +43,8 @@
         </Style>
 
         <Style x:Key="ProgressLote" TargetType="ProgressBar">
-            <Setter Property="Background" Value="#FFE5E5EA"/>
-            <Setter Property="Foreground" Value="#FF007AFF"/>
+            <Setter Property="Background" Value="{StaticResource CorBorda}"/>
+            <Setter Property="Foreground" Value="{StaticResource CorAzul}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ProgressBar">
@@ -71,10 +71,10 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <StackPanel Margin="2,0,0,10">
-                <TextBlock Text="Galeria" FontSize="15" FontWeight="SemiBold" Foreground="#FF1D1D1F"/>
-                <TextBlock Text="Arraste vídeos para cá" FontSize="11" Foreground="#FF86868B" Margin="0,2,0,0"/>
+                <TextBlock Text="Galeria" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource CorTexto}"/>
+                <TextBlock Text="Arraste vídeos para cá" FontSize="11" Foreground="{StaticResource CorTextoSecundario}" Margin="0,2,0,0"/>
             </StackPanel>
-            <Border Grid.Row="1" Background="White" BorderBrush="#FFE5E5EA" BorderThickness="1" CornerRadius="10" ClipToBounds="True">
+            <Border Grid.Row="1" Background="White" BorderBrush="{StaticResource CorBorda}" BorderThickness="1" CornerRadius="10" ClipToBounds="True">
             <ListBox Name="lstGaleria" SelectionChanged="LstGaleria_SelectionChanged" BorderThickness="0" Background="Transparent" Padding="4" MouseRightButtonUp="LstGaleria_MouseRightButtonUp"
                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                  HorizontalContentAlignment="Stretch">
@@ -104,9 +104,9 @@
                                         </Border.Background>
                                     </Border>
                                     <!-- Miniatura com a duração no canto, como na Fototeca -->
-                                    <Border Grid.Column="0" Width="56" Height="32" CornerRadius="4" Background="#FFE5E5EA" Margin="0,0,8,0" VerticalAlignment="Center" ClipToBounds="True">
+                                    <Border Grid.Column="0" Width="56" Height="32" CornerRadius="4" Background="{StaticResource CorBorda}" Margin="0,0,8,0" VerticalAlignment="Center" ClipToBounds="True">
                                         <Grid>
-                                            <TextBlock Style="{StaticResource Icone}" Text="&#xE714;" FontSize="12" Foreground="#FFAEAEB2" HorizontalAlignment="Center"/>
+                                            <TextBlock Style="{StaticResource Icone}" Text="&#xE714;" FontSize="12" Foreground="{StaticResource CorCinzaClaro}" HorizontalAlignment="Center"/>
                                             <Border CornerRadius="4">
                                                 <Border.Background>
                                                     <ImageBrush ImageSource="{Binding Miniatura}" Stretch="UniformToFill"/>
@@ -121,14 +121,14 @@
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,1,4,1">
                                         <TextBlock Text="{Binding NomeComFlag}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Caminho}"/>
                                         <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
-                                            <TextBlock Name="icoCortes" Style="{StaticResource Icone}" Text="&#xE8C6;" FontSize="11" Foreground="#FFFF9500" Margin="0,0,4,0" Visibility="Collapsed" ToolTip="Tem cortes a fazer"/>
-                                            <TextBlock Name="txtCortes" Text="Cortes" FontSize="10.5" Foreground="#FFFF9500" Margin="0,0,8,0" Visibility="Collapsed"/>
-                                            <TextBlock Name="icoCrono" Style="{StaticResource Icone}" Text="&#xE916;" FontSize="11" Foreground="#FF007AFF" Margin="0,0,4,0" Visibility="Collapsed" ToolTip="Tem cronoanálise"/>
-                                            <TextBlock Name="txtCrono" Text="Cronoanálise" FontSize="10.5" Foreground="#FF007AFF" Visibility="Collapsed"/>
+                                            <TextBlock Name="icoCortes" Style="{StaticResource Icone}" Text="&#xE8C6;" FontSize="11" Foreground="{StaticResource CorLaranja}" Margin="0,0,4,0" Visibility="Collapsed" ToolTip="Tem cortes a fazer"/>
+                                            <TextBlock Name="txtCortes" Text="Cortes" FontSize="10.5" Foreground="{StaticResource CorLaranja}" Margin="0,0,8,0" Visibility="Collapsed"/>
+                                            <TextBlock Name="icoCrono" Style="{StaticResource Icone}" Text="&#xE916;" FontSize="11" Foreground="{StaticResource CorAzul}" Margin="0,0,4,0" Visibility="Collapsed" ToolTip="Tem cronoanálise"/>
+                                            <TextBlock Name="txtCrono" Text="Cronoanálise" FontSize="10.5" Foreground="{StaticResource CorAzul}" Visibility="Collapsed"/>
                                         </StackPanel>
                                     </StackPanel>
                                     <Button Grid.Column="2" Content="&#xE711;" FontFamily="{StaticResource FonteIcones}" Width="20" Height="20" FontSize="10"
-                                            Foreground="#FFAEAEB2" Background="Transparent" BorderThickness="0"
+                                            Foreground="{StaticResource CorCinzaClaro}" Background="Transparent" BorderThickness="0"
                                             Cursor="Hand" ToolTip="Remover este vídeo"
                                             Click="BtnRemoverVideoGaleria_Click"/>
                                 </Grid>
@@ -136,15 +136,15 @@
                         </Grid>
                         <DataTemplate.Triggers>
                             <DataTrigger Binding="{Binding TemCortes}" Value="True">
-                                <Setter TargetName="bdrCard" Property="Background" Value="#FFFFF4E5"/>
-                                <Setter TargetName="bdrCard" Property="BorderBrush" Value="#FFFF9500"/>
+                                <Setter TargetName="bdrCard" Property="Background" Value="{StaticResource CorLaranjaClaro}"/>
+                                <Setter TargetName="bdrCard" Property="BorderBrush" Value="{StaticResource CorLaranja}"/>
                                 <Setter TargetName="bdrCard" Property="BorderThickness" Value="1"/>
                                 <Setter TargetName="icoCortes" Property="Visibility" Value="Visible"/>
                                 <Setter TargetName="txtCortes" Property="Visibility" Value="Visible"/>
                             </DataTrigger>
                             <DataTrigger Binding="{Binding TemCronoAnalise}" Value="True">
-                                <Setter TargetName="bdrCard" Property="Background" Value="#FFE5F1FF"/>
-                                <Setter TargetName="bdrCard" Property="BorderBrush" Value="#FF007AFF"/>
+                                <Setter TargetName="bdrCard" Property="Background" Value="{StaticResource CorAzulClaro}"/>
+                                <Setter TargetName="bdrCard" Property="BorderBrush" Value="{StaticResource CorAzul}"/>
                                 <Setter TargetName="bdrCard" Property="BorderThickness" Value="1"/>
                                 <Setter TargetName="icoCrono" Property="Visibility" Value="Visible"/>
                                 <Setter TargetName="txtCrono" Property="Visibility" Value="Visible"/>
@@ -154,7 +154,7 @@
                             </DataTrigger>
                             <DataTrigger Binding="{Binding Exportando}" Value="True">
                                 <Setter TargetName="bdrCard" Property="Background" Value="White"/>
-                                <Setter TargetName="bdrCard" Property="BorderBrush" Value="#FF34C759"/>
+                                <Setter TargetName="bdrCard" Property="BorderBrush" Value="{StaticResource CorVerde}"/>
                                 <Setter TargetName="bdrCard" Property="BorderThickness" Value="1"/>
                                 <Setter TargetName="bdrProgresso" Property="Visibility" Value="Visible"/>
                             </DataTrigger>
@@ -170,7 +170,7 @@
                                         <ContentPresenter/>
                                     </Border>
                                     <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="item" Property="Background" Value="#FFF5F5F7"/></Trigger>
+                                        <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="item" Property="Background" Value="{StaticResource CorFundoJanela}"/></Trigger>
                                         <Trigger Property="IsSelected" Value="True"><Setter TargetName="item" Property="Background" Value="#FFE8E8ED"/></Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -182,7 +182,7 @@
                     <ContextMenu>
                         <MenuItem Header="Marcar/desmarcar cronoanálise" Click="ToggleCronoAnaliseFlag_Click">
                             <MenuItem.Icon>
-                                <TextBlock Style="{StaticResource Icone}" Text="&#xE916;" Foreground="#FF007AFF"/>
+                                <TextBlock Style="{StaticResource Icone}" Text="&#xE916;" Foreground="{StaticResource CorAzul}"/>
                             </MenuItem.Icon>
                         </MenuItem>
                     </ContextMenu>
@@ -269,8 +269,8 @@
                     <!-- Estado vazio: aparece enquanto nenhum vídeo está aberto -->
                     <StackPanel Name="pnlVideoVazio" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
                         <TextBlock Style="{StaticResource Icone}" Text="&#xE714;" FontSize="36" Foreground="#FF636366" HorizontalAlignment="Center"/>
-                        <TextBlock Text="Nenhum vídeo aberto" FontSize="15" FontWeight="SemiBold" Foreground="#FFAEAEB2" HorizontalAlignment="Center" Margin="0,12,0,0"/>
-                        <TextBlock Text="Selecione um vídeo na galeria ou arraste arquivos para lá" FontSize="12" Foreground="#FF8E8E93" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        <TextBlock Text="Nenhum vídeo aberto" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource CorCinzaClaro}" HorizontalAlignment="Center" Margin="0,12,0,0"/>
+                        <TextBlock Text="Selecione um vídeo na galeria ou arraste arquivos para lá" FontSize="12" Foreground="{StaticResource CorCinza}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -288,7 +288,7 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- ===== LINHA 1: Linha do tempo em largura total ===== -->
-                <TextBlock Name="lblTempoAtual" Text="00:00,00" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0" Foreground="#FF86868B" FontFamily="Consolas"/>
+                <TextBlock Name="lblTempoAtual" Text="00:00,00" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0" Foreground="{StaticResource CorTextoSecundario}" FontFamily="Consolas"/>
 
                 <Grid Grid.Row="0" Grid.Column="1" Name="gridSliderCorte" Height="35" SizeChanged="GridSliderCorte_SizeChanged">
                     <Slider Name="slLinhaTempo" Focusable="False" Style="{StaticResource SliderYoutube}"
@@ -301,7 +301,7 @@
                     <Canvas Name="canvasCorte" VerticalAlignment="Center" Height="16" Margin="6,0,6,0" Panel.ZIndex="2">
                         <Border Name="bdrCorte" Height="16" BorderBrush="Black" BorderThickness="4,1,4,1" Background="Transparent" Visibility="Hidden" CornerRadius="2"/>
                         <!-- Risquinho do tempo da célula selecionada na cronoanálise -->
-                        <Border Name="bdrMarcaTempo" Width="2" Height="26" Canvas.Top="-5" Background="#FF1D1D1F" CornerRadius="1"
+                        <Border Name="bdrMarcaTempo" Width="2" Height="26" Canvas.Top="-5" Background="{StaticResource CorTexto}" CornerRadius="1"
                                 Visibility="Hidden" IsHitTestVisible="False"/>
                     </Canvas>
 
@@ -312,7 +312,7 @@
                     </Popup>
                 </Grid>
 
-                <TextBlock Name="lblTempoTotal" Text="00:00,00" Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="#FF86868B" FontFamily="Consolas"/>
+                <TextBlock Name="lblTempoTotal" Text="00:00,00" Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="{StaticResource CorTextoSecundario}" FontFamily="Consolas"/>
 
 
                 <!-- ===== LINHA 3: Barra de ferramentas (reprodução | cortar | ferramentas) ===== -->
@@ -337,7 +337,7 @@
                                 Click="BtnVelocidadeMenos_Click" FontSize="18" FontWeight="Bold"
                                 ToolTip="Diminuir velocidade"/>
                         <TextBlock Name="lblVelocidade" Text="1.0×" VerticalAlignment="Center" TextAlignment="Center" Width="40"
-                                   Foreground="#FF86868B" FontWeight="Bold" FontSize="13"
+                                   Foreground="{StaticResource CorTextoSecundario}" FontWeight="Bold" FontSize="13"
                                    ToolTip="Velocidade atual de reprodução"/>
                         <Button Name="btnVelocidadeMais" Padding="0" Tag="&#xE710;" Width="36" Height="35"
                                 Style="{StaticResource BotaoArredondado}"
@@ -409,14 +409,14 @@
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Name="lblProximaParte" Grid.Column="0" FontWeight="SemiBold" Foreground="#FF007AFF" VerticalAlignment="Center" TextWrapping="Wrap"
+                                        <TextBlock Name="lblProximaParte" Grid.Column="0" FontWeight="SemiBold" Foreground="{StaticResource CorAzul}" VerticalAlignment="Center" TextWrapping="Wrap"
                                                    ToolTip="Cada segmento é exportado conforme a opção escolhida ao converter; sem segmentos, exporta o vídeo inteiro."/>
                                         <Button Name="btnLimparSegmentos" Grid.Column="1" Content="Remover todos" Tag="&#xE74D;" Height="24" Padding="8,0" Visibility="Collapsed"
                                                 Style="{StaticResource BotaoPerigo}" FontSize="11"
                                                 ToolTip="Remove todos os segmentos deste vídeo"
                                                 Click="BtnLimparSegmentos_Click"/>
                                     </Grid>
-                                    <TextBlock Name="txtDicaSegmentos" Foreground="#FF86868B" FontSize="11" TextWrapping="Wrap"/>
+                                    <TextBlock Name="txtDicaSegmentos" Foreground="{StaticResource CorTextoSecundario}" FontSize="11" TextWrapping="Wrap"/>
                                     <ScrollViewer Name="svSegmentos" MaxHeight="70" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
                                         <WrapPanel Name="wrapSegmentos"/>
                                     </ScrollViewer>
@@ -427,7 +427,7 @@
                                 <StackPanel>
                                     <!-- Rotação: uma opção por vez -->
                                     <WrapPanel Margin="0,0,0,6">
-                                        <TextBlock Text="Girar" Width="60" Foreground="#FF86868B" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Girar" Width="60" Foreground="{StaticResource CorTextoSecundario}" VerticalAlignment="Center"/>
                                         <RadioButton Name="rbNormal" GroupName="Rotacao" Content="Não girar" IsChecked="True" Margin="0,0,15,0"/>
                                         <RadioButton Name="rbRotDireita" GroupName="Rotacao" Content="90° direita" Margin="0,0,15,0"/>
                                         <RadioButton Name="rbRotEsquerda" GroupName="Rotacao" Content="90° esquerda" Margin="0,0,15,0"/>
@@ -435,7 +435,7 @@
                                     </WrapPanel>
                                     <!-- Espelhamento: pode combinar com a rotação -->
                                     <WrapPanel>
-                                        <TextBlock Text="Espelhar" Width="60" Foreground="#FF86868B" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Espelhar" Width="60" Foreground="{StaticResource CorTextoSecundario}" VerticalAlignment="Center"/>
                                         <CheckBox Name="rbEspelharH" Content="Horizontal" Margin="0,0,15,0"/>
                                         <CheckBox Name="rbEspelharV" Content="Vertical"/>
                                     </WrapPanel>
@@ -450,7 +450,7 @@
                             <TextBlock Name="lblStatusLote" Text="Vídeo 1/1" FontSize="11" Margin="0,0,0,5"/>
                             <Grid>
                                 <ProgressBar Name="pbProgresso" Style="{StaticResource ProgressLote}"/>
-                                <TextBlock Name="lblPorcentagem" Text="0%" HorizontalAlignment="Right" Margin="0,-20,0,0" FontWeight="SemiBold" Foreground="#FF1D1D1F"/>
+                                <TextBlock Name="lblPorcentagem" Text="0%" HorizontalAlignment="Right" Margin="0,-20,0,0" FontWeight="SemiBold" Foreground="{StaticResource CorTexto}"/>
                             </Grid>
                         </StackPanel>
                         <Button Name="btnProcessar" Content="Exportar…" Tag="&#xE8AB;" Height="46" Style="{StaticResource BotaoPrimario}" Click="BtnProcessar_Click" FontSize="14" FontWeight="SemiBold"/>
@@ -458,7 +458,7 @@
                 </Grid>  <!-- fecha painelConfigCompleto -->
 
             <!-- Painel de Cronoanálise (modo crono) - estilo limpo, inspirado no padrão Apple -->
-            <Border Name="pnlCrono" Visibility="Collapsed" Background="White" BorderBrush="#FFE5E5EA" BorderThickness="1" CornerRadius="12">
+            <Border Name="pnlCrono" Visibility="Collapsed" Background="White" BorderBrush="{StaticResource CorBorda}" BorderThickness="1" CornerRadius="12">
                 <Grid Margin="14,12,14,12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -475,10 +475,10 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Cronoanálise" FontSize="15" FontWeight="SemiBold" Foreground="#FF1D1D1F" VerticalAlignment="Center"
+                        <TextBlock Grid.Column="0" Text="Cronoanálise" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource CorTexto}" VerticalAlignment="Center"
                                    ToolTip="Arraste para desacoplar o painel"/>
                         <TextBlock Name="lblCronoGeralResumo" Grid.Column="1" Visibility="Collapsed" Margin="12,0,12,0" VerticalAlignment="Center"
-                                   FontSize="11" Foreground="#FF86868B" TextTrimming="CharacterEllipsis"/>
+                                   FontSize="11" Foreground="{StaticResource CorTextoSecundario}" TextTrimming="CharacterEllipsis"/>
                         <StackPanel Grid.Column="2" Orientation="Horizontal" Cursor="Arrow">
                             <ToggleButton Name="btnCronoTodosVideos" Content="Todos os vídeos" Tag="&#xE8F1;" Margin="0,0,6,0" Style="{StaticResource BotaoArredondadoToggle}" Checked="BtnCronoTodosVideos_Click" Unchecked="BtnCronoTodosVideos_Click"
                                           ToolTip="Ver as cronoanálises de todos os vídeos, agrupadas por vídeo (funciona sem vídeo aberto)"/>
@@ -496,9 +496,9 @@
                                     ToolTip="Mais opções">
                                 <Button.ContextMenu>
                                     <ContextMenu>
-                                        <MenuItem Name="btnLimparCache" Header="Limpar cache de todas as cronoanálises…" Foreground="#FFFF3B30" Click="BtnLimparCache_Click">
+                                        <MenuItem Name="btnLimparCache" Header="Limpar cache de todas as cronoanálises…" Foreground="{StaticResource CorVermelho}" Click="BtnLimparCache_Click">
                                             <MenuItem.Icon>
-                                                <TextBlock Style="{StaticResource Icone}" Text="&#xE74D;" Foreground="#FFFF3B30"/>
+                                                <TextBlock Style="{StaticResource Icone}" Text="&#xE74D;" Foreground="{StaticResource CorVermelho}"/>
                                             </MenuItem.Icon>
                                         </MenuItem>
                                     </ContextMenu>
@@ -527,7 +527,7 @@
                                     <DataTemplate>
                                         <StackPanel Margin="0,0,0,12">
                                             <!-- Cabeçalho do vídeo: nome, caminho logo abaixo e botão para reabrir -->
-                                            <Border Background="#FFF5F5F7" CornerRadius="8" Padding="10,6">
+                                            <Border Background="{StaticResource CorFundoJanela}" CornerRadius="8" Padding="10,6">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="Auto"/>
@@ -541,7 +541,7 @@
                                                         <ToggleButton.Template>
                                                             <ControlTemplate TargetType="ToggleButton">
                                                                 <Border Background="Transparent">
-                                                                    <TextBlock Name="seta" Style="{StaticResource Icone}" Text="&#xE76C;" Foreground="#FF86868B" FontSize="12"
+                                                                    <TextBlock Name="seta" Style="{StaticResource Icone}" Text="&#xE76C;" Foreground="{StaticResource CorTextoSecundario}" FontSize="12"
                                                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                                 </Border>
                                                                 <ControlTemplate.Triggers>
@@ -552,13 +552,13 @@
                                                             </ControlTemplate>
                                                         </ToggleButton.Template>
                                                     </ToggleButton>
-                                                    <TextBlock Grid.Column="1" Style="{StaticResource Icone}" Text="&#xE714;" Foreground="#FF007AFF" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="1" Style="{StaticResource Icone}" Text="&#xE714;" Foreground="{StaticResource CorAzul}" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                                     <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                                         <StackPanel Orientation="Horizontal">
                                                             <TextBlock Text="{Binding NomeVideo}" FontWeight="SemiBold" FontSize="12.5"/>
-                                                            <TextBlock Text="{Binding Resumo}" Foreground="#FF86868B" FontSize="11" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{Binding Resumo}" Foreground="{StaticResource CorTextoSecundario}" FontSize="11" VerticalAlignment="Center"/>
                                                         </StackPanel>
-                                                        <TextBlock Text="{Binding CaminhoVideo}" Foreground="#FF86868B" FontSize="10.5" TextTrimming="CharacterEllipsis"
+                                                        <TextBlock Text="{Binding CaminhoVideo}" Foreground="{StaticResource CorTextoSecundario}" FontSize="10.5" TextTrimming="CharacterEllipsis"
                                                                    ToolTip="{Binding CaminhoVideo}"/>
                                                     </StackPanel>
                                                     <Button Grid.Column="3" Content="Abrir" Tag="&#xE8E5;" Margin="10,0,0,0" VerticalAlignment="Center"
@@ -569,7 +569,7 @@
                                             <DataGrid ItemsSource="{Binding Linhas}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
                                                       IsReadOnly="True" HeadersVisibility="Column" BorderThickness="0" Background="White" RowBackground="White"
                                                       SelectionMode="Single" SelectionUnit="FullRow" FontSize="12" GridLinesVisibility="Horizontal"
-                                                      HorizontalGridLinesBrush="#FFF2F2F7" VerticalGridLinesBrush="Transparent" Foreground="#FF1D1D1F"
+                                                      HorizontalGridLinesBrush="{StaticResource CorFundoCinza}" VerticalGridLinesBrush="Transparent" Foreground="{StaticResource CorTexto}"
                                                       RowHeaderWidth="0" SnapsToDevicePixels="True" CanUserSortColumns="False"
                                                       VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled"
                                                       PreviewMouseWheel="GridCronoGeral_PreviewMouseWheel">
@@ -586,11 +586,11 @@
                                                 <DataGrid.Resources>
                                                     <Style TargetType="DataGridColumnHeader">
                                                         <Setter Property="Background" Value="White"/>
-                                                        <Setter Property="Foreground" Value="#FF86868B"/>
+                                                        <Setter Property="Foreground" Value="{StaticResource CorTextoSecundario}"/>
                                                         <Setter Property="FontSize" Value="11"/>
                                                         <Setter Property="FontWeight" Value="SemiBold"/>
                                                         <Setter Property="Padding" Value="8,6"/>
-                                                        <Setter Property="BorderBrush" Value="#FFE5E5EA"/>
+                                                        <Setter Property="BorderBrush" Value="{StaticResource CorBorda}"/>
                                                         <Setter Property="BorderThickness" Value="0,0,0,1"/>
                                                     </Style>
                                                     <Style TargetType="DataGridRow">
@@ -611,14 +611,14 @@
                             </ItemsControl>
                         </ScrollViewer>
                         <TextBlock Name="lblCronoGeralVazio" Text="Nenhuma cronoanálise salva ainda." Visibility="Collapsed"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="13" Foreground="#FF86868B"/>
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="13" Foreground="{StaticResource CorTextoSecundario}"/>
                     </Grid>
 
                     <!-- Análise de tempos: gráfico de dispersão das amostras de uma operação por vez, com a média como eixo -->
                     <Grid Name="pnlCronoAnalise" Grid.Row="1" Grid.RowSpan="4" Visibility="Collapsed" Panel.ZIndex="1" Background="White">
                         <Grid.Resources>
                             <Style x:Key="AnTile" TargetType="Border">
-                                <Setter Property="Background" Value="#FFF5F5F7"/>
+                                <Setter Property="Background" Value="{StaticResource CorFundoJanela}"/>
                                 <Setter Property="CornerRadius" Value="10"/>
                                 <Setter Property="Padding" Value="12,8"/>
                                 <Setter Property="Margin" Value="0,0,8,0"/>
@@ -626,17 +626,17 @@
                             <Style x:Key="AnTileRotulo" TargetType="TextBlock">
                                 <Setter Property="FontSize" Value="10"/>
                                 <Setter Property="FontWeight" Value="SemiBold"/>
-                                <Setter Property="Foreground" Value="#FF86868B"/>
+                                <Setter Property="Foreground" Value="{StaticResource CorTextoSecundario}"/>
                             </Style>
                             <Style x:Key="AnTileValor" TargetType="TextBlock">
                                 <Setter Property="FontSize" Value="19"/>
                                 <Setter Property="FontWeight" Value="SemiBold"/>
-                                <Setter Property="Foreground" Value="#FF1D1D1F"/>
+                                <Setter Property="Foreground" Value="{StaticResource CorTexto}"/>
                                 <Setter Property="Margin" Value="0,2,0,0"/>
                             </Style>
                             <Style x:Key="AnLegendaTexto" TargetType="TextBlock">
                                 <Setter Property="FontSize" Value="10.5"/>
-                                <Setter Property="Foreground" Value="#FF86868B"/>
+                                <Setter Property="Foreground" Value="{StaticResource CorTextoSecundario}"/>
                                 <Setter Property="VerticalAlignment" Value="Center"/>
                                 <Setter Property="Margin" Value="5,0,14,0"/>
                             </Style>
@@ -656,7 +656,7 @@
                                       SelectionChanged="CmbAnaliseOperacao_SelectionChanged"/>
                             <Button Name="btnAnaliseProx" Tag="&#xE76C;" Width="36" Height="30" Padding="0" Margin="4,0,0,0" Style="{StaticResource BotaoArredondado}"
                                     Click="BtnAnaliseProx_Click" ToolTip="Próxima operação"/>
-                            <TextBlock Name="lblAnaliseContador" Margin="12,0,0,0" VerticalAlignment="Center" FontSize="11" Foreground="#FF86868B"/>
+                            <TextBlock Name="lblAnaliseContador" Margin="12,0,0,0" VerticalAlignment="Center" FontSize="11" Foreground="{StaticResource CorTextoSecundario}"/>
                         </StackPanel>
 
                         <!-- Indicadores -->
@@ -665,7 +665,7 @@
                                 <StackPanel><TextBlock Style="{StaticResource AnTileRotulo}" Text="AMOSTRAS"/><TextBlock Name="lblAnN" Style="{StaticResource AnTileValor}"/></StackPanel>
                             </Border>
                             <Border Style="{StaticResource AnTile}" Background="#FFEAF3FF">
-                                <StackPanel><TextBlock Style="{StaticResource AnTileRotulo}" Text="MÉDIA" Foreground="#FF007AFF"/><TextBlock Name="lblAnMedia" Style="{StaticResource AnTileValor}" Foreground="#FF007AFF"/></StackPanel>
+                                <StackPanel><TextBlock Style="{StaticResource AnTileRotulo}" Text="MÉDIA" Foreground="{StaticResource CorAzul}"/><TextBlock Name="lblAnMedia" Style="{StaticResource AnTileValor}" Foreground="{StaticResource CorAzul}"/></StackPanel>
                             </Border>
                             <Border Style="{StaticResource AnTile}">
                                 <StackPanel><TextBlock Style="{StaticResource AnTileRotulo}" Text="DESVIO PADRÃO"/><TextBlock Name="lblAnDp" Style="{StaticResource AnTileValor}"/></StackPanel>
@@ -682,21 +682,21 @@
                         </UniformGrid>
 
                         <!-- Gráfico -->
-                        <Border Name="bdAnaliseGrafico" Grid.Row="2" Background="#FFFAFAFC" CornerRadius="12" BorderBrush="#FFE5E5EA" BorderThickness="1">
+                        <Border Name="bdAnaliseGrafico" Grid.Row="2" Background="#FFFAFAFC" CornerRadius="12" BorderBrush="{StaticResource CorBorda}" BorderThickness="1">
                             <Canvas Name="cnvAnalise" ClipToBounds="True" SizeChanged="CnvAnalise_SizeChanged"/>
                         </Border>
                         <TextBlock Name="lblAnaliseVazio" Grid.Row="2" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                   FontSize="13" Foreground="#FF86868B" TextAlignment="Center"
+                                   FontSize="13" Foreground="{StaticResource CorTextoSecundario}" TextAlignment="Center"
                                    Text="Nenhuma operação com tempo registrado neste vídeo."/>
 
                         <!-- Legenda -->
                         <StackPanel Name="pnlAnaliseLegenda" Grid.Row="3" Orientation="Horizontal" Margin="2,8,0,0">
-                            <TextBlock Text="Distância da média:" FontSize="10.5" FontWeight="SemiBold" Foreground="#FF86868B" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="Distância da média:" FontSize="10.5" FontWeight="SemiBold" Foreground="{StaticResource CorTextoSecundario}" VerticalAlignment="Center" Margin="0,0,10,0"/>
                             <Ellipse Width="9" Height="9" Fill="#FF4CAF50" VerticalAlignment="Center"/><TextBlock Style="{StaticResource AnLegendaTexto}" Text="até 5%"/>
                             <Ellipse Width="9" Height="9" Fill="#FFFFC107" VerticalAlignment="Center"/><TextBlock Style="{StaticResource AnLegendaTexto}" Text="até 15%"/>
                             <Ellipse Width="9" Height="9" Fill="#FFFF9800" VerticalAlignment="Center"/><TextBlock Style="{StaticResource AnLegendaTexto}" Text="até 30%"/>
                             <Ellipse Width="9" Height="9" Fill="#FFF44336" VerticalAlignment="Center"/><TextBlock Style="{StaticResource AnLegendaTexto}" Text="acima de 30%"/>
-                            <Rectangle Width="16" Height="8" Fill="#1A007AFF" Stroke="#FF007AFF" StrokeThickness="1" RadiusX="2" RadiusY="2" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                            <Rectangle Width="16" Height="8" Fill="#1A007AFF" Stroke="{StaticResource CorAzul}" StrokeThickness="1" RadiusX="2" RadiusY="2" VerticalAlignment="Center" Margin="10,0,0,0"/>
                             <TextBlock Style="{StaticResource AnLegendaTexto}" Text="±1 desvio padrão"/>
                         </StackPanel>
                     </Grid>
@@ -707,8 +707,8 @@
                                   BorderThickness="0" Background="White" RowBackground="White"
                                   AlternatingRowBackground="White" SelectionMode="Extended"
                                   SelectionUnit="Cell" FontSize="12" GridLinesVisibility="Horizontal"
-                                  HorizontalGridLinesBrush="#FFF2F2F7" VerticalGridLinesBrush="Transparent"
-                                  Foreground="#FF1D1D1F" RowHeaderWidth="0" SnapsToDevicePixels="True"
+                                  HorizontalGridLinesBrush="{StaticResource CorFundoCinza}" VerticalGridLinesBrush="Transparent"
+                                  Foreground="{StaticResource CorTexto}" RowHeaderWidth="0" SnapsToDevicePixels="True"
                                   CellEditEnding="GridCrono_CellEditEnding"
                                   BeginningEdit="GridCrono_BeginningEdit"
                                   PreviewTextInput="GridCrono_PreviewTextInput"
@@ -717,11 +717,11 @@
                             <DataGrid.Resources>
                                 <Style TargetType="DataGridColumnHeader">
                                     <Setter Property="Background" Value="White"/>
-                                    <Setter Property="Foreground" Value="#FF86868B"/>
+                                    <Setter Property="Foreground" Value="{StaticResource CorTextoSecundario}"/>
                                     <Setter Property="FontSize" Value="11"/>
                                     <Setter Property="FontWeight" Value="SemiBold"/>
                                     <Setter Property="Padding" Value="8,8"/>
-                                    <Setter Property="BorderBrush" Value="#FFE5E5EA"/>
+                                    <Setter Property="BorderBrush" Value="{StaticResource CorBorda}"/>
                                     <Setter Property="BorderThickness" Value="0,0,0,1"/>
                                     <Setter Property="HorizontalContentAlignment" Value="Center"/>
                                 </Style>
@@ -750,15 +750,15 @@
                                     </Setter>
                                     <Style.Triggers>
                                         <Trigger Property="IsSelected" Value="True">
-                                            <Setter Property="Background" Value="#FFE5F1FF"/>
-                                            <Setter Property="Foreground" Value="#FF1D1D1F"/>
+                                            <Setter Property="Background" Value="{StaticResource CorAzulClaro}"/>
+                                            <Setter Property="Foreground" Value="{StaticResource CorTexto}"/>
                                         </Trigger>
                                         <MultiTrigger>
                                             <MultiTrigger.Conditions>
                                                 <Condition Property="IsSelected" Value="True"/>
                                                 <Condition Property="Selector.IsSelectionActive" Value="False"/>
                                             </MultiTrigger.Conditions>
-                                            <Setter Property="Background" Value="#FFF2F2F7"/>
+                                            <Setter Property="Background" Value="{StaticResource CorFundoCinza}"/>
                                         </MultiTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -780,7 +780,7 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Button Content="&#xE74D;" FontFamily="{StaticResource FonteIcones}" Width="24" Height="24" FontSize="12"
-                                                    Foreground="#FFAEAEB2" Background="Transparent"
+                                                    Foreground="{StaticResource CorCinzaClaro}" Background="Transparent"
                                                     BorderThickness="0" Cursor="Hand"
                                                     ToolTip="Excluir este registro"
                                                     Click="BtnExcluirLinhaCrono_Click">
@@ -854,7 +854,7 @@
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
                                             <Setter Property="TextBlock.FontFamily" Value="Consolas"/>
                                             <Setter Property="TextBlock.TextAlignment" Value="Center"/>
-                                            <Setter Property="TextBlock.Foreground" Value="#FF3A3A3C"/>
+                                            <Setter Property="TextBlock.Foreground" Value="{StaticResource CorTextoMedio}"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                     <DataGridTextColumn.EditingElementStyle>
@@ -871,7 +871,7 @@
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
                                             <Setter Property="TextBlock.FontFamily" Value="Consolas"/>
                                             <Setter Property="TextBlock.TextAlignment" Value="Center"/>
-                                            <Setter Property="TextBlock.Foreground" Value="#FF3A3A3C"/>
+                                            <Setter Property="TextBlock.Foreground" Value="{StaticResource CorTextoMedio}"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                     <DataGridTextColumn.EditingElementStyle>
@@ -890,7 +890,7 @@
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
                                             <Setter Property="TextBlock.FontFamily" Value="Consolas"/>
                                             <Setter Property="TextBlock.TextAlignment" Value="Center"/>
-                                            <Setter Property="TextBlock.Foreground" Value="#FF3A3A3C"/>
+                                            <Setter Property="TextBlock.Foreground" Value="{StaticResource CorTextoMedio}"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                     <DataGridTextColumn.EditingElementStyle>
@@ -907,7 +907,7 @@
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
                                             <Setter Property="TextBlock.FontFamily" Value="Consolas"/>
                                             <Setter Property="TextBlock.TextAlignment" Value="Center"/>
-                                            <Setter Property="TextBlock.Foreground" Value="#FF3A3A3C"/>
+                                            <Setter Property="TextBlock.Foreground" Value="{StaticResource CorTextoMedio}"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                     <DataGridTextColumn.EditingElementStyle>
@@ -926,7 +926,7 @@
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
                                             <Setter Property="TextBlock.FontFamily" Value="Consolas"/>
                                             <Setter Property="TextBlock.TextAlignment" Value="Center"/>
-                                            <Setter Property="TextBlock.Foreground" Value="#FF3A3A3C"/>
+                                            <Setter Property="TextBlock.Foreground" Value="{StaticResource CorTextoMedio}"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                     <DataGridTextColumn.EditingElementStyle>
@@ -943,7 +943,7 @@
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
                                             <Setter Property="TextBlock.FontFamily" Value="Consolas"/>
                                             <Setter Property="TextBlock.TextAlignment" Value="Center"/>
-                                            <Setter Property="TextBlock.Foreground" Value="#FF3A3A3C"/>
+                                            <Setter Property="TextBlock.Foreground" Value="{StaticResource CorTextoMedio}"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                     <DataGridTextColumn.EditingElementStyle>
@@ -962,7 +962,7 @@
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
                                             <Setter Property="TextBlock.FontFamily" Value="Consolas"/>
                                             <Setter Property="TextBlock.TextAlignment" Value="Center"/>
-                                            <Setter Property="TextBlock.Foreground" Value="#FF3A3A3C"/>
+                                            <Setter Property="TextBlock.Foreground" Value="{StaticResource CorTextoMedio}"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                     <DataGridTextColumn.EditingElementStyle>
@@ -979,7 +979,7 @@
                                             <Setter Property="TextBlock.Margin" Value="3,2"/>
                                             <Setter Property="TextBlock.FontFamily" Value="Consolas"/>
                                             <Setter Property="TextBlock.TextAlignment" Value="Center"/>
-                                            <Setter Property="TextBlock.Foreground" Value="#FF3A3A3C"/>
+                                            <Setter Property="TextBlock.Foreground" Value="{StaticResource CorTextoMedio}"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                     <DataGridTextColumn.EditingElementStyle>
@@ -995,9 +995,9 @@
                                 <DataGridTemplateColumn Header="Duração" Width="76" IsReadOnly="True" CanUserResize="False" CanUserReorder="False">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Border Background="#FFF2F2F7" CornerRadius="6" Padding="8,2" Margin="4,3" HorizontalAlignment="Center">
+                                            <Border Background="{StaticResource CorFundoCinza}" CornerRadius="6" Padding="8,2" Margin="4,3" HorizontalAlignment="Center">
                                                 <TextBlock Text="{Binding DuracaoDisplay}" FontFamily="Consolas" FontWeight="SemiBold"
-                                                           Foreground="#FF1D1D1F" TextAlignment="Center"/>
+                                                           Foreground="{StaticResource CorTexto}" TextAlignment="Center"/>
                                             </Border>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
@@ -1028,7 +1028,7 @@
                                                 <!-- Mini gráfico: trilha de largura fixa (mesma escala em todas as linhas) -->
                                                 <Grid Grid.Column="0" Width="80" Height="10" HorizontalAlignment="Left"
                                                       VerticalAlignment="Center" Margin="0,0,8,0" ClipToBounds="True">
-                                                    <Border Background="#FFF2F2F7" CornerRadius="5"/>
+                                                    <Border Background="{StaticResource CorFundoCinza}" CornerRadius="5"/>
 
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
@@ -1044,7 +1044,7 @@
                                                     </Grid>
 
                                                     <!-- Eixo central (média) -->
-                                                    <Rectangle Width="1.5" Fill="#FF8E8E93" HorizontalAlignment="Center"/>
+                                                    <Rectangle Width="1.5" Fill="{StaticResource CorCinza}" HorizontalAlignment="Center"/>
                                                 </Grid>
 
                                                 <!-- Texto do desvio -->
@@ -1075,7 +1075,7 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Button x:Name="btnVis" Content="&#xE7B3;" FontFamily="{StaticResource FonteIcones}" Width="28" Height="24" FontSize="12"
-                                                    Foreground="#FF007AFF" Background="#FFE5F1FF" BorderThickness="0" Cursor="Hand"
+                                                    Foreground="{StaticResource CorAzul}" Background="{StaticResource CorAzulClaro}" BorderThickness="0" Cursor="Hand"
                                                     HorizontalAlignment="Center" IsEnabled="{Binding PodeVisualizar}"
                                                     ToolTip="Visualizar as faixas desta linha na timeline (indisponível enquanto houver cortes no vídeo)"
                                                     Click="BtnVisualizarCrono_Click">
@@ -1094,7 +1094,7 @@
                                             </Button>
                                             <DataTemplate.Triggers>
                                                 <DataTrigger Binding="{Binding Visualizando}" Value="True">
-                                                    <Setter TargetName="btnVis" Property="Background" Value="#FF007AFF"/>
+                                                    <Setter TargetName="btnVis" Property="Background" Value="{StaticResource CorAzul}"/>
                                                     <Setter TargetName="btnVis" Property="Foreground" Value="White"/>
                                                 </DataTrigger>
                                             </DataTemplate.Triggers>
@@ -1107,29 +1107,29 @@
 
                     <!-- Barra de status de seleção (Row 4) -->
                     <Border x:Name="pnlCronoSelecao" Grid.Row="4" Visibility="Collapsed"
-                            Background="#FFF5F5F7" CornerRadius="8"
+                            Background="{StaticResource CorFundoJanela}" CornerRadius="8"
                             Margin="0,8,0,0" Padding="12,6">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Seleção" FontSize="11" FontWeight="SemiBold"
-                                       Foreground="#FF1D1D1F" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                            <TextBlock Text="Soma" FontSize="11" Foreground="#FF86868B"
+                                       Foreground="{StaticResource CorTexto}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                            <TextBlock Text="Soma" FontSize="11" Foreground="{StaticResource CorTextoSecundario}"
                                        VerticalAlignment="Center" Margin="0,0,4,0"/>
                             <TextBlock x:Name="lblCronoSoma" FontSize="11" FontWeight="SemiBold"
-                                       FontFamily="Consolas" Foreground="#FF1D1D1F"
+                                       FontFamily="Consolas" Foreground="{StaticResource CorTexto}"
                                        VerticalAlignment="Center" Margin="0,0,16,0"/>
-                            <TextBlock Text="Média" FontSize="11" Foreground="#FF86868B"
+                            <TextBlock Text="Média" FontSize="11" Foreground="{StaticResource CorTextoSecundario}"
                                        VerticalAlignment="Center" Margin="0,0,4,0"/>
                             <TextBlock x:Name="lblCronoMedia" FontSize="11" FontWeight="SemiBold"
-                                       FontFamily="Consolas" Foreground="#FF007AFF"
+                                       FontFamily="Consolas" Foreground="{StaticResource CorAzul}"
                                        VerticalAlignment="Center" Margin="0,0,16,0"/>
-                            <TextBlock x:Name="lblCronoQtd" FontSize="10" Foreground="#FF86868B"
+                            <TextBlock x:Name="lblCronoQtd" FontSize="10" Foreground="{StaticResource CorTextoSecundario}"
                                        VerticalAlignment="Center"/>
                         </StackPanel>
                     </Border>
 
                     <!-- Lista suspensa de sugestões de operação (opções já usadas neste vídeo) -->
                     <Popup Name="popupOperacoes" Placement="Bottom" StaysOpen="True" AllowsTransparency="True" IsOpen="False">
-                        <Border Background="White" BorderBrush="#FFD1D1D6" BorderThickness="1" CornerRadius="8" Padding="4">
+                        <Border Background="White" BorderBrush="{StaticResource CorBordaForte}" BorderThickness="1" CornerRadius="8" Padding="4">
                             <ListBox Name="lstOperacoes" Focusable="False" MaxHeight="160" BorderThickness="0" FontSize="11"
                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                      PreviewMouseLeftButtonDown="LstOperacoes_PreviewMouseLeftButtonDown">
@@ -1164,15 +1164,15 @@
                     Background="#F2E5F1FF" IsHitTestVisible="False">
                 <Grid>
                     <!-- Borda tracejada -->
-                    <Rectangle Name="retAlvoArrastar" RadiusX="14" RadiusY="14" Stroke="#FF007AFF" StrokeThickness="2"
+                    <Rectangle Name="retAlvoArrastar" RadiusX="14" RadiusY="14" Stroke="{StaticResource CorAzul}" StrokeThickness="2"
                                StrokeDashArray="5 4" SnapsToDevicePixels="True"/>
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20">
-                        <Border Name="bdrIconeArrastar" Width="64" Height="64" CornerRadius="32" Background="#FF007AFF" HorizontalAlignment="Center">
+                        <Border Name="bdrIconeArrastar" Width="64" Height="64" CornerRadius="32" Background="{StaticResource CorAzul}" HorizontalAlignment="Center">
                             <TextBlock Name="icoArrastar" Style="{StaticResource Icone}" Text="&#xE896;" FontSize="28" Foreground="White" HorizontalAlignment="Center"/>
                         </Border>
-                        <TextBlock Name="lblArrastarTitulo" Text="Solte para adicionar" FontSize="16" FontWeight="SemiBold" Foreground="#FF1D1D1F"
+                        <TextBlock Name="lblArrastarTitulo" Text="Solte para adicionar" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource CorTexto}"
                                    HorizontalAlignment="Center" Margin="0,14,0,0"/>
-                        <TextBlock Name="lblArrastarDetalhe" FontSize="12" Foreground="#FF86868B" HorizontalAlignment="Center"
+                        <TextBlock Name="lblArrastarDetalhe" FontSize="12" Foreground="{StaticResource CorTextoSecundario}" HorizontalAlignment="Center"
                                    TextAlignment="Center" TextWrapping="Wrap" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Grid>
@@ -1180,7 +1180,7 @@
 
             <!-- Resto da janela: só uma dica discreta, a área toda aceita o soltar -->
             <Border Grid.Column="1" Margin="0,15,15,15" CornerRadius="14" BorderBrush="#4D007AFF" BorderThickness="1.5" IsHitTestVisible="False">
-                <TextBlock Name="lblArrastarDica" Text="Pode soltar em qualquer lugar da janela" FontSize="13" Foreground="#FF86868B"
+                <TextBlock Name="lblArrastarDica" Text="Pode soltar em qualquer lugar da janela" FontSize="13" Foreground="{StaticResource CorTextoSecundario}"
                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </Border>
         </Grid>
