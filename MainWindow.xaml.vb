@@ -495,7 +495,8 @@ Partial Class MainWindow
     Private Shared ReadOnly semaforoMiniaturas As New SemaphoreSlim(2)
 
     Private Sub AdicionarVideoGaleria(caminho As String)
-        Dim tarefa As New VideoTarefa() With {.Caminho = caminho}
+        ' Já entra na galeria com o indicador de cronoanálise, sem precisar abrir o vídeo
+        Dim tarefa As New VideoTarefa() With {.Caminho = caminho, .TemCronoAnalise = CacheTemCronoAnalise(caminho)}
         lstGaleria.Items.Add(tarefa)
         CarregarMiniaturaAsync(tarefa)
     End Sub
@@ -1466,9 +1467,14 @@ Partial Class MainWindow
     Private Function TemCronoAnalisePersistida(v As VideoTarefa) As Boolean
         If v Is Nothing Then Return False
         If videoAtual IsNot Nothing AndAlso Object.ReferenceEquals(v, videoAtual) Then Return cronoEntries.Count > 0
-        If cacheGlobal Is Nothing Then Return v.TemCronoAnalise
-        Dim c = cacheGlobal.Videos.FirstOrDefault(Function(x) String.Equals(x.CaminhoVideo, v.Caminho, StringComparison.OrdinalIgnoreCase))
-        Return (c IsNot Nothing AndAlso c.CronoAnalises.Count > 0) OrElse v.TemCronoAnalise
+        Return CacheTemCronoAnalise(v.Caminho) OrElse v.TemCronoAnalise
+    End Function
+
+    ' O cache salvo tem cronoanálise para este arquivo? (só consulta; não cria entrada no cache)
+    Private Function CacheTemCronoAnalise(caminho As String) As Boolean
+        If cacheGlobal Is Nothing OrElse String.IsNullOrWhiteSpace(caminho) Then Return False
+        Dim c = cacheGlobal.Videos.FirstOrDefault(Function(x) String.Equals(x.CaminhoVideo, caminho, StringComparison.OrdinalIgnoreCase))
+        Return c IsNot Nothing AndAlso c.CronoAnalises.Count > 0
     End Function
 
     ' Anima o card colapsando (altura e opacidade) e então remove o vídeo da lista
