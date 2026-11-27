@@ -85,6 +85,12 @@ Public Module Paleta
         End Get
     End Property
 
+    Public ReadOnly Property BordaForte As SolidColorBrush
+        Get
+            Return Recurso("CorBordaForte")
+        End Get
+    End Property
+
     Public ReadOnly Property BotaoFundo As SolidColorBrush
         Get
             Return Recurso("CorBotaoFundo")

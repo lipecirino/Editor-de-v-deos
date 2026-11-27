@@ -28,14 +28,49 @@ Partial Public Class ExportarWindow
         Return r.Trim().TrimEnd("."c)
     End Function
 
+    Private Shared ReadOnly UFsValidas As New HashSet(Of String) From {
+        "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR",
+        "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"}
+
     ''' <summary>Monta "(Cliente - Cidade - UF) - (Velocidade) - (aaaa.mm.dd)"; vazio se faltar algum campo.</summary>
     Private Function MontarNomePasta() As String
+        If CamposFaltando().Count > 0 Then Return ""
         Dim cliente = LimparNome(txtCliente.Text)
         Dim cidade = LimparNome(txtCidade.Text)
         Dim uf = LimparNome(txtEstado.Text)
         Dim vel = LimparNome(txtVelocidade.Text)
-        If cliente = "" OrElse cidade = "" OrElse uf = "" OrElse vel = "" OrElse Not dpData.SelectedDate.HasValue Then Return ""
         Return $"({cliente} - {cidade} - {uf}) - ({vel}) - ({dpData.SelectedDate.Value:yyyy.MM.dd})"
+    End Function
+
+    ' Campos da pasta padronizada ainda vazios ou inválidos (rótulo para a mensagem e o controle para destacar)
+    Private Function CamposFaltando() As List(Of KeyValuePair(Of String, Control))
+        Dim faltando As New List(Of KeyValuePair(Of String, Control))
+        If LimparNome(txtCliente.Text) = "" Then faltando.Add(New KeyValuePair(Of String, Control)("cliente", txtCliente))
+        If LimparNome(txtCidade.Text) = "" Then faltando.Add(New KeyValuePair(Of String, Control)("cidade", txtCidade))
+        Dim uf = LimparNome(txtEstado.Text)
+        If uf = "" Then
+            faltando.Add(New KeyValuePair(Of String, Control)("UF", txtEstado))
+        ElseIf Not UFsValidas.Contains(uf) Then
+            faltando.Add(New KeyValuePair(Of String, Control)("UF válida", txtEstado))
+        End If
+        If LimparNome(txtVelocidade.Text) = "" Then faltando.Add(New KeyValuePair(Of String, Control)("velocidade", txtVelocidade))
+        If Not dpData.SelectedDate.HasValue Then faltando.Add(New KeyValuePair(Of String, Control)("data", dpData))
+        Return faltando
+    End Function
+
+    ' Borda vermelha nos campos que faltam (só depois de tentar exportar), cinza nos demais
+    Private _mostrarFaltando As Boolean = False
+
+    Private Sub DestacarCamposFaltando(faltando As List(Of KeyValuePair(Of String, Control)))
+        For Each c As Control In {txtCliente, txtCidade, txtEstado, txtVelocidade, dpData}
+            Dim falta = _mostrarFaltando AndAlso faltando.Any(Function(f) f.Value Is c)
+            c.BorderBrush = If(falta, Paleta.Vermelho, Paleta.BordaForte)
+        Next
+    End Sub
+
+    Private Shared Function JuntarLista(itens As List(Of String)) As String
+        If itens.Count <= 1 Then Return String.Join("", itens)
+        Return String.Join(", ", itens.Take(itens.Count - 1)) & " e " & itens.Last()
     End Function
 
     Private Sub Campo_TextChanged(sender As Object, e As TextChangedEventArgs)
@@ -114,13 +149,32 @@ Partial Public Class ExportarWindow
         pnlExcluir.Visibility = If(mesmaPasta, Visibility.Visible, Visibility.Collapsed)
         If Not mesmaPasta Then chkExcluirOriginal.IsChecked = False
 
-        ' A pasta padronizada é sub-opção da "Outra pasta"
+        ' A pasta padronizada é sub-opção da "Outra pasta" e pode ser desligada
         pnlPadronizada.Visibility = If(mesmaPasta, Visibility.Collapsed, Visibility.Visible)
         Dim padronizada = Not mesmaPasta AndAlso chkPadronizada.IsChecked = True
-        gridPadronizada.Visibility = If(padronizada, Visibility.Visible, Visibility.Collapsed)
-        lblNomePasta.Visibility = gridPadronizada.Visibility
+        pnlCamposPadronizada.Visibility = If(padronizada, Visibility.Visible, Visibility.Collapsed)
+        bdrPadronizada.BorderBrush = If(padronizada, CType(FindResource("CorDestaque"), Brush), Paleta.Borda)
+        lblPadronizadaDesc.Text = If(padronizada,
+            "Os vídeos vão para uma pasta nova dentro da pasta escolhida.",
+            "Desligado: os vídeos vão direto para a pasta escolhida.")
+
+        Dim faltando = CamposFaltando()
+        DestacarCamposFaltando(faltando)
         Dim nomePasta = MontarNomePasta()
-        lblNomePasta.Text = If(nomePasta = "", "Preencha cliente, cidade, estado, velocidade e data.", "Pasta: " & nomePasta)
+        If nomePasta = "" Then
+            icoPrevia.Text = ChrW(&HE946).ToString()
+            icoPrevia.Foreground = Paleta.Laranja
+            bdrPrevia.Background = Paleta.LaranjaClaro
+            lblPreviaTitulo.Text = "FALTA PREENCHER"
+            Dim lista = JuntarLista(faltando.Select(Function(f) f.Key).ToList())
+            lblNomePasta.Text = Char.ToUpper(lista(0)) & lista.Substring(1) & "."
+        Else
+            icoPrevia.Text = ChrW(&HE8B7).ToString()
+            icoPrevia.Foreground = Paleta.TextoSecundario
+            bdrPrevia.Background = Paleta.FundoCinza
+            lblPreviaTitulo.Text = "NOME DA PASTA"
+            lblNomePasta.Text = nomePasta
+        End If
 
         Dim excluir = mesmaPasta AndAlso chkExcluirOriginal.IsChecked = True
         If excluir Then
@@ -147,6 +201,7 @@ Partial Public Class ExportarWindow
             partes.Add(If(excluir, "Mesma pasta, apagando originais", "Mesma pasta"))
         Else
             partes.Add(If(String.IsNullOrEmpty(PastaDestino), "Outra pasta (a escolher)", $"Em {Path.GetFileName(PastaDestino.TrimEnd("\"c))}"))
+            If padronizada Then partes.Add("em subpasta padronizada")
         End If
         partes.Add(If(rbEconomico.IsChecked = True, "Econômico", "Alto desempenho"))
         lblRodape.Text = String.Join(" · ", partes)
@@ -179,7 +234,10 @@ Partial Public Class ExportarWindow
 
         Dim usarPadronizada = rbOutraPasta.IsChecked = True AndAlso chkPadronizada.IsChecked = True
         If usarPadronizada AndAlso MontarNomePasta() = "" Then
-            ConfirmacaoWindow.Avisar(Me, "Pasta padronizada incompleta", "Preencha cliente, cidade, estado, velocidade e data, ou desmarque a opção.", TipoAviso.Informacao)
+            ' Destaca o que falta e leva o cursor ao primeiro campo, em vez de abrir um aviso
+            _mostrarFaltando = True
+            AtualizarEstado()
+            CamposFaltando().First().Value.Focus()
             Return
         End If
         NomePastaPadronizada = If(usarPadronizada, MontarNomePasta(), "")
