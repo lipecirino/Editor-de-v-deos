@@ -60,11 +60,11 @@
 
     <Grid Margin="15">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="280" />
+            <ColumnDefinition Name="colGaleria" Width="280" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <Grid Grid.Column="0" Margin="0,0,15,0">
+        <Grid Name="gridGaleria" Grid.Column="0" Margin="0,0,15,0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
@@ -242,6 +242,30 @@
                             </Button>
                         </StackPanel>
                     </Border>
+                    <!-- Vídeo ampliado: só aparece com a cronoanálise em janela separada -->
+                    <Button Name="btnVideoAmpliado" Visibility="Collapsed" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10"
+                            Foreground="White" Background="#B31C1C1E" BorderThickness="0" Cursor="Hand" Focusable="False"
+                            Click="BtnVideoAmpliado_Click" ToolTip="Ampliar o vídeo: mostra só o vídeo e as barras de tempo (Esc para voltar)">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Name="bd" Background="{TemplateBinding Background}" CornerRadius="8" Padding="10,5">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Name="ico" Style="{StaticResource Icone}" Text="&#xE740;" FontSize="12" Foreground="White" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                        <TextBlock Name="txt" Text="Ampliar" FontSize="12" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="bd" Property="Background" Value="#E61C1C1E"/>
+                                    </Trigger>
+                                    <Trigger Property="Tag" Value="ampliado">
+                                        <Setter TargetName="ico" Property="Text" Value="&#xE73F;"/>
+                                        <Setter TargetName="txt" Property="Text" Value="Reduzir"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
                     <!-- Estado vazio: aparece enquanto nenhum vídeo está aberto -->
                     <StackPanel Name="pnlVideoVazio" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
                         <TextBlock Style="{StaticResource Icone}" Text="&#xE714;" FontSize="36" Foreground="#FF636366" HorizontalAlignment="Center"/>
@@ -292,7 +316,7 @@
 
 
                 <!-- ===== LINHA 3: Barra de ferramentas (reprodução | cortar | ferramentas) ===== -->
-                <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,12,0,0">
+                <Grid Name="gridBarraFerramentas" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,12,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
@@ -507,11 +531,29 @@
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto"/>
                                                         <ColumnDefinition Width="*"/>
                                                         <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
-                                                    <TextBlock Grid.Column="0" Style="{StaticResource Icone}" Text="&#xE714;" Foreground="#FF007AFF" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <ToggleButton Name="tglExpandirVideo" Grid.Column="0" IsChecked="False" Width="24" Height="24" Margin="0,0,6,0" VerticalAlignment="Center"
+                                                                  Background="Transparent" BorderThickness="0" Cursor="Hand" Focusable="False"
+                                                                  ToolTip="Mostrar ou recolher as operações deste vídeo">
+                                                        <ToggleButton.Template>
+                                                            <ControlTemplate TargetType="ToggleButton">
+                                                                <Border Background="Transparent">
+                                                                    <TextBlock Name="seta" Style="{StaticResource Icone}" Text="&#xE76C;" Foreground="#FF86868B" FontSize="12"
+                                                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsChecked" Value="True">
+                                                                        <Setter TargetName="seta" Property="Text" Value="&#xE70D;"/>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </ToggleButton.Template>
+                                                    </ToggleButton>
+                                                    <TextBlock Grid.Column="1" Style="{StaticResource Icone}" Text="&#xE714;" Foreground="#FF007AFF" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                                         <StackPanel Orientation="Horizontal">
                                                             <TextBlock Text="{Binding NomeVideo}" FontWeight="SemiBold" FontSize="12.5"/>
                                                             <TextBlock Text="{Binding Resumo}" Foreground="#FF86868B" FontSize="11" VerticalAlignment="Center"/>
@@ -519,7 +561,7 @@
                                                         <TextBlock Text="{Binding CaminhoVideo}" Foreground="#FF86868B" FontSize="10.5" TextTrimming="CharacterEllipsis"
                                                                    ToolTip="{Binding CaminhoVideo}"/>
                                                     </StackPanel>
-                                                    <Button Grid.Column="2" Content="Abrir" Tag="&#xE8E5;" Margin="10,0,0,0" VerticalAlignment="Center"
+                                                    <Button Grid.Column="3" Content="Abrir" Tag="&#xE8E5;" Margin="10,0,0,0" VerticalAlignment="Center"
                                                             Style="{StaticResource BotaoArredondado}" Click="BtnAbrirVideoCronoGeral_Click"
                                                             ToolTip="Abrir este vídeo no programa para continuar a cronoanálise"/>
                                                 </Grid>
@@ -531,6 +573,16 @@
                                                       RowHeaderWidth="0" SnapsToDevicePixels="True" CanUserSortColumns="False"
                                                       VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled"
                                                       PreviewMouseWheel="GridCronoGeral_PreviewMouseWheel">
+                                                <DataGrid.Style>
+                                                    <Style TargetType="DataGrid">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsChecked, ElementName=tglExpandirVideo}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </DataGrid.Style>
                                                 <DataGrid.Resources>
                                                     <Style TargetType="DataGridColumnHeader">
                                                         <Setter Property="Background" Value="White"/>

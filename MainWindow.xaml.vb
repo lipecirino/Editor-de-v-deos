@@ -3918,6 +3918,12 @@ Partial Class MainWindow
         ' Se o DataGrid estiver em modo de edição de célula, não interceptar setas
         Dim editandoCelula As Boolean = modoCronoAtivo AndAlso editandoCelulaCrono
 
+        ' Esc sai do vídeo ampliado
+        If videoAmpliado AndAlso e.Key = Key.Escape AndAlso Not editandoCelula Then
+            DefinirVideoAmpliado(False)
+            Return True
+        End If
+
         ' Carregar configurações de atalhos
         Dim settings = SettingsManager.Carregar()
 
@@ -4143,12 +4149,32 @@ Partial Class MainWindow
         ' Criar janela flutuante
         cronoPanelWindow = New CronoPanelWindow(Me, pnlCrono)
         cronoPanelWindow.Show()
+        btnVideoAmpliado.Visibility = Visibility.Visible
+    End Sub
+
+    ' Vídeo ampliado (só com a cronoanálise desacoplada): esconde a galeria e a barra de ferramentas,
+    ' deixando o vídeo, a linha do tempo e as barras de tempo ocupando a janela
+    Private videoAmpliado As Boolean = False
+
+    Private Sub BtnVideoAmpliado_Click(sender As Object, e As RoutedEventArgs)
+        DefinirVideoAmpliado(Not videoAmpliado)
+    End Sub
+
+    Private Sub DefinirVideoAmpliado(ampliar As Boolean)
+        If ampliar AndAlso cronoPanelWindow Is Nothing Then ampliar = False
+        videoAmpliado = ampliar
+        colGaleria.Width = If(ampliar, New GridLength(0), New GridLength(280))
+        gridGaleria.Visibility = If(ampliar, Visibility.Collapsed, Visibility.Visible)
+        gridBarraFerramentas.Visibility = If(ampliar, Visibility.Collapsed, Visibility.Visible)
+        btnVideoAmpliado.Tag = If(ampliar, "ampliado", Nothing)
     End Sub
 
     Public Sub ReacoplarCronoPanel(cronoPanel As Border)
         If cronoPanel Is Nothing Then Return
 
         cronoPanelWindow = Nothing
+        DefinirVideoAmpliado(False)
+        btnVideoAmpliado.Visibility = Visibility.Collapsed
 
         ' Remover o painel do pai atual (janela flutuante) antes de re-adicionar
         Dim parentPanel = VisualTreeHelper.GetParent(cronoPanel)
